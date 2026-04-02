@@ -81,9 +81,13 @@ const SaasAdminLayout = () => {
       )} style={{ background: 'hsl(240 6% 7% / 0.95)', backdropFilter: 'blur(20px)' }}>
         <div className="h-14 px-4 flex items-center justify-between border-b border-border/60">
           <Link to="/admin" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-destructive to-void-warning flex items-center justify-center">
-              <Shield className="w-4 h-4 text-white" />
-            </div>
+            {logoClosed ? (
+              <img src={logoClosed} alt="Logo" className="w-8 h-8 object-contain" />
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-destructive to-void-warning flex items-center justify-center">
+                <Shield className="w-4 h-4 text-white" />
+              </div>
+            )}
             {sidebarOpen && (
               <span className="font-bold text-[15px] tracking-tight text-foreground">
                 Void <span className="text-destructive">Admin</span>
