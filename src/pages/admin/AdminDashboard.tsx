@@ -311,7 +311,7 @@ const AdminDashboard = () => {
                     color: "hsl(0, 0%, 95%)",
                     boxShadow: "0 0 20px hsl(180, 100%, 50%, 0.1)",
                   }}
-                  formatter={(value: number) => [formatCurrency(value), "Revenue"]}
+                  formatter={(value: number) => [formatCurrency(value), "Receita"]}
                 />
                 <Area
                   type="monotone"
