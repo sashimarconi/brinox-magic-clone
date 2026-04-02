@@ -29,11 +29,11 @@ const navSections = [
   {
     title: "Construtor de Loja",
     items: [
-      { label: "Produtos", path: "/admin/products", icon: Package },
-      { label: "Editor de Produto", path: "/admin/product-builder", icon: PenTool },
-      { label: "Avaliações", path: "/admin/reviews", icon: Star },
-      { label: "Badges", path: "/admin/badges", icon: ShieldCheck },
-      { label: "Lojas", path: "/admin/stores", icon: Store },
+      { label: "Produtos", path: "/dashboard/products", icon: Package },
+      { label: "Editor de Produto", path: "/dashboard/product-builder", icon: PenTool },
+      { label: "Avaliações", path: "/dashboard/reviews", icon: Star },
+      { label: "Badges", path: "/dashboard/badges", icon: ShieldCheck },
+      { label: "Lojas", path: "/dashboard/stores", icon: Store },
     ],
   },
   {
