@@ -64,7 +64,7 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_1fr_0.95fr]">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 xl:grid-cols-[1.15fr_1fr_0.95fr]">
         <Card className="rounded-[28px] border-border/80 shadow-sm">
           <CardContent className="space-y-5 p-6">
             <div className="flex items-center gap-3">
