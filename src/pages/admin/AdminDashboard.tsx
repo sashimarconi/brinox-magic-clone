@@ -151,9 +151,9 @@ const AdminDashboard = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-display font-black text-foreground">
-            Command <span className="void-text-gradient">Center</span>
+            Central de <span className="void-text-gradient">Comando</span>
           </h1>
-          <p className="text-sm text-muted-foreground">Real-time store overview</p>
+          <p className="text-sm text-muted-foreground">Visão geral da sua loja em tempo real</p>
         </div>
 
         <Popover open={filterOpen} onOpenChange={setFilterOpen}>
