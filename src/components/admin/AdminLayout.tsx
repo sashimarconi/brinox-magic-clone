@@ -39,10 +39,10 @@ const navSections = [
   {
     title: "Checkout",
     items: [
-      { label: "Builder", path: "/admin/checkout-builder", icon: PenTool },
-      { label: "Gateways", path: "/admin/gateways", icon: CreditCard },
-      { label: "Fretes", path: "/admin/shipping", icon: Truck },
-      { label: "Order Bumps", path: "/admin/order-bumps", icon: Tag },
+      { label: "Builder", path: "/dashboard/checkout-builder", icon: PenTool },
+      { label: "Gateways", path: "/dashboard/gateways", icon: CreditCard },
+      { label: "Fretes", path: "/dashboard/shipping", icon: Truck },
+      { label: "Order Bumps", path: "/dashboard/order-bumps", icon: Tag },
     ],
   },
   {
