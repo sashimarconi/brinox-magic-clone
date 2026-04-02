@@ -14,48 +14,48 @@ const navSections = [
   {
     title: "Central de Comando",
     items: [
-      { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
-      { label: "Live View", path: "/admin/live-view", icon: Radio },
-      { label: "Análises", path: "/admin/analytics", icon: BarChart3 },
+      { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+      { label: "Live View", path: "/dashboard/live-view", icon: Radio },
+      { label: "Análises", path: "/dashboard/analytics", icon: BarChart3 },
     ],
   },
   {
     title: "Vendas",
     items: [
-      { label: "Pedidos", path: "/admin/orders", icon: ClipboardList },
-      { label: "Carrinhos Abandonados", path: "/admin/abandoned-carts", icon: ShoppingCart },
+      { label: "Pedidos", path: "/dashboard/orders", icon: ClipboardList },
+      { label: "Carrinhos Abandonados", path: "/dashboard/abandoned-carts", icon: ShoppingCart },
     ],
   },
   {
     title: "Construtor de Loja",
     items: [
-      { label: "Produtos", path: "/admin/products", icon: Package },
-      { label: "Editor de Produto", path: "/admin/product-builder", icon: PenTool },
-      { label: "Avaliações", path: "/admin/reviews", icon: Star },
-      { label: "Badges", path: "/admin/badges", icon: ShieldCheck },
-      { label: "Lojas", path: "/admin/stores", icon: Store },
+      { label: "Produtos", path: "/dashboard/products", icon: Package },
+      { label: "Editor de Produto", path: "/dashboard/product-builder", icon: PenTool },
+      { label: "Avaliações", path: "/dashboard/reviews", icon: Star },
+      { label: "Badges", path: "/dashboard/badges", icon: ShieldCheck },
+      { label: "Lojas", path: "/dashboard/stores", icon: Store },
     ],
   },
   {
     title: "Checkout",
     items: [
-      { label: "Builder", path: "/admin/checkout-builder", icon: PenTool },
-      { label: "Gateways", path: "/admin/gateways", icon: CreditCard },
-      { label: "Fretes", path: "/admin/shipping", icon: Truck },
-      { label: "Order Bumps", path: "/admin/order-bumps", icon: Tag },
+      { label: "Builder", path: "/dashboard/checkout-builder", icon: PenTool },
+      { label: "Gateways", path: "/dashboard/gateways", icon: CreditCard },
+      { label: "Fretes", path: "/dashboard/shipping", icon: Truck },
+      { label: "Order Bumps", path: "/dashboard/order-bumps", icon: Tag },
     ],
   },
   {
     title: "Marketing",
     items: [
-      { label: "Pixels", path: "/admin/pixels", icon: Zap },
-      { label: "Webhooks", path: "/admin/webhooks", icon: Webhook },
+      { label: "Pixels", path: "/dashboard/pixels", icon: Zap },
+      { label: "Webhooks", path: "/dashboard/webhooks", icon: Webhook },
     ],
   },
   {
     title: "Configurações",
     items: [
-      { label: "Notificações", path: "/admin/notifications", icon: Bell },
+      { label: "Notificações", path: "/dashboard/notifications", icon: Bell },
     ],
   },
 ];
@@ -80,12 +80,12 @@ const AdminLayout = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) navigate("/admin/login");
+      if (!session) navigate("/login");
       setLoading(false);
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) navigate("/admin/login");
+      if (!session) navigate("/login");
     });
 
     checkAuth();
@@ -94,7 +94,7 @@ const AdminLayout = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate("/admin/login");
+    navigate("/login");
   };
 
   if (loading) {
@@ -106,7 +106,7 @@ const AdminLayout = () => {
   }
 
   const isActive = (path: string) => {
-    if (path === "/admin") return location.pathname === "/admin";
+    if (path === "/dashboard") return location.pathname === "/dashboard";
     return location.pathname.startsWith(path);
   };
 
@@ -114,7 +114,7 @@ const AdminLayout = () => {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-4 flex items-center justify-between border-b border-border">
-        <Link to="/admin" className="flex items-center gap-2.5 group">
+        <Link to="/dashboard" className="flex items-center gap-2.5 group">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-void-purple to-void-cyan flex items-center justify-center void-glow-purple-sm group-hover:void-glow-purple transition-shadow">
             <span className="text-white font-display font-black text-sm">V</span>
           </div>

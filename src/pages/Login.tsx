@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,14 +7,13 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Lock } from "lucide-react";
 
-const AdminLogin = () => {
+const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Force dark mode on login page
   useState(() => {
     document.documentElement.classList.add("dark");
   });
@@ -28,21 +27,19 @@ const AdminLogin = () => {
     if (error) {
       toast({ title: "Acesso negado", description: error.message, variant: "destructive" });
     } else {
-      navigate("/admin");
+      navigate("/dashboard");
     }
     setLoading(false);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 void-gradient-bg relative overflow-hidden">
-      {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-void-purple/5 rounded-full blur-[120px]" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-void-cyan/5 rounded-full blur-[120px]" />
       </div>
 
       <div className="w-full max-w-sm relative z-10">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-void-purple to-void-cyan void-glow-purple mb-4">
             <Lock className="w-7 h-7 text-white" />
@@ -51,10 +48,9 @@ const AdminLogin = () => {
             <span className="text-foreground">Void</span>
             <span className="text-void-cyan">Tok</span>
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Entre no void</p>
+          <p className="text-sm text-muted-foreground mt-1">Entre na sua conta</p>
         </div>
 
-        {/* Login card */}
         <div className="bg-card/80 backdrop-blur-xl rounded-xl border border-border p-6 space-y-6 void-glow-purple-sm">
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
@@ -64,13 +60,13 @@ const AdminLogin = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@voidtok.com"
+                placeholder="seu@email.com"
                 required
                 className="bg-muted/50 border-border focus:border-void-purple focus:ring-void-purple/20 placeholder:text-muted-foreground/50"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-muted-foreground text-xs uppercase tracking-wider font-semibold">Password</Label>
+              <Label htmlFor="password" className="text-muted-foreground text-xs uppercase tracking-wider font-semibold">Senha</Label>
               <Input
                 id="password"
                 type="password"
@@ -89,10 +85,19 @@ const AdminLogin = () => {
               {loading ? "Entrando..." : "Acessar Painel"}
             </Button>
           </form>
+
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">
+              Não tem conta?{" "}
+              <Link to="/register" className="text-void-cyan hover:underline font-semibold">
+                Criar conta
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default AdminLogin;
+export default Login;
