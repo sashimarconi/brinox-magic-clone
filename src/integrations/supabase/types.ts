@@ -126,8 +126,11 @@ export type Database = {
         Row: {
           active: boolean | null
           created_at: string
+          description: string | null
+          display_name: string | null
           gateway_name: string
           id: string
+          logo_url: string | null
           public_key: string | null
           secret_key: string | null
           updated_at: string
@@ -136,8 +139,11 @@ export type Database = {
         Insert: {
           active?: boolean | null
           created_at?: string
+          description?: string | null
+          display_name?: string | null
           gateway_name?: string
           id?: string
+          logo_url?: string | null
           public_key?: string | null
           secret_key?: string | null
           updated_at?: string
@@ -146,8 +152,11 @@ export type Database = {
         Update: {
           active?: boolean | null
           created_at?: string
+          description?: string | null
+          display_name?: string | null
           gateway_name?: string
           id?: string
+          logo_url?: string | null
           public_key?: string | null
           secret_key?: string | null
           updated_at?: string
