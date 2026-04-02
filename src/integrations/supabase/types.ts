@@ -1002,32 +1002,29 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          monthly_views_limit: number | null
-          monthly_views_used: number | null
+          monthly_price: number
           plan: Database["public"]["Enums"]["plan_type"]
+          transaction_fee_percent: number
           updated_at: string
           user_id: string
-          views_reset_at: string | null
         }
         Insert: {
           created_at?: string
           id?: string
-          monthly_views_limit?: number | null
-          monthly_views_used?: number | null
+          monthly_price?: number
           plan?: Database["public"]["Enums"]["plan_type"]
+          transaction_fee_percent?: number
           updated_at?: string
           user_id: string
-          views_reset_at?: string | null
         }
         Update: {
           created_at?: string
           id?: string
-          monthly_views_limit?: number | null
-          monthly_views_used?: number | null
+          monthly_price?: number
           plan?: Database["public"]["Enums"]["plan_type"]
+          transaction_fee_percent?: number
           updated_at?: string
           user_id?: string
-          views_reset_at?: string | null
         }
         Relationships: []
       }
@@ -1222,9 +1219,9 @@ export type Database = {
           created_at: string
           email: string
           full_name: string
-          monthly_views_limit: number
-          monthly_views_used: number
+          monthly_price: number
           plan: Database["public"]["Enums"]["plan_type"]
+          transaction_fee_percent: number
           user_id: string
         }[]
       }
@@ -1259,7 +1256,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      increment_plan_views: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

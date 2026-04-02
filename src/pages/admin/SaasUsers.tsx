@@ -15,8 +15,8 @@ interface SaasUser {
   full_name: string | null;
   avatar_url: string | null;
   plan: "free" | "pro" | "enterprise";
-  monthly_views_used: number;
-  monthly_views_limit: number;
+  transaction_fee_percent: number;
+  monthly_price: number;
   created_at: string;
 }
 
@@ -99,7 +99,7 @@ const SaasUsers = () => {
                 <TableHead>Usuário</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Plano</TableHead>
-                <TableHead>Views (mês)</TableHead>
+                <TableHead>Taxa</TableHead>
                 <TableHead>Cadastro</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
@@ -121,12 +121,8 @@ const SaasUsers = () => {
                       {user.plan.toUpperCase()}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm">
-                    {user.plan === "free" ? (
-                      <span>{user.monthly_views_used} / {user.monthly_views_limit}</span>
-                    ) : (
-                      <span className="text-muted-foreground">Ilimitado</span>
-                    )}
+                  <TableCell className="text-sm font-mono">
+                    {user.transaction_fee_percent}%
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {format(new Date(user.created_at), "dd/MM/yyyy")}
