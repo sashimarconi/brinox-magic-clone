@@ -67,6 +67,7 @@ const App = () => (
             <Route path="webhooks" element={<AdminWebhooks />} />
             <Route path="notifications" element={<AdminNotifications />} />
             <Route path="stores" element={<AdminStores />} />
+            <Route path="plans" element={<AdminPlans />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

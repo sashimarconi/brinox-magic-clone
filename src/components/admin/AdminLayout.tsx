@@ -56,6 +56,7 @@ const navSections = [
     title: "Configurações",
     items: [
       { label: "Notificações", path: "/dashboard/notifications", icon: Bell },
+      { label: "Plano & Limites", path: "/dashboard/plans", icon: Crown },
     ],
   },
 ];
