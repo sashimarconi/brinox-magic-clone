@@ -63,14 +63,8 @@ const AdminPlatformSettings = () => {
     },
   });
 
-  const { data: gateways } = useQuery({
-    queryKey: ["gateway-settings-platform"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("gateway_settings").select("*");
-      if (error) throw error;
-      return data;
-    },
-  });
+  // Gateway catalog names from GATEWAYS_DEFAULTS keys
+  const gatewayNames = Object.keys(GATEWAYS_DEFAULTS);
 
   const updateSetting = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
@@ -90,16 +84,30 @@ const AdminPlatformSettings = () => {
   });
 
   const updateGateway = useMutation({
-    mutationFn: async ({ id, display_name, description, logo_url }: { id: string; display_name: string; description: string; logo_url: string }) => {
-      const { error } = await (supabase as any)
-        .from("gateway_settings")
-        .update({ display_name: display_name || null, description: description || null, logo_url: logo_url || null })
-        .eq("id", id);
-      if (error) throw error;
+    mutationFn: async ({ gatewayName, display_name, description, logo_url }: { gatewayName: string; display_name: string; description: string; logo_url: string }) => {
+      const meta = JSON.stringify({ display_name, description, logo_url });
+      const key = `gateway_meta_${gatewayName}`;
+      // Upsert into platform_settings
+      const { data: existing } = await (supabase as any)
+        .from("platform_settings")
+        .select("id")
+        .eq("key", key)
+        .maybeSingle();
+      if (existing) {
+        const { error } = await (supabase as any)
+          .from("platform_settings")
+          .update({ value: meta, updated_at: new Date().toISOString() })
+          .eq("key", key);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any)
+          .from("platform_settings")
+          .insert({ key, value: meta });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gateway-settings-platform"] });
-      queryClient.invalidateQueries({ queryKey: ["gateway-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["platform-settings"] });
       setEditGateway(null);
       toast({ title: "Gateway atualizado!" });
     },
@@ -173,16 +181,23 @@ const AdminPlatformSettings = () => {
     },
   ];
 
-  const configuredGateways = gateways?.filter((g) => g.public_key || g.secret_key) || [];
+  const getGatewayMeta = (name: string) => {
+    const raw = settings?.[`gateway_meta_${name}`];
+    if (raw) {
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+    return null;
+  };
 
-  const openEditGateway = (gw: any) => {
-    const defaults = GATEWAYS_DEFAULTS[gw.gateway_name];
+  const openEditGateway = (name: string) => {
+    const defaults = GATEWAYS_DEFAULTS[name];
+    const meta = getGatewayMeta(name);
     setGwForm({
-      display_name: (gw as any).display_name || defaults?.label || gw.gateway_name,
-      description: (gw as any).description || defaults?.description || "",
-      logo_url: (gw as any).logo_url || defaults?.logoUrl || "",
+      display_name: meta?.display_name || defaults?.label || name,
+      description: meta?.description || defaults?.description || "",
+      logo_url: meta?.logo_url || defaults?.logoUrl || "",
     });
-    setEditGateway(gw.id);
+    setEditGateway(name);
   };
 
   return (
@@ -283,19 +298,16 @@ const AdminPlatformSettings = () => {
           </p>
         </div>
 
-        {configuredGateways.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-6">Nenhum gateway configurado ainda</p>
-        )}
-
         <div className="grid gap-3">
-          {configuredGateways.map((gw) => {
-            const defaults = GATEWAYS_DEFAULTS[gw.gateway_name];
-            const displayName = (gw as any).display_name || defaults?.label || gw.gateway_name;
-            const displayDesc = (gw as any).description || defaults?.description || "";
-            const displayLogo = (gw as any).logo_url || defaults?.logoUrl || "";
+          {gatewayNames.map((name) => {
+            const defaults = GATEWAYS_DEFAULTS[name];
+            const meta = getGatewayMeta(name);
+            const displayName = meta?.display_name || defaults?.label || name;
+            const displayDesc = meta?.description || defaults?.description || "";
+            const displayLogo = meta?.logo_url || defaults?.logoUrl || "";
 
             return (
-              <Card key={gw.id} className="border-border/60 bg-card">
+              <Card key={name} className="border-border/60 bg-card">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center overflow-hidden shrink-0">
@@ -316,7 +328,7 @@ const AdminPlatformSettings = () => {
                       variant="outline"
                       size="sm"
                       className="gap-1.5 shrink-0"
-                      onClick={() => openEditGateway(gw)}
+                      onClick={() => openEditGateway(name)}
                     >
                       <Pencil className="w-3.5 h-3.5" />
                       Editar
@@ -395,7 +407,7 @@ const AdminPlatformSettings = () => {
               onClick={() => {
                 if (editGateway) {
                   updateGateway.mutate({
-                    id: editGateway,
+                    gatewayName: editGateway,
                     display_name: gwForm.display_name,
                     description: gwForm.description,
                     logo_url: gwForm.logo_url,

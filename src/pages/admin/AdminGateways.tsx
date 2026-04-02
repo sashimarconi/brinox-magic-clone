@@ -73,6 +73,25 @@ const AdminGateways = () => {
     },
   });
 
+  const { data: platformSettings } = useQuery({
+    queryKey: ["platform-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("platform_settings" as any).select("*");
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data as any[])?.forEach((row: any) => { map[row.key] = row.value || ""; });
+      return map;
+    },
+  });
+
+  const getGatewayMeta = (name: string) => {
+    const raw = platformSettings?.[`gateway_meta_${name}`];
+    if (raw) {
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+    return null;
+  };
+
   useEffect(() => {
     if (gateways && !loaded) {
       const newStates: Record<string, GatewayState> = {};
@@ -202,10 +221,10 @@ const AdminGateways = () => {
 
       {/* Active gateway hero */}
       {activeGateway && (() => {
-        const activeGw = gateways?.find((g) => g.gateway_name === activeGateway.name);
-        const heroLabel = (activeGw as any)?.display_name || activeGateway.label;
-        const heroDesc = (activeGw as any)?.description || activeGateway.description;
-        const heroLogo = (activeGw as any)?.logo_url || activeGateway.logoUrl;
+        const meta = getGatewayMeta(activeGateway.name);
+        const heroLabel = meta?.display_name || activeGateway.label;
+        const heroDesc = meta?.description || activeGateway.description;
+        const heroLogo = meta?.logo_url || activeGateway.logoUrl;
         return (
         <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 p-5">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-10 -mt-10" />
@@ -249,10 +268,10 @@ const AdminGateways = () => {
           const configured = isConfigured(gw.name);
           const active = state.active;
 
-          const existing = gateways?.find((g) => g.gateway_name === gw.name);
-          const displayLabel = (existing as any)?.display_name || gw.label;
-          const displayDesc = (existing as any)?.description || gw.description;
-          const displayLogo = (existing as any)?.logo_url || gw.logoUrl;
+          const meta = getGatewayMeta(gw.name);
+          const displayLabel = meta?.display_name || gw.label;
+          const displayDesc = meta?.description || gw.description;
+          const displayLogo = meta?.logo_url || gw.logoUrl;
 
           return (
             <div
