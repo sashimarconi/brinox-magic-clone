@@ -216,6 +216,23 @@ Deno.serve(async (req) => {
         } catch (pushErr) {
           console.error("Push notification error:", pushErr);
         }
+
+        // Send to Utmify
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/send-utmify-order`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${serviceRoleKey}`,
+            },
+            body: JSON.stringify({
+              order_id: order.id,
+              status: "paid",
+            }),
+          });
+        } catch (utmifyErr) {
+          console.error("Utmify dispatch error:", utmifyErr);
+        }
       } else {
         console.warn(`No order matched transaction ${transactionId}`);
       }
