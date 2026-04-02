@@ -27,6 +27,7 @@ export type Database = {
           session_id: string | null
           total: number | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -40,6 +41,7 @@ export type Database = {
           session_id?: string | null
           total?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -53,6 +55,7 @@ export type Database = {
           session_id?: string | null
           total?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -62,18 +65,21 @@ export type Database = {
           created_at: string
           id: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           config?: Json
           created_at?: string
           id?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           config?: Json
           created_at?: string
           id?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -88,6 +94,7 @@ export type Database = {
           pix_instruction_text: string
           pix_payment_title: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           checkout_button_text?: string
@@ -99,6 +106,7 @@ export type Database = {
           pix_instruction_text?: string
           pix_payment_title?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           checkout_button_text?: string
@@ -110,6 +118,7 @@ export type Database = {
           pix_instruction_text?: string
           pix_payment_title?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -122,6 +131,7 @@ export type Database = {
           public_key: string | null
           secret_key: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           active?: boolean | null
@@ -131,6 +141,7 @@ export type Database = {
           public_key?: string | null
           secret_key?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           active?: boolean | null
@@ -140,6 +151,7 @@ export type Database = {
           public_key?: string | null
           secret_key?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -179,18 +191,21 @@ export type Database = {
           id: string
           order_bump_id: string
           product_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           order_bump_id: string
           product_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           order_bump_id?: string
           product_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -228,6 +243,7 @@ export type Database = {
           product_id: string | null
           sort_order: number | null
           title: string
+          user_id: string | null
         }
         Insert: {
           active?: boolean | null
@@ -247,6 +263,7 @@ export type Database = {
           product_id?: string | null
           sort_order?: number | null
           title: string
+          user_id?: string | null
         }
         Update: {
           active?: boolean | null
@@ -266,6 +283,7 @@ export type Database = {
           product_id?: string | null
           sort_order?: number | null
           title?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -303,6 +321,7 @@ export type Database = {
           total: number
           transaction_id: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           bumps_total?: number | null
@@ -329,6 +348,7 @@ export type Database = {
           total: number
           transaction_id?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           bumps_total?: number | null
@@ -355,6 +375,7 @@ export type Database = {
           total?: number
           transaction_id?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -381,6 +402,7 @@ export type Database = {
           metadata: Json | null
           page_url: string | null
           session_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -389,6 +411,7 @@ export type Database = {
           metadata?: Json | null
           page_url?: string | null
           session_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -397,6 +420,7 @@ export type Database = {
           metadata?: Json | null
           page_url?: string | null
           session_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -408,6 +432,7 @@ export type Database = {
           product_id: string
           sort_order: number | null
           url: string
+          user_id: string | null
         }
         Insert: {
           alt?: string | null
@@ -416,6 +441,7 @@ export type Database = {
           product_id: string
           sort_order?: number | null
           url: string
+          user_id?: string | null
         }
         Update: {
           alt?: string | null
@@ -424,6 +450,7 @@ export type Database = {
           product_id?: string
           sort_order?: number | null
           url?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -441,18 +468,21 @@ export type Database = {
           created_at: string
           id: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           config?: Json
           created_at?: string
           id?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           config?: Json
           created_at?: string
           id?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -465,6 +495,7 @@ export type Database = {
           product_id: string
           sort_order: number | null
           thumbnail_url: string | null
+          user_id: string | null
           variant_group_id: string | null
         }
         Insert: {
@@ -475,6 +506,7 @@ export type Database = {
           product_id: string
           sort_order?: number | null
           thumbnail_url?: string | null
+          user_id?: string | null
           variant_group_id?: string | null
         }
         Update: {
@@ -485,6 +517,7 @@ export type Database = {
           product_id?: string
           sort_order?: number | null
           thumbnail_url?: string | null
+          user_id?: string | null
           variant_group_id?: string | null
         }
         Relationships: [
@@ -529,6 +562,7 @@ export type Database = {
           thank_you_url: string | null
           title: string
           updated_at: string
+          user_id: string | null
           video_url: string | null
         }
         Insert: {
@@ -555,6 +589,7 @@ export type Database = {
           thank_you_url?: string | null
           title: string
           updated_at?: string
+          user_id?: string | null
           video_url?: string | null
         }
         Update: {
@@ -581,7 +616,32 @@ export type Database = {
           thank_you_url?: string | null
           title?: string
           updated_at?: string
+          user_id?: string | null
           video_url?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -618,18 +678,21 @@ export type Database = {
           id: string
           product_id: string
           review_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           product_id: string
           review_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           product_id?: string
           review_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -661,6 +724,7 @@ export type Database = {
           review_date: string | null
           updated_at: string
           user_avatar_url: string | null
+          user_id: string | null
           user_name: string
         }
         Insert: {
@@ -675,6 +739,7 @@ export type Database = {
           review_date?: string | null
           updated_at?: string
           user_avatar_url?: string | null
+          user_id?: string | null
           user_name: string
         }
         Update: {
@@ -689,6 +754,7 @@ export type Database = {
           review_date?: string | null
           updated_at?: string
           user_avatar_url?: string | null
+          user_id?: string | null
           user_name?: string
         }
         Relationships: [
@@ -713,6 +779,7 @@ export type Database = {
           name: string
           price: number
           sort_order: number | null
+          user_id: string | null
         }
         Insert: {
           active?: boolean | null
@@ -725,6 +792,7 @@ export type Database = {
           name: string
           price?: number
           sort_order?: number | null
+          user_id?: string | null
         }
         Update: {
           active?: boolean | null
@@ -737,6 +805,7 @@ export type Database = {
           name?: string
           price?: number
           sort_order?: number | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -747,6 +816,7 @@ export type Database = {
           product_id: string
           sort_order: number | null
           store_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -754,6 +824,7 @@ export type Database = {
           product_id: string
           sort_order?: number | null
           store_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -761,6 +832,7 @@ export type Database = {
           product_id?: string
           sort_order?: number | null
           store_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -790,6 +862,7 @@ export type Database = {
           rating: number | null
           total_sales: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -801,6 +874,7 @@ export type Database = {
           rating?: number | null
           total_sales?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -812,6 +886,7 @@ export type Database = {
           rating?: number | null
           total_sales?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -828,6 +903,7 @@ export type Database = {
           sort_order: number | null
           total_sales: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           active?: boolean | null
@@ -841,6 +917,7 @@ export type Database = {
           sort_order?: number | null
           total_sales?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           active?: boolean | null
@@ -854,6 +931,7 @@ export type Database = {
           sort_order?: number | null
           total_sales?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -864,6 +942,7 @@ export type Database = {
           id: string
           pixel_id: string
           platform: string
+          user_id: string | null
         }
         Insert: {
           active?: boolean | null
@@ -871,6 +950,7 @@ export type Database = {
           id?: string
           pixel_id: string
           platform?: string
+          user_id?: string | null
         }
         Update: {
           active?: boolean | null
@@ -878,6 +958,7 @@ export type Database = {
           id?: string
           pixel_id?: string
           platform?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -891,6 +972,7 @@ export type Database = {
           id: string
           sort_order: number | null
           title: string
+          user_id: string | null
         }
         Insert: {
           active?: boolean | null
@@ -901,6 +983,7 @@ export type Database = {
           id?: string
           sort_order?: number | null
           title: string
+          user_id?: string | null
         }
         Update: {
           active?: boolean | null
@@ -911,6 +994,7 @@ export type Database = {
           id?: string
           sort_order?: number | null
           title?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -921,6 +1005,7 @@ export type Database = {
           name: string
           product_id: string
           sort_order: number | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -928,6 +1013,7 @@ export type Database = {
           name: string
           product_id: string
           sort_order?: number | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -935,6 +1021,7 @@ export type Database = {
           name?: string
           product_id?: string
           sort_order?: number | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -958,6 +1045,7 @@ export type Database = {
           page_url: string | null
           region: string | null
           session_id: string
+          user_id: string | null
         }
         Insert: {
           city?: string | null
@@ -970,6 +1058,7 @@ export type Database = {
           page_url?: string | null
           region?: string | null
           session_id: string
+          user_id?: string | null
         }
         Update: {
           city?: string | null
@@ -982,6 +1071,7 @@ export type Database = {
           page_url?: string | null
           region?: string | null
           session_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -996,6 +1086,7 @@ export type Database = {
           secret_key: string | null
           updated_at: string
           url: string
+          user_id: string | null
         }
         Insert: {
           active?: boolean
@@ -1007,6 +1098,7 @@ export type Database = {
           secret_key?: string | null
           updated_at?: string
           url: string
+          user_id?: string | null
         }
         Update: {
           active?: boolean
@@ -1018,6 +1110,7 @@ export type Database = {
           secret_key?: string | null
           updated_at?: string
           url?: string
+          user_id?: string | null
         }
         Relationships: []
       }
