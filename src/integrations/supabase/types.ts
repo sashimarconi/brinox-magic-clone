@@ -1031,6 +1031,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       variant_groups: {
         Row: {
           created_at: string
@@ -1152,13 +1170,54 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_list_users: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          created_at: string
+          email: string
+          full_name: string
+          monthly_views_limit: number
+          monthly_views_used: number
+          plan: Database["public"]["Enums"]["plan_type"]
+          user_id: string
+        }[]
+      }
+      admin_saas_metrics: {
+        Args: never
+        Returns: {
+          enterprise_users: number
+          free_users: number
+          pro_users: number
+          total_orders: number
+          total_products: number
+          total_revenue: number
+          total_stores: number
+          total_users: number
+        }[]
+      }
+      admin_update_user_plan: {
+        Args: {
+          _new_plan: Database["public"]["Enums"]["plan_type"]
+          _target_user_id: string
+        }
+        Returns: undefined
+      }
       get_user_plan: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["plan_type"]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       increment_plan_views: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       plan_type: "free" | "pro" | "enterprise"
     }
     CompositeTypes: {
@@ -1287,6 +1346,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       plan_type: ["free", "pro", "enterprise"],
     },
   },
