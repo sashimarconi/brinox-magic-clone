@@ -1,23 +1,31 @@
 import { usePlanLimits } from "@/hooks/usePlanLimits";
-import { PLANS, formatLimit, isUnlimited } from "@/lib/plans";
+import { PLANS } from "@/lib/plans";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
-import { Crown, Zap, Rocket, Package, Store, Radio, Webhook, Tag, Truck, Eye } from "lucide-react";
+import { Crown, Zap, Rocket, Percent, DollarSign, Receipt } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const planIcons = { free: Zap, pro: Crown, enterprise: Rocket };
 
-const resourceLabels: Record<string, { label: string; icon: React.ElementType }> = {
-  products: { label: "Produtos", icon: Package },
-  stores: { label: "Lojas", icon: Store },
-  pixels: { label: "Pixels", icon: Radio },
-  webhooks: { label: "Webhooks", icon: Webhook },
-  orderBumps: { label: "Order Bumps", icon: Tag },
-  shippingOptions: { label: "Opções de Frete", icon: Truck },
-};
-
 const AdminPlans = () => {
-  const { plan, planType, usage, monthlyViewsUsed, monthlyViewsLimit, isLoading } = usePlanLimits();
+  const { plan, planType, isLoading } = usePlanLimits();
+
+  const { data: monthlyFees } = useQuery({
+    queryKey: ["monthly-fees"],
+    queryFn: async () => {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const { data } = await supabase
+        .from("invoices")
+        .select("fee_amount")
+        .gte("created_at", startOfMonth.toISOString());
+
+      return data?.reduce((sum, inv) => sum + Number(inv.fee_amount), 0) ?? 0;
+    },
+  });
 
   if (isLoading) {
     return (
@@ -32,8 +40,8 @@ const AdminPlans = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-display font-black text-foreground">Plano & Limites</h1>
-        <p className="text-muted-foreground text-sm mt-1">Gerencie seu plano e acompanhe o uso dos recursos</p>
+        <h1 className="text-2xl font-display font-black text-foreground">Plano & Faturamento</h1>
+        <p className="text-muted-foreground text-sm mt-1">Seu plano atual e taxas de transação</p>
       </div>
 
       {/* Current Plan Card */}
@@ -52,58 +60,40 @@ const AdminPlans = () => {
         </div>
       </Card>
 
-      {/* Usage Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Object.entries(resourceLabels).map(([key, { label, icon: Icon }]) => {
-          const used = usage?.[key as keyof typeof usage] ?? 0;
-          const limit = plan.limits[key as keyof typeof plan.limits];
-          const unlimited = isUnlimited(limit);
-          const percent = unlimited ? 0 : (used / limit) * 100;
-          const isNearLimit = !unlimited && percent >= 80;
-
-          return (
-            <Card key={key} className="bg-card/60 border-border p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Icon className="w-4 h-4 text-void-cyan" />
-                  <span className="text-sm font-semibold text-foreground">{label}</span>
-                </div>
-                <span className={`text-sm font-mono font-bold ${isNearLimit ? 'text-void-danger' : 'text-muted-foreground'}`}>
-                  {used}/{formatLimit(limit)}
-                </span>
-              </div>
-              {!unlimited && (
-                <Progress
-                  value={percent}
-                  className="h-2"
-                />
-              )}
-              {unlimited && (
-                <p className="text-xs text-muted-foreground/70">Ilimitado</p>
-              )}
-            </Card>
-          );
-        })}
-
-        {/* Monthly Views - special card for Free plan */}
-        <Card className="bg-card/60 border-border p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Eye className="w-4 h-4 text-void-cyan" />
-              <span className="text-sm font-semibold text-foreground">Visualizações/mês</span>
-            </div>
-            <span className={`text-sm font-mono font-bold ${!isUnlimited(monthlyViewsLimit) && monthlyViewsUsed >= monthlyViewsLimit * 0.8 ? 'text-void-danger' : 'text-muted-foreground'}`}>
-              {monthlyViewsUsed}/{formatLimit(monthlyViewsLimit)}
-            </span>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-card/60 border-border p-5 space-y-2">
+          <div className="flex items-center gap-2">
+            <Percent className="w-4 h-4 text-void-cyan" />
+            <span className="text-sm font-semibold text-foreground">Taxa por venda</span>
           </div>
-          {!isUnlimited(monthlyViewsLimit) ? (
-            <Progress
-              value={(monthlyViewsUsed / monthlyViewsLimit) * 100}
-              className="h-2"
-            />
-          ) : (
-            <p className="text-xs text-muted-foreground/70">Ilimitado</p>
-          )}
+          <p className="text-3xl font-mono font-black text-void-cyan">{plan.transactionFeePercent}%</p>
+          <p className="text-xs text-muted-foreground">Cobrado automaticamente em cada venda aprovada</p>
+        </Card>
+
+        <Card className="bg-card/60 border-border p-5 space-y-2">
+          <div className="flex items-center gap-2">
+            <DollarSign className="w-4 h-4 text-void-purple" />
+            <span className="text-sm font-semibold text-foreground">Mensalidade</span>
+          </div>
+          <p className="text-3xl font-mono font-black text-foreground">
+            {plan.monthlyPrice === 0 ? (
+              <span className="text-emerald-400">Grátis</span>
+            ) : (
+              <>R${plan.monthlyPrice}<span className="text-sm text-muted-foreground font-normal">/mês</span></>
+            )}
+          </p>
+        </Card>
+
+        <Card className="bg-card/60 border-border p-5 space-y-2">
+          <div className="flex items-center gap-2">
+            <Receipt className="w-4 h-4 text-void-cyan" />
+            <span className="text-sm font-semibold text-foreground">Taxas do mês</span>
+          </div>
+          <p className="text-3xl font-mono font-black text-foreground">
+            R${(monthlyFees ?? 0).toFixed(2)}
+          </p>
+          <p className="text-xs text-muted-foreground">Total acumulado de taxas neste mês</p>
         </Card>
       </div>
 
@@ -136,24 +126,26 @@ const AdminPlans = () => {
 
                 <ul className="space-y-2 text-sm">
                   <li className="flex justify-between text-muted-foreground">
+                    <span>Taxa por venda</span>
+                    <span className="font-mono font-semibold text-foreground">{p.transactionFeePercent}%</span>
+                  </li>
+                  <li className="flex justify-between text-muted-foreground">
+                    <span>Mensalidade</span>
+                    <span className="font-mono font-semibold text-foreground">
+                      {p.monthlyPrice === 0 ? 'Grátis' : `R$${p.monthlyPrice}`}
+                    </span>
+                  </li>
+                  <li className="flex justify-between text-muted-foreground">
                     <span>Produtos</span>
-                    <span className="font-mono font-semibold text-foreground">{formatLimit(p.limits.products)}</span>
+                    <span className="font-mono font-semibold text-foreground">Ilimitados</span>
                   </li>
                   <li className="flex justify-between text-muted-foreground">
                     <span>Lojas</span>
-                    <span className="font-mono font-semibold text-foreground">{formatLimit(p.limits.stores)}</span>
-                  </li>
-                  <li className="flex justify-between text-muted-foreground">
-                    <span>Pixels</span>
-                    <span className="font-mono font-semibold text-foreground">{formatLimit(p.limits.pixels)}</span>
-                  </li>
-                  <li className="flex justify-between text-muted-foreground">
-                    <span>Webhooks</span>
-                    <span className="font-mono font-semibold text-foreground">{formatLimit(p.limits.webhooks)}</span>
+                    <span className="font-mono font-semibold text-foreground">Ilimitadas</span>
                   </li>
                   <li className="flex justify-between text-muted-foreground">
                     <span>Views/mês</span>
-                    <span className="font-mono font-semibold text-foreground">{formatLimit(p.limits.monthlyViews)}</span>
+                    <span className="font-mono font-semibold text-foreground">Ilimitados</span>
                   </li>
                 </ul>
               </Card>

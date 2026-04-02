@@ -1219,9 +1219,9 @@ export type Database = {
           created_at: string
           email: string
           full_name: string
-          monthly_views_limit: number
-          monthly_views_used: number
+          monthly_price: number
           plan: Database["public"]["Enums"]["plan_type"]
+          transaction_fee_percent: number
           user_id: string
         }[]
       }
