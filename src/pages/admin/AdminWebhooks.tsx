@@ -141,16 +141,16 @@ const AdminWebhooks = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Webhooks</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Webhooks</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Configure webhooks para receber notificações em tempo real dos eventos da sua loja
+            Configure webhooks para receber notificações em tempo real
           </p>
         </div>
-        <Button onClick={openCreate} className="gap-2">
+        <Button onClick={openCreate} className="gap-2 self-start sm:self-auto shrink-0">
           <Plus className="h-4 w-4" />
-          Novo Webhook
+          <span className="hidden sm:inline">Novo Webhook</span><span className="sm:hidden">Novo</span>
         </Button>
       </div>
 
