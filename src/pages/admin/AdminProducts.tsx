@@ -391,7 +391,7 @@ const AdminProducts = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
                 <Label>Avaliação</Label>
                 <Input type="number" step="0.1" value={form.rating} onChange={(e) => updateField("rating", parseFloat(e.target.value))} />
