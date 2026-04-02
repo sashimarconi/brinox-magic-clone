@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -69,36 +71,53 @@
     --admin-accent-light: 263 70% 95%;
     --admin-chart-stroke: 348 83% 47%;
     --admin-chart-fill: 348 83% 90%;
+
+    /* VoidTok tokens */
+    --void-black: 0 0% 0%;
+    --void-deep: 0 0% 6%;
+    --void-card: 240 10% 8%;
+    --void-card-hover: 240 10% 12%;
+    --void-purple: 270 100% 53%;
+    --void-purple-glow: 270 100% 65%;
+    --void-cyan: 180 100% 50%;
+    --void-cyan-glow: 180 100% 70%;
+    --void-navy: 230 50% 15%;
+    --void-navy-border: 230 40% 20%;
+    --void-text: 0 0% 100%;
+    --void-text-muted: 230 15% 55%;
+    --void-success: 142 71% 45%;
+    --void-warning: 45 93% 47%;
+    --void-danger: 0 84% 60%;
   }
 
   .dark {
-    --background: 260 40% 7%;
+    --background: 0 0% 4%;
     --foreground: 0 0% 95%;
 
-    --card: 260 35% 12%;
+    --card: 240 10% 8%;
     --card-foreground: 0 0% 95%;
 
-    --popover: 260 35% 12%;
+    --popover: 240 10% 8%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 263 70% 58%;
+    --primary: 270 100% 53%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 260 30% 18%;
+    --secondary: 230 50% 15%;
     --secondary-foreground: 0 0% 95%;
 
-    --muted: 260 25% 16%;
-    --muted-foreground: 260 10% 55%;
+    --muted: 240 10% 12%;
+    --muted-foreground: 230 15% 55%;
 
-    --accent: 260 30% 18%;
-    --accent-foreground: 0 0% 95%;
+    --accent: 180 100% 50%;
+    --accent-foreground: 0 0% 0%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 260 20% 18%;
-    --input: 260 20% 18%;
-    --ring: 263 70% 58%;
+    --border: 230 40% 18%;
+    --input: 230 40% 18%;
+    --ring: 270 100% 53%;
 
     /* Marketplace dark overrides */
     --marketplace-red-light: 348 60% 18%;
@@ -107,18 +126,27 @@
     --marketplace-orange-light: 30 60% 18%;
     --marketplace-gray-light: 220 14% 16%;
 
-    --admin-bg: 260 40% 7%;
-    --admin-sidebar: 260 35% 10%;
-    --admin-sidebar-border: 260 20% 15%;
-    --admin-topbar: 260 35% 8%;
-    --admin-card: 260 35% 12%;
-    --admin-card-hover: 260 30% 15%;
+    --admin-bg: 0 0% 4%;
+    --admin-sidebar: 240 10% 6%;
+    --admin-sidebar-border: 230 40% 15%;
+    --admin-topbar: 240 10% 6%;
+    --admin-card: 240 10% 8%;
+    --admin-card-hover: 240 10% 12%;
     --admin-text: 0 0% 95%;
-    --admin-text-muted: 260 10% 55%;
-    --admin-accent: 263 70% 58%;
-    --admin-accent-light: 263 70% 20%;
-    --admin-chart-stroke: 348 83% 55%;
-    --admin-chart-fill: 348 60% 18%;
+    --admin-text-muted: 230 15% 55%;
+    --admin-accent: 270 100% 53%;
+    --admin-accent-light: 270 100% 20%;
+    --admin-chart-stroke: 180 100% 50%;
+    --admin-chart-fill: 180 80% 15%;
+
+    --sidebar-background: 240 10% 6%;
+    --sidebar-foreground: 0 0% 80%;
+    --sidebar-primary: 270 100% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 230 50% 15%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 230 40% 15%;
+    --sidebar-ring: 180 100% 50%;
   }
 }
 
@@ -134,6 +162,60 @@
   }
 
   #lovable-badge { 
-  display: none !important; 
+    display: none !important; 
+  }
 }
+
+@layer utilities {
+  .font-display {
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  .void-glow-cyan {
+    box-shadow: 0 0 15px hsl(180 100% 50% / 0.3), 0 0 40px hsl(180 100% 50% / 0.1);
+  }
+
+  .void-glow-purple {
+    box-shadow: 0 0 15px hsl(270 100% 53% / 0.3), 0 0 40px hsl(270 100% 53% / 0.1);
+  }
+
+  .void-glow-cyan-sm {
+    box-shadow: 0 0 8px hsl(180 100% 50% / 0.25);
+  }
+
+  .void-glow-purple-sm {
+    box-shadow: 0 0 8px hsl(270 100% 53% / 0.25);
+  }
+
+  .void-gradient-bg {
+    background: radial-gradient(ellipse at top, hsl(270 100% 53% / 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom right, hsl(180 100% 50% / 0.05) 0%, transparent 50%),
+                hsl(0 0% 4%);
+  }
+
+  .void-card-border {
+    border: 1px solid hsl(230 40% 18%);
+  }
+
+  .void-card-navy {
+    border-color: hsl(230 50% 20%);
+    background: hsl(240 10% 8%);
+  }
+
+  .void-text-gradient {
+    background: linear-gradient(135deg, hsl(270 100% 65%), hsl(180 100% 50%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .icon-glow:hover {
+    filter: drop-shadow(0 0 6px hsl(180 100% 50% / 0.6));
+    transition: filter 0.2s ease;
+  }
+
+  .icon-glow-purple:hover {
+    filter: drop-shadow(0 0 6px hsl(270 100% 53% / 0.6));
+    transition: filter 0.2s ease;
+  }
 }
