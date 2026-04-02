@@ -28,6 +28,9 @@ import AdminLiveView from "./pages/admin/AdminLiveView";
 import AdminAbandonedCarts from "./pages/admin/AdminAbandonedCarts";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminPlans from "./pages/admin/AdminPlans";
+import SaasAdminLayout from "./components/admin/SaasAdminLayout";
+import SaasMetrics from "./pages/admin/SaasMetrics";
+import SaasUsers from "./pages/admin/SaasUsers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,10 +48,12 @@ const App = () => (
           <Route path="/checkout/:slug" element={<CheckoutPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          {/* Legacy redirect */}
-          <Route path="/admin/login" element={<Navigate to="/login" replace />} />
-          <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/admin/*" element={<Navigate to="/dashboard" replace />} />
+          {/* SaaS Owner Admin */}
+          <Route path="/admin" element={<SaasAdminLayout />}>
+            <Route index element={<SaasMetrics />} />
+            <Route path="users" element={<SaasUsers />} />
+          </Route>
+          {/* User Dashboard */}
           <Route path="/dashboard" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="live-view" element={<AdminLiveView />} />
