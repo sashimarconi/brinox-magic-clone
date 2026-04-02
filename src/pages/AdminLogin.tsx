@@ -51,7 +51,7 @@ const AdminLogin = () => {
             <span className="text-foreground">Void</span>
             <span className="text-void-cyan">Tok</span>
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Enter the void</p>
+          <p className="text-sm text-muted-foreground mt-1">Entre no void</p>
         </div>
 
         {/* Login card */}
