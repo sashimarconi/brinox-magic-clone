@@ -180,7 +180,7 @@ const AdminLayout = () => {
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-void-cyan hover:bg-muted transition-colors group"
         >
           <ExternalLink className="w-4 h-4 shrink-0 group-hover:text-void-cyan" />
-          {sidebarOpen && <span>View Store</span>}
+          {sidebarOpen && <span>Ver Loja</span>}
         </Link>
         <button
           onClick={handleLogout}
