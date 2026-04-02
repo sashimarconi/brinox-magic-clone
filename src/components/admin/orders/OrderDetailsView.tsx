@@ -118,7 +118,7 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
         </Card>
 
         <Card className="rounded-[28px] border-border/80 shadow-sm">
-          <CardContent className="space-y-5 p-6">
+          <CardContent className="space-y-5 p-4 sm:p-6">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-foreground">
                 <CreditCard className="h-5 w-5" />
@@ -197,7 +197,7 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
         </Card>
 
         <Card className="rounded-[28px] border-border/80 shadow-sm">
-          <CardContent className="space-y-5 p-6">
+          <CardContent className="space-y-5 p-4 sm:p-6">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-foreground">
                 <TimerReset className="h-5 w-5" />
@@ -253,7 +253,7 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
       </div>
 
       <Card className="rounded-[28px] border-border/80 shadow-sm">
-        <CardContent className="space-y-5 p-6">
+        <CardContent className="space-y-5 p-4 sm:p-6">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-foreground">
               <ShoppingBag className="h-5 w-5" />
