@@ -14,9 +14,9 @@ const navSections = [
   {
     title: "Central de Comando",
     items: [
-      { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
-      { label: "Live View", path: "/admin/live-view", icon: Radio },
-      { label: "Análises", path: "/admin/analytics", icon: BarChart3 },
+      { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+      { label: "Live View", path: "/dashboard/live-view", icon: Radio },
+      { label: "Análises", path: "/dashboard/analytics", icon: BarChart3 },
     ],
   },
   {
