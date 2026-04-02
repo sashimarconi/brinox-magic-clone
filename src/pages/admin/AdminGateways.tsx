@@ -296,7 +296,7 @@ const AdminGateways = () => {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5 truncate">{gw.description}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">{displayDesc}</p>
               </div>
 
               {/* Config button */}
