@@ -136,7 +136,32 @@ const SaasUsers = () => {
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Taxa: {user.transaction_fee_percent}%</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Taxa:</span>
+                    {editingFee === user.user_id ? (
+                      <div className="flex items-center gap-1">
+                        <Input
+                          value={feeValue}
+                          onChange={(e) => setFeeValue(e.target.value)}
+                          className="w-16 h-6 text-xs px-1.5"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          autoFocus
+                          onKeyDown={(e) => { if (e.key === "Enter") handleFeeSave(user.user_id); if (e.key === "Escape") setEditingFee(null); }}
+                        />
+                        <span>%</span>
+                        <button onClick={() => handleFeeSave(user.user_id)} className="text-accent hover:text-accent/80"><Check className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => setEditingFee(null)} className="text-muted-foreground hover:text-destructive"><X className="w-3.5 h-3.5" /></button>
+                      </div>
+                    ) : (
+                      <button onClick={() => handleFeeEdit(user.user_id, user.transaction_fee_percent)} className="flex items-center gap-1 hover:text-foreground transition-colors">
+                        <span>{user.transaction_fee_percent}%</span>
+                        <Pencil className="w-3 h-3 opacity-50" />
+                      </button>
+                    )}
+                  </div>
                   <span>{format(new Date(user.created_at), "dd/MM/yyyy")}</span>
                 </div>
                 <Select value={user.plan} onValueChange={(val) => handlePlanChange(user.user_id, val)}>
