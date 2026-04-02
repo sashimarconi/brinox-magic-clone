@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Package, Star, ShieldCheck, LogOut, Menu, CreditCard, Truck, Tag,
   BarChart3, LayoutDashboard, ClipboardList, Store, PenTool, Radio,
-  ChevronLeft, ExternalLink, ShoppingCart, Webhook, Bell, Zap
+  ChevronLeft, ExternalLink, ShoppingCart, Webhook, Bell, Zap, Crown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SaleNotification from "@/components/admin/SaleNotification";
