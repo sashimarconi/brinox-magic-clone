@@ -30,6 +30,8 @@ const SaasUsers = () => {
   const [users, setUsers] = useState<SaasUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [editingFee, setEditingFee] = useState<string | null>(null);
+  const [feeValue, setFeeValue] = useState("");
 
   const fetchUsers = async () => {
     const { data, error } = await supabase.rpc("admin_list_users");
@@ -53,6 +55,30 @@ const SaasUsers = () => {
       toast({ title: "Plano atualizado!" });
       fetchUsers();
     }
+  };
+
+  const handleFeeEdit = (userId: string, currentFee: number) => {
+    setEditingFee(userId);
+    setFeeValue(String(currentFee));
+  };
+
+  const handleFeeSave = async (userId: string) => {
+    const fee = parseFloat(feeValue);
+    if (isNaN(fee) || fee < 0 || fee > 100) {
+      toast({ title: "Erro", description: "Taxa inválida (0-100%)", variant: "destructive" });
+      return;
+    }
+    const { error } = await (supabase as any).rpc("admin_update_user_fee", {
+      _target_user_id: userId,
+      _new_fee: fee,
+    });
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Taxa atualizada!" });
+      fetchUsers();
+    }
+    setEditingFee(null);
   };
 
   const filtered = users.filter((u) =>
