@@ -12,28 +12,28 @@ import PushNotificationToggle from "@/components/admin/PushNotificationToggle";
 
 const navSections = [
   {
-    title: "Command Center",
+    title: "Central de Comando",
     items: [
       { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
       { label: "Live View", path: "/admin/live-view", icon: Radio },
-      { label: "Analytics", path: "/admin/analytics", icon: BarChart3 },
+      { label: "Análises", path: "/admin/analytics", icon: BarChart3 },
     ],
   },
   {
-    title: "Sales",
+    title: "Vendas",
     items: [
-      { label: "Orders", path: "/admin/orders", icon: ClipboardList },
-      { label: "Abandoned Carts", path: "/admin/abandoned-carts", icon: ShoppingCart },
+      { label: "Pedidos", path: "/admin/orders", icon: ClipboardList },
+      { label: "Carrinhos Abandonados", path: "/admin/abandoned-carts", icon: ShoppingCart },
     ],
   },
   {
-    title: "Store Builder",
+    title: "Construtor de Loja",
     items: [
-      { label: "Products", path: "/admin/products", icon: Package },
-      { label: "Product Editor", path: "/admin/product-builder", icon: PenTool },
-      { label: "Reviews", path: "/admin/reviews", icon: Star },
+      { label: "Produtos", path: "/admin/products", icon: Package },
+      { label: "Editor de Produto", path: "/admin/product-builder", icon: PenTool },
+      { label: "Avaliações", path: "/admin/reviews", icon: Star },
       { label: "Badges", path: "/admin/badges", icon: ShieldCheck },
-      { label: "Stores", path: "/admin/stores", icon: Store },
+      { label: "Lojas", path: "/admin/stores", icon: Store },
     ],
   },
   {
@@ -41,7 +41,7 @@ const navSections = [
     items: [
       { label: "Builder", path: "/admin/checkout-builder", icon: PenTool },
       { label: "Gateways", path: "/admin/gateways", icon: CreditCard },
-      { label: "Shipping", path: "/admin/shipping", icon: Truck },
+      { label: "Fretes", path: "/admin/shipping", icon: Truck },
       { label: "Order Bumps", path: "/admin/order-bumps", icon: Tag },
     ],
   },
@@ -53,9 +53,9 @@ const navSections = [
     ],
   },
   {
-    title: "Settings",
+    title: "Configurações",
     items: [
-      { label: "Notifications", path: "/admin/notifications", icon: Bell },
+      { label: "Notificações", path: "/admin/notifications", icon: Bell },
     ],
   },
 ];
@@ -180,14 +180,14 @@ const AdminLayout = () => {
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-void-cyan hover:bg-muted transition-colors group"
         >
           <ExternalLink className="w-4 h-4 shrink-0 group-hover:text-void-cyan" />
-          {sidebarOpen && <span>View Store</span>}
+          {sidebarOpen && <span>Ver Loja</span>}
         </Link>
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-void-danger hover:bg-void-danger/10 transition-colors"
         >
           <LogOut className="w-4 h-4 shrink-0" />
-          {sidebarOpen && <span>Log Out</span>}
+          {sidebarOpen && <span>Sair</span>}
         </button>
       </div>
     </div>

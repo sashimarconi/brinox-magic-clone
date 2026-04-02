@@ -24,10 +24,10 @@ interface Stats {
 }
 
 const quickPeriods = [
-  { label: "Today", days: 0 },
-  { label: "7 days", days: 7 },
-  { label: "15 days", days: 15 },
-  { label: "30 days", days: 30 },
+  { label: "Hoje", days: 0 },
+  { label: "7 dias", days: 7 },
+  { label: "15 dias", days: 15 },
+  { label: "30 dias", days: 30 },
 ];
 
 const AdminDashboard = () => {
@@ -119,22 +119,22 @@ const AdminDashboard = () => {
   const formatCurrency = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 
   const periodLabel = useMemo(() => {
-    if (!dateRange?.from) return "Select period";
+    if (!dateRange?.from) return "Selecionar período";
     const from = format(dateRange.from, "dd/MM/yyyy");
     const to = dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : from;
     return from === to ? from : `${from} — ${to}`;
   }, [dateRange]);
 
   const statCards = [
-    { label: "Live Visitors", value: String(stats.onlineNow), icon: Activity, live: true, color: "text-void-cyan", glow: "void-glow-cyan-sm" },
-    { label: "Visits", value: String(stats.visits), icon: Users, color: "text-void-purple-glow" },
+    { label: "Visitantes agora", value: String(stats.onlineNow), icon: Activity, live: true, color: "text-void-cyan", glow: "void-glow-cyan-sm" },
+    { label: "Visitas", value: String(stats.visits), icon: Users, color: "text-void-purple-glow" },
     { label: "Checkouts", value: String(stats.checkouts), icon: ShoppingCart, color: "text-void-warning" },
-    { label: "Pending Sales", value: String(stats.pendingOrders), icon: Package2, color: "text-marketplace-orange" },
-    { label: "Approved Sales", value: String(stats.paidOrders), icon: CheckCircle2, color: "text-void-success" },
-    { label: "Total Orders", value: String(stats.totalOrders), icon: Package2, color: "text-foreground" },
-    { label: "Total Revenue", value: formatCurrency(stats.totalRevenue), icon: DollarSign, color: "text-foreground" },
-    { label: "Approved Revenue", value: formatCurrency(stats.paidRevenue), icon: DollarSign, color: "text-void-cyan", glow: "void-glow-cyan-sm" },
-    { label: "Conversion", value: `${stats.conversionRate.toFixed(1)}%`, icon: TrendingUp, color: "text-void-purple-glow", glow: "void-glow-purple-sm" },
+    { label: "Vendas pendentes", value: String(stats.pendingOrders), icon: Package2, color: "text-marketplace-orange" },
+    { label: "Vendas aprovadas", value: String(stats.paidOrders), icon: CheckCircle2, color: "text-void-success" },
+    { label: "Pedidos totais", value: String(stats.totalOrders), icon: Package2, color: "text-foreground" },
+    { label: "Receita total", value: formatCurrency(stats.totalRevenue), icon: DollarSign, color: "text-foreground" },
+    { label: "Receita aprovada", value: formatCurrency(stats.paidRevenue), icon: DollarSign, color: "text-void-cyan", glow: "void-glow-cyan-sm" },
+    { label: "Conversão", value: `${stats.conversionRate.toFixed(1)}%`, icon: TrendingUp, color: "text-void-purple-glow", glow: "void-glow-purple-sm" },
   ];
 
   if (loading) {
@@ -151,9 +151,9 @@ const AdminDashboard = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-display font-black text-foreground">
-            Command <span className="void-text-gradient">Center</span>
+            Central de <span className="void-text-gradient">Comando</span>
           </h1>
-          <p className="text-sm text-muted-foreground">Real-time store overview</p>
+          <p className="text-sm text-muted-foreground">Visão geral da sua loja em tempo real</p>
         </div>
 
         <Popover open={filterOpen} onOpenChange={setFilterOpen}>
@@ -165,7 +165,7 @@ const AdminDashboard = () => {
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="end">
             <div className="p-3 border-b border-border">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Quick Period</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Período rápido</p>
               <div className="flex flex-wrap gap-2">
                 {quickPeriods.map((p) => (
                   <button
@@ -241,8 +241,8 @@ const AdminDashboard = () => {
               <Shield className="w-5 h-5 text-void-success" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground font-medium">Domain Status</p>
-              <p className="text-sm font-bold text-void-success">Healthy</p>
+              <p className="text-xs text-muted-foreground font-medium">Status do Domínio</p>
+              <p className="text-sm font-bold text-void-success">Saudável</p>
             </div>
           </CardContent>
         </Card>
@@ -253,7 +253,7 @@ const AdminDashboard = () => {
             </div>
             <div>
               <p className="text-xs text-muted-foreground font-medium">Pixels</p>
-              <p className="text-sm font-bold text-void-cyan">Active</p>
+              <p className="text-sm font-bold text-void-cyan">Ativos</p>
             </div>
           </CardContent>
         </Card>
@@ -276,7 +276,7 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-void-cyan" />
-              <span className="text-sm font-display font-bold text-foreground">Revenue Flow</span>
+              <span className="text-sm font-display font-bold text-foreground">Fluxo de Receita</span>
             </div>
             <span className="text-xs text-muted-foreground">{periodLabel}</span>
           </div>
@@ -311,7 +311,7 @@ const AdminDashboard = () => {
                     color: "hsl(0, 0%, 95%)",
                     boxShadow: "0 0 20px hsl(180, 100%, 50%, 0.1)",
                   }}
-                  formatter={(value: number) => [formatCurrency(value), "Revenue"]}
+                  formatter={(value: number) => [formatCurrency(value), "Receita"]}
                 />
                 <Area
                   type="monotone"
