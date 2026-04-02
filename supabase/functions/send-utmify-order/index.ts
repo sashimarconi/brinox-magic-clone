@@ -29,7 +29,7 @@ serve(async (req) => {
     // Fetch order with product info
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("*, products(id, title, sale_price, slug)")
+      .select("*, products(id, title, sale_price, slug), utm_params")
       .eq("id", order_id)
       .single();
 
@@ -122,13 +122,13 @@ serve(async (req) => {
         },
       ],
       trackingParameters: {
-        src: null,
-        sck: null,
-        utm_source: null,
-        utm_campaign: null,
-        utm_medium: null,
-        utm_content: null,
-        utm_term: null,
+        src: order.utm_params?.src || null,
+        sck: order.utm_params?.sck || null,
+        utm_source: order.utm_params?.utm_source || null,
+        utm_campaign: order.utm_params?.utm_campaign || null,
+        utm_medium: order.utm_params?.utm_medium || null,
+        utm_content: order.utm_params?.utm_content || null,
+        utm_term: order.utm_params?.utm_term || null,
       },
       commission: {
         totalPriceInCents: totalInCents,

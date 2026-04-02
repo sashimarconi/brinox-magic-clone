@@ -322,6 +322,7 @@ export type Database = {
           transaction_id: string | null
           updated_at: string
           user_id: string | null
+          utm_params: Json | null
         }
         Insert: {
           bumps_total?: number | null
@@ -349,6 +350,7 @@ export type Database = {
           transaction_id?: string | null
           updated_at?: string
           user_id?: string | null
+          utm_params?: Json | null
         }
         Update: {
           bumps_total?: number | null
@@ -376,6 +378,7 @@ export type Database = {
           transaction_id?: string | null
           updated_at?: string
           user_id?: string | null
+          utm_params?: Json | null
         }
         Relationships: [
           {
