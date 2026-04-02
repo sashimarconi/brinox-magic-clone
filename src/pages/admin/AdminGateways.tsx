@@ -268,10 +268,10 @@ const AdminGateways = () => {
           const configured = isConfigured(gw.name);
           const active = state.active;
 
-          const existing = gateways?.find((g) => g.gateway_name === gw.name);
-          const displayLabel = (existing as any)?.display_name || gw.label;
-          const displayDesc = (existing as any)?.description || gw.description;
-          const displayLogo = (existing as any)?.logo_url || gw.logoUrl;
+          const meta = getGatewayMeta(gw.name);
+          const displayLabel = meta?.display_name || gw.label;
+          const displayDesc = meta?.description || gw.description;
+          const displayLogo = meta?.logo_url || gw.logoUrl;
 
           return (
             <div
