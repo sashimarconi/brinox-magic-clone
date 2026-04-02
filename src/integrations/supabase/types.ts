@@ -1170,6 +1170,51 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_analytics_summary: {
+        Args: { days?: number }
+        Returns: {
+          conversion_rate: number
+          total_abandoned_carts: number
+          total_orders_period: number
+          total_page_views: number
+          total_revenue_period: number
+          total_sessions: number
+        }[]
+      }
+      admin_daily_orders: {
+        Args: { days?: number }
+        Returns: {
+          day: string
+          order_count: number
+          paid_count: number
+          revenue: number
+        }[]
+      }
+      admin_daily_signups: {
+        Args: { days?: number }
+        Returns: {
+          day: string
+          signup_count: number
+        }[]
+      }
+      admin_list_orders: {
+        Args: { _limit?: number; _offset?: number; _status?: string }
+        Returns: {
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          order_id: string
+          owner_email: string
+          payment_method: string
+          payment_status: string
+          pix_copied: boolean
+          product_title: string
+          product_variant: string
+          quantity: number
+          total: number
+        }[]
+      }
       admin_list_users: {
         Args: never
         Returns: {
