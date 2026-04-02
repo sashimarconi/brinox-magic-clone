@@ -42,10 +42,10 @@ export const OrdersListView = ({
   const [filterOpen, setFilterOpen] = useState(false);
 
   const statCards = [
-    { label: "Pedidos totais", value: stats.total, icon: Package2, tone: "text-foreground" },
-    { label: "Pagos", value: stats.paid, icon: Wallet, tone: "text-marketplace-green" },
-    { label: "Pendentes", value: stats.pending, icon: Clock3, tone: "text-marketplace-yellow" },
-    { label: "Pix copiado", value: stats.copied, icon: CopyCheck, tone: "text-marketplace-blue" },
+    { label: "Pedidos totais", value: stats.total, icon: Package2, tone: "text-muted-foreground" },
+    { label: "Pagos", value: stats.paid, icon: Wallet, tone: "text-void-success" },
+    { label: "Pendentes", value: stats.pending, icon: Clock3, tone: "text-void-warning" },
+    { label: "Pix copiado", value: stats.copied, icon: CopyCheck, tone: "text-accent" },
   ];
 
   const activeFilterCount = (statusFilter !== "all" ? 1 : 0) + (dateFilter !== "all" ? 1 : 0);

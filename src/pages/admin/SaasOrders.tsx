@@ -26,10 +26,10 @@ interface SaasOrder {
 }
 
 const statusMap: Record<string, { label: string; className: string }> = {
-  paid: { label: "Aprovado", className: "bg-void-success/20 text-void-success border-void-success/30" },
-  pending: { label: "Pendente", className: "bg-void-warning/20 text-void-warning border-void-warning/30" },
-  refused: { label: "Recusado", className: "bg-void-danger/20 text-void-danger border-void-danger/30" },
-  refunded: { label: "Reembolsado", className: "bg-void-purple/20 text-void-purple border-void-purple/30" },
+  paid: { label: "Aprovado", className: "bg-void-success/10 text-void-success border-void-success/20" },
+  pending: { label: "Pendente", className: "bg-void-warning/10 text-void-warning border-void-warning/20" },
+  refused: { label: "Recusado", className: "bg-destructive/10 text-destructive border-destructive/20" },
+  refunded: { label: "Reembolsado", className: "bg-primary/10 text-primary border-primary/20" },
 };
 
 const SaasOrders = () => {
@@ -66,10 +66,10 @@ const SaasOrders = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-display font-bold">Todos os Pedidos</h1>
-        <p className="text-muted-foreground text-sm">Pedidos de todos os usuários da plataforma</p>
+        <h1 className="text-2xl font-bold tracking-tight">Todos os Pedidos</h1>
+        <p className="text-muted-foreground text-sm mt-1">Pedidos de todos os usuários da plataforma</p>
       </div>
 
       {/* Filters */}
@@ -80,11 +80,11 @@ const SaasOrders = () => {
             placeholder="Buscar por cliente, produto ou dono..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-9 h-9 text-sm"
           />
         </div>
         <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(0); }}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-36 h-9 text-xs">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -97,64 +97,64 @@ const SaasOrders = () => {
         </Select>
       </div>
 
-      <Card className="bg-card/50 border-border backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ClipboardList className="w-4 h-4 text-void-cyan" />
+      <Card className="border-border/60 bg-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <ClipboardList className="w-4 h-4 text-accent" />
             Pedidos
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-void-cyan" />
+            <div className="flex items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-transparent border-t-accent" />
             </div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Produto</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>PIX Copiado</TableHead>
-                  <TableHead>Dono</TableHead>
-                  <TableHead>Data</TableHead>
+                <TableRow className="hover:bg-transparent border-border/60">
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Cliente</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Produto</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Total</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Status</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">PIX Copiado</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Dono</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Data</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((order) => {
                   const st = statusMap[order.payment_status] || { label: order.payment_status, className: "" };
                   return (
-                    <TableRow key={order.order_id}>
+                    <TableRow key={order.order_id} className="border-border/40 hover:bg-muted/30 transition-colors">
                       <TableCell>
                         <div>
                           <p className="text-sm font-medium">{order.customer_name}</p>
-                          <p className="text-xs text-muted-foreground">{order.customer_email}</p>
+                          <p className="text-[11px] text-muted-foreground">{order.customer_email}</p>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div>
                           <p className="text-sm">{order.product_title || "—"}</p>
                           {order.product_variant && (
-                            <p className="text-xs text-muted-foreground">{order.product_variant}</p>
+                            <p className="text-[11px] text-muted-foreground">{order.product_variant}</p>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm font-medium">
+                      <TableCell className="text-sm font-medium font-mono">
                         R$ {Number(order.total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={st.className}>{st.label}</Badge>
+                        <Badge variant="outline" className={`text-[10px] font-medium ${st.className}`}>{st.label}</Badge>
                       </TableCell>
                       <TableCell>
                         {order.payment_method === "pix" ? (
-                          <Badge variant="outline" className={order.pix_copied ? "bg-void-success/20 text-void-success border-void-success/30" : "bg-muted text-muted-foreground"}>
+                          <Badge variant="outline" className={`text-[10px] font-medium ${order.pix_copied ? "bg-void-success/10 text-void-success border-void-success/20" : "bg-muted text-muted-foreground border-border"}`}>
                             {order.pix_copied ? "Sim" : "Não"}
                           </Badge>
                         ) : "—"}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
+                      <TableCell className="text-[11px] text-muted-foreground">
                         {order.owner_email || "—"}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
@@ -165,7 +165,7 @@ const SaasOrders = () => {
                 })}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-12 text-sm">
                       Nenhum pedido encontrado.
                     </TableCell>
                   </TableRow>
@@ -178,15 +178,15 @@ const SaasOrders = () => {
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Página {page + 1} · {filtered.length} resultado(s)
         </p>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}>
-            <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
+          <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)} className="h-8 text-xs">
+            <ChevronLeft className="w-3.5 h-3.5 mr-1" /> Anterior
           </Button>
-          <Button variant="outline" size="sm" disabled={orders.length < limit} onClick={() => setPage(page + 1)}>
-            Próxima <ChevronRight className="w-4 h-4 ml-1" />
+          <Button variant="outline" size="sm" disabled={orders.length < limit} onClick={() => setPage(page + 1)} className="h-8 text-xs">
+            Próxima <ChevronRight className="w-3.5 h-3.5 ml-1" />
           </Button>
         </div>
       </div>

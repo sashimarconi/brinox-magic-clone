@@ -126,55 +126,55 @@ const AdminDashboard = () => {
   }, [dateRange]);
 
   const statCards = [
-    { label: "Visitantes agora", value: String(stats.onlineNow), icon: Activity, live: true, color: "text-void-cyan", glow: "void-glow-cyan-sm" },
-    { label: "Visitas", value: String(stats.visits), icon: Users, color: "text-void-purple-glow" },
+    { label: "Visitantes agora", value: String(stats.onlineNow), icon: Activity, live: true, color: "text-void-success" },
+    { label: "Visitas", value: String(stats.visits), icon: Users, color: "text-accent" },
     { label: "Checkouts", value: String(stats.checkouts), icon: ShoppingCart, color: "text-void-warning" },
     { label: "Vendas pendentes", value: String(stats.pendingOrders), icon: Package2, color: "text-marketplace-orange" },
     { label: "Vendas aprovadas", value: String(stats.paidOrders), icon: CheckCircle2, color: "text-void-success" },
-    { label: "Pedidos totais", value: String(stats.totalOrders), icon: Package2, color: "text-foreground" },
-    { label: "Receita total", value: formatCurrency(stats.totalRevenue), icon: DollarSign, color: "text-foreground" },
-    { label: "Receita aprovada", value: formatCurrency(stats.paidRevenue), icon: DollarSign, color: "text-void-cyan", glow: "void-glow-cyan-sm" },
-    { label: "Conversão", value: `${stats.conversionRate.toFixed(1)}%`, icon: TrendingUp, color: "text-void-purple-glow", glow: "void-glow-purple-sm" },
+    { label: "Pedidos totais", value: String(stats.totalOrders), icon: Package2, color: "text-muted-foreground" },
+    { label: "Receita total", value: formatCurrency(stats.totalRevenue), icon: DollarSign, color: "text-muted-foreground" },
+    { label: "Receita aprovada", value: formatCurrency(stats.paidRevenue), icon: DollarSign, color: "text-accent" },
+    { label: "Conversão", value: `${stats.conversionRate.toFixed(1)}%`, icon: TrendingUp, color: "text-primary" },
   ];
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-void-cyan" />
+        <div className="animate-spin rounded-full h-7 w-7 border-2 border-transparent border-t-accent" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-display font-black text-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Central de <span className="void-text-gradient">Comando</span>
           </h1>
-          <p className="text-sm text-muted-foreground">Visão geral da sua loja em tempo real</p>
+          <p className="text-sm text-muted-foreground mt-1">Visão geral da sua loja em tempo real</p>
         </div>
 
         <Popover open={filterOpen} onOpenChange={setFilterOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="gap-2 border-border hover:border-void-purple/50 hover:text-void-cyan transition-all">
-              <CalendarDays className="h-4 w-4" />
-              {periodLabel}
+            <Button variant="outline" size="sm" className="gap-2 border-border hover:bg-muted transition-colors">
+              <CalendarDays className="h-3.5 w-3.5" />
+              <span className="text-xs">{periodLabel}</span>
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="end">
             <div className="p-3 border-b border-border">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Período rápido</p>
-              <div className="flex flex-wrap gap-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Período rápido</p>
+              <div className="flex flex-wrap gap-1.5">
                 {quickPeriods.map((p) => (
                   <button
                     key={p.label}
                     className={cn(
-                      "rounded-full border px-3 py-1 text-xs font-medium transition-all",
+                      "rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors",
                       dateRange?.from?.toDateString() === (p.days === 0 ? new Date() : subDays(new Date(), p.days)).toDateString()
-                        ? "border-void-cyan bg-void-cyan/10 text-void-cyan void-glow-cyan-sm"
-                        : "border-border bg-muted text-muted-foreground hover:text-foreground hover:border-void-purple/50"
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-muted text-muted-foreground hover:text-foreground"
                     )}
                     onClick={() => {
                       setDateRange({
@@ -207,26 +207,23 @@ const AdminDashboard = () => {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {statCards.map((card) => (
-          <Card key={card.label} className={cn(
-            "border-border bg-card/80 backdrop-blur-sm hover:border-void-navy-border hover:bg-card transition-all duration-200 group",
-            card.glow && "hover:" + card.glow
-          )}>
+          <Card key={card.label} className="border-border/60 bg-card hover:bg-muted/30 transition-colors duration-150">
             <CardContent className="p-4">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-xs font-medium text-muted-foreground">{card.label}</span>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{card.label}</span>
                 {card.live && (
-                  <span className="flex items-center gap-1 text-[9px] text-void-cyan font-semibold bg-void-cyan/10 px-1.5 py-0.5 rounded-full">
+                  <span className="flex items-center gap-1 text-[9px] text-void-success font-semibold bg-void-success/8 px-1.5 py-0.5 rounded-md">
                     <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-void-cyan opacity-75" />
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-void-cyan" />
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-void-success opacity-50" />
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-void-success" />
                     </span>
                     LIVE
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <card.icon className={cn("w-4 h-4 shrink-0 transition-all", card.color, "group-hover:scale-110")} />
-                <p className="text-xl font-display font-bold text-foreground truncate">{card.value}</p>
+              <div className="flex items-center gap-2.5">
+                <card.icon className={cn("w-4 h-4 shrink-0", card.color)} />
+                <p className="text-lg font-semibold text-foreground truncate">{card.value}</p>
               </div>
             </CardContent>
           </Card>
@@ -235,92 +232,92 @@ const AdminDashboard = () => {
 
       {/* Store Health */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <Card className="border-border bg-card/80 backdrop-blur-sm">
+        <Card className="border-border/60 bg-card">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-void-success/10 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-void-success" />
+            <div className="w-9 h-9 rounded-lg bg-void-success/8 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-void-success" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground font-medium">Status do Domínio</p>
-              <p className="text-sm font-bold text-void-success">Saudável</p>
+              <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Status do Domínio</p>
+              <p className="text-sm font-semibold text-void-success mt-0.5">Saudável</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-border bg-card/80 backdrop-blur-sm">
+        <Card className="border-border/60 bg-card">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-void-cyan/10 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-void-cyan" />
+            <div className="w-9 h-9 rounded-lg bg-accent/8 flex items-center justify-center">
+              <Zap className="w-4 h-4 text-accent" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground font-medium">Pixels</p>
-              <p className="text-sm font-bold text-void-cyan">Ativos</p>
+              <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Pixels</p>
+              <p className="text-sm font-semibold text-accent mt-0.5">Ativos</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-border bg-card/80 backdrop-blur-sm">
+        <Card className="border-border/60 bg-card">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-void-purple/10 flex items-center justify-center">
-              <Activity className="w-5 h-5 text-void-purple" />
+            <div className="w-9 h-9 rounded-lg bg-primary/8 flex items-center justify-center">
+              <Activity className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground font-medium">Gateway</p>
-              <p className="text-sm font-bold text-void-purple-glow">Online</p>
+              <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Gateway</p>
+              <p className="text-sm font-semibold text-primary mt-0.5">Online</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Revenue Chart */}
-      <Card className="border-border bg-card/80 backdrop-blur-sm">
-        <CardContent className="p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-void-cyan" />
-              <span className="text-sm font-display font-bold text-foreground">Fluxo de Receita</span>
+      <Card className="border-border/60 bg-card">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2.5">
+              <TrendingUp className="h-4 w-4 text-accent" />
+              <span className="text-sm font-semibold text-foreground">Fluxo de Receita</span>
             </div>
-            <span className="text-xs text-muted-foreground">{periodLabel}</span>
+            <span className="text-[11px] text-muted-foreground">{periodLabel}</span>
           </div>
           <div className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenueData}>
                 <defs>
                   <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(180, 100%, 50%)" stopOpacity={0.3} />
-                    <stop offset="50%" stopColor="hsl(270, 100%, 53%)" stopOpacity={0.1} />
-                    <stop offset="100%" stopColor="hsl(270, 100%, 53%)" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="hsl(199, 89%, 48%)" stopOpacity={0.15} />
+                    <stop offset="100%" stopColor="hsl(199, 89%, 48%)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 40%, 18%)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 15%, 14%)" vertical={false} />
                 <XAxis
                   dataKey="hour"
-                  tick={{ fill: "hsl(230, 15%, 55%)", fontSize: 11 }}
+                  tick={{ fill: "hsl(220, 10%, 50%)", fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fill: "hsl(230, 15%, 55%)", fontSize: 11 }}
+                  tick={{ fill: "hsl(220, 10%, 50%)", fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v) => `R$ ${v}`}
                 />
                 <Tooltip
                   contentStyle={{
-                    background: "hsl(240, 10%, 8%)",
-                    border: "1px solid hsl(230, 40%, 18%)",
-                    borderRadius: 12,
-                    color: "hsl(0, 0%, 95%)",
-                    boxShadow: "0 0 20px hsl(180, 100%, 50%, 0.1)",
+                    background: "hsl(240, 6%, 10%)",
+                    border: "1px solid hsl(230, 15%, 16%)",
+                    borderRadius: 8,
+                    color: "hsl(210, 20%, 92%)",
+                    fontSize: 12,
+                    boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
                   }}
                   formatter={(value: number) => [formatCurrency(value), "Receita"]}
                 />
                 <Area
                   type="monotone"
                   dataKey="value"
-                  stroke="hsl(180, 100%, 50%)"
-                  strokeWidth={2}
+                  stroke="hsl(199, 89%, 48%)"
+                  strokeWidth={1.5}
                   fill="url(#revenueGrad)"
                   dot={false}
-                  activeDot={{ r: 5, fill: "hsl(180, 100%, 50%)", stroke: "hsl(240, 10%, 8%)", strokeWidth: 2 }}
+                  activeDot={{ r: 4, fill: "hsl(199, 89%, 48%)", stroke: "hsl(240, 6%, 10%)", strokeWidth: 2 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
