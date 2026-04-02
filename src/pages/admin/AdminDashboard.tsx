@@ -119,7 +119,7 @@ const AdminDashboard = () => {
   const formatCurrency = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 
   const periodLabel = useMemo(() => {
-    if (!dateRange?.from) return "Select period";
+    if (!dateRange?.from) return "Selecionar período";
     const from = format(dateRange.from, "dd/MM/yyyy");
     const to = dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : from;
     return from === to ? from : `${from} — ${to}`;
