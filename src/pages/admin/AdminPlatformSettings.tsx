@@ -63,14 +63,8 @@ const AdminPlatformSettings = () => {
     },
   });
 
-  const { data: gateways } = useQuery({
-    queryKey: ["gateway-settings-platform"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("gateway_settings").select("*");
-      if (error) throw error;
-      return data;
-    },
-  });
+  // Gateway catalog names from GATEWAYS_DEFAULTS keys
+  const gatewayNames = Object.keys(GATEWAYS_DEFAULTS);
 
   const updateSetting = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
