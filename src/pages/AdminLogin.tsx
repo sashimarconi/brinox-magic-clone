@@ -86,7 +86,7 @@ const AdminLogin = () => {
               className="w-full bg-void-cyan hover:bg-void-cyan/90 text-black font-display font-bold tracking-wide void-glow-cyan-sm hover:void-glow-cyan transition-all"
               disabled={loading}
             >
-              {loading ? "Accessing..." : "Access Panel"}
+              {loading ? "Entrando..." : "Acessar Painel"}
             </Button>
           </form>
         </div>
