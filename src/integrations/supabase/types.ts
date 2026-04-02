@@ -998,6 +998,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_plans: {
+        Row: {
+          created_at: string
+          id: string
+          monthly_views_limit: number | null
+          monthly_views_used: number | null
+          plan: Database["public"]["Enums"]["plan_type"]
+          updated_at: string
+          user_id: string
+          views_reset_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          monthly_views_limit?: number | null
+          monthly_views_used?: number | null
+          plan?: Database["public"]["Enums"]["plan_type"]
+          updated_at?: string
+          user_id: string
+          views_reset_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          monthly_views_limit?: number | null
+          monthly_views_used?: number | null
+          plan?: Database["public"]["Enums"]["plan_type"]
+          updated_at?: string
+          user_id?: string
+          views_reset_at?: string | null
+        }
+        Relationships: []
+      }
       variant_groups: {
         Row: {
           created_at: string
@@ -1119,10 +1152,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_plan: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["plan_type"]
+      }
+      increment_plan_views: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
-      [_ in never]: never
+      plan_type: "free" | "pro" | "enterprise"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1249,6 +1286,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      plan_type: ["free", "pro", "enterprise"],
+    },
   },
 } as const

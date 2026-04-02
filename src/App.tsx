@@ -27,6 +27,7 @@ import AdminStores from "./pages/admin/AdminStores";
 import AdminLiveView from "./pages/admin/AdminLiveView";
 import AdminAbandonedCarts from "./pages/admin/AdminAbandonedCarts";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminPlans from "./pages/admin/AdminPlans";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,7 @@ const App = () => (
             <Route path="webhooks" element={<AdminWebhooks />} />
             <Route path="notifications" element={<AdminNotifications />} />
             <Route path="stores" element={<AdminStores />} />
+            <Route path="plans" element={<AdminPlans />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
