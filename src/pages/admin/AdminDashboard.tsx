@@ -253,7 +253,7 @@ const AdminDashboard = () => {
             </div>
             <div>
               <p className="text-xs text-muted-foreground font-medium">Pixels</p>
-              <p className="text-sm font-bold text-void-cyan">Active</p>
+              <p className="text-sm font-bold text-void-cyan">Ativos</p>
             </div>
           </CardContent>
         </Card>
