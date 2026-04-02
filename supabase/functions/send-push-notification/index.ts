@@ -6,7 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Web Push helpers using Web Crypto API
 function base64urlToUint8Array(base64url: string): Uint8Array {
   const base64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
   const pad = (4 - (base64.length % 4)) % 4;
@@ -101,7 +100,6 @@ async function encryptPayload(
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const enc = new TextEncoder();
 
-  // IKM
   const authInfo = new Uint8Array([
     ...enc.encode("WebPush: info\0"),
     ...subscriberPublicKey,
@@ -116,10 +114,8 @@ async function encryptPayload(
     )
   );
 
-  // PRK
   const prkKey = await crypto.subtle.importKey("raw", ikm, "HKDF", false, ["deriveBits"]);
 
-  // CEK
   const cekInfo = new Uint8Array([...enc.encode("Content-Encoding: aes128gcm\0")]);
   const cek = new Uint8Array(
     await crypto.subtle.deriveBits(
@@ -129,7 +125,6 @@ async function encryptPayload(
     )
   );
 
-  // Nonce
   const nonceInfo = new Uint8Array([...enc.encode("Content-Encoding: nonce\0")]);
   const nonce = new Uint8Array(
     await crypto.subtle.deriveBits(
@@ -139,14 +134,12 @@ async function encryptPayload(
     )
   );
 
-  // Pad and encrypt
-  const paddedPayload = new Uint8Array([...payload, 2]); // delimiter
+  const paddedPayload = new Uint8Array([...payload, 2]);
   const aesKey = await crypto.subtle.importKey("raw", cek, "AES-GCM", false, ["encrypt"]);
   const encrypted = new Uint8Array(
     await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, aesKey, paddedPayload)
   );
 
-  // Build aes128gcm body
   const recordSize = encrypted.length + 86;
   const header = new Uint8Array(86);
   header.set(salt, 0);
@@ -202,7 +195,23 @@ Deno.serve(async (req) => {
     const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const { title, body: notifBody, url: notifUrl, tag, event_type } = await req.json();
+    const { title, body: notifBody, url: notifUrl, tag, event_type, user_id } = await req.json();
+
+    // Fetch store name for the notification sender
+    let storeName = "";
+    if (user_id) {
+      const { data: storeData } = await supabase
+        .from("store_settings")
+        .select("name")
+        .eq("user_id", user_id)
+        .limit(1)
+        .maybeSingle();
+      if (storeData?.name) {
+        storeName = storeData.name;
+      }
+    }
+
+    const notifTitle = title || (storeName ? `VoidTok - ${storeName}` : "VoidTok");
 
     // Get all push subscriptions with user preferences
     const { data: subscriptions, error } = await supabase
@@ -237,7 +246,6 @@ Deno.serve(async (req) => {
 
     const filteredSubs = subscriptions.filter((sub) => {
       const prefs = settingsMap.get(sub.user_id);
-      // Default: push enabled, notify_paid true, notify_pending false
       const pushEnabled = prefs ? prefs.push_enabled : true;
       const notifyPaid = prefs ? prefs.notify_paid : true;
       const notifyPending = prefs ? prefs.notify_pending : false;
@@ -249,7 +257,7 @@ Deno.serve(async (req) => {
     });
 
     const payload = {
-      title: title || "Nova venda!",
+      title: notifTitle,
       body: notifBody || "Você recebeu um novo pagamento.",
       url: notifUrl || "/admin/orders",
       tag: tag || "sale-" + Date.now(),

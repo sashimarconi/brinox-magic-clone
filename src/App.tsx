@@ -13,7 +13,6 @@ import AdminProducts from "./pages/admin/AdminProducts";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminReviews from "./pages/admin/AdminReviews";
-import AdminBadges from "./pages/admin/AdminBadges";
 import AdminGateways from "./pages/admin/AdminGateways";
 import AdminShipping from "./pages/admin/AdminShipping";
 import AdminOrderBumps from "./pages/admin/AdminOrderBumps";
@@ -33,6 +32,7 @@ import SaasMetrics from "./pages/admin/SaasMetrics";
 import SaasUsers from "./pages/admin/SaasUsers";
 import SaasAnalytics from "./pages/admin/SaasAnalytics";
 import SaasOrders from "./pages/admin/SaasOrders";
+import AdminPlatformSettings from "./pages/admin/AdminPlatformSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +56,7 @@ const App = () => (
             <Route path="analytics" element={<SaasAnalytics />} />
             <Route path="orders" element={<SaasOrders />} />
             <Route path="users" element={<SaasUsers />} />
+            <Route path="platform" element={<AdminPlatformSettings />} />
           </Route>
           {/* User Dashboard */}
           <Route path="/dashboard" element={<AdminLayout />}>
@@ -66,7 +67,6 @@ const App = () => (
             <Route path="abandoned-carts" element={<AdminAbandonedCarts />} />
             <Route path="products" element={<AdminProducts />} />
             <Route path="reviews" element={<AdminReviews />} />
-            <Route path="badges" element={<AdminBadges />} />
             <Route path="gateways" element={<AdminGateways />} />
             <Route path="shipping" element={<AdminShipping />} />
             <Route path="order-bumps" element={<AdminOrderBumps />} />

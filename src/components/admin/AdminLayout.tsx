@@ -4,11 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Package, Star, ShieldCheck, LogOut, Menu, CreditCard, Truck, Tag,
   BarChart3, LayoutDashboard, ClipboardList, Store, PenTool, Radio,
-  ChevronLeft, ExternalLink, ShoppingCart, Webhook, Bell, Zap, Crown
+  ChevronLeft, ExternalLink, ShoppingCart, Webhook, Bell, Zap, Crown,
+  ChevronDown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SaleNotification from "@/components/admin/SaleNotification";
 import PushNotificationToggle from "@/components/admin/PushNotificationToggle";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { useQuery } from "@tanstack/react-query";
 
 const navSections = [
   {
@@ -32,7 +35,6 @@ const navSections = [
       { label: "Produtos", path: "/dashboard/products", icon: Package },
       { label: "Editor de Produto", path: "/dashboard/product-builder", icon: PenTool },
       { label: "Avaliações", path: "/dashboard/reviews", icon: Star },
-      { label: "Badges", path: "/dashboard/badges", icon: ShieldCheck },
       { label: "Lojas", path: "/dashboard/stores", icon: Store },
     ],
   },
@@ -68,14 +70,32 @@ const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Force dark mode for VoidTok admin
+  // Track which sections are expanded
+  const getActiveSectionIndex = () => {
+    const idx = navSections.findIndex(s => s.items.some(i => isActive(i.path)));
+    return idx >= 0 ? idx : 0;
+  };
+
+  const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0]));
+
+  // Fetch platform logos
+  const { data: platformSettings } = useQuery({
+    queryKey: ["platform-settings"],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("platform_settings")
+        .select("key, value");
+      const map: Record<string, string> = {};
+      (data || []).forEach((row: any) => { map[row.key] = row.value || ""; });
+      return map;
+    },
+  });
+
   useEffect(() => {
     const root = document.documentElement;
     root.classList.add("dark");
     localStorage.setItem("admin-theme", "dark");
-    return () => {
-      root.classList.remove("dark");
-    };
+    return () => { root.classList.remove("dark"); };
   }, []);
 
   useEffect(() => {
@@ -92,6 +112,17 @@ const AdminLayout = () => {
     checkAuth();
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Auto-expand section containing active route
+  useEffect(() => {
+    const idx = navSections.findIndex(s => s.items.some(i => {
+      if (i.path === "/dashboard") return location.pathname === "/dashboard";
+      return location.pathname.startsWith(i.path);
+    }));
+    if (idx >= 0) {
+      setExpandedSections(prev => new Set(prev).add(idx));
+    }
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -111,18 +142,44 @@ const AdminLayout = () => {
     return location.pathname.startsWith(path);
   };
 
+  const toggleSection = (idx: number) => {
+    setExpandedSections(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
+
+  const logoOpen = platformSettings?.sidebar_logo_open;
+  const logoClosed = platformSettings?.sidebar_logo_collapsed;
+
   const SidebarNav = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="h-14 px-4 flex items-center justify-between border-b border-border/60">
         <Link to="/dashboard" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <span className="text-white font-bold text-xs">V</span>
-          </div>
-          {sidebarOpen && (
-            <span className="font-bold text-[15px] tracking-tight text-foreground">
-              Void<span className="text-accent">Tok</span>
-            </span>
+          {sidebarOpen ? (
+            logoOpen ? (
+              <img src={logoOpen} alt="Logo" className="h-7 object-contain" />
+            ) : (
+              <>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <span className="text-white font-bold text-xs">V</span>
+                </div>
+                <span className="font-bold text-[15px] tracking-tight text-foreground">
+                  Void<span className="text-accent">Tok</span>
+                </span>
+              </>
+            )
+          ) : (
+            logoClosed ? (
+              <img src={logoClosed} alt="Logo" className="w-8 h-8 object-contain" />
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <span className="text-white font-bold text-xs">V</span>
+              </div>
+            )
           )}
         </Link>
         <button
@@ -134,48 +191,81 @@ const AdminLayout = () => {
       </div>
 
       {/* Nav items */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-5">
-        {navSections.map((section) => (
-          <div key={section.title}>
-            {sidebarOpen && (
-              <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/60">
-                {section.title}
-              </p>
-            )}
-            <div className="space-y-0.5">
-              {section.items.map((item) => (
+      <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
+        {navSections.map((section, sIdx) => {
+          const isExpanded = expandedSections.has(sIdx);
+          const hasActive = section.items.some(i => isActive(i.path));
+
+          return (
+            <Collapsible key={section.title} open={isExpanded} onOpenChange={() => toggleSection(sIdx)}>
+              {sidebarOpen ? (
+                <CollapsibleTrigger className="w-full flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-muted/40 transition-colors group">
+                  <span className={cn(
+                    "text-[10px] font-semibold uppercase tracking-[0.14em]",
+                    hasActive ? "text-primary" : "text-muted-foreground/60"
+                  )}>
+                    {section.title}
+                  </span>
+                  <ChevronDown className={cn(
+                    "w-3 h-3 text-muted-foreground/50 transition-transform duration-200",
+                    !isExpanded && "-rotate-90"
+                  )} />
+                </CollapsibleTrigger>
+              ) : null}
+
+              <CollapsibleContent className="space-y-0.5 mt-0.5">
+                {section.items.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      "group flex items-center gap-3 px-2.5 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150",
+                      isActive(item.path)
+                        ? "bg-primary/10 text-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    <div className={cn(
+                      "flex items-center justify-center w-5 h-5",
+                      isActive(item.path) && "text-primary"
+                    )}>
+                      <item.icon className={cn(
+                        "w-[15px] h-[15px] shrink-0 transition-colors duration-150",
+                        isActive(item.path) ? "text-primary" : "group-hover:text-foreground"
+                      )} />
+                    </div>
+                    {sidebarOpen && <span>{item.label}</span>}
+                    {item.label === "Live View" && sidebarOpen && (
+                      <span className="ml-auto flex h-1.5 w-1.5 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-void-success opacity-60" />
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-void-success" />
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </CollapsibleContent>
+
+              {/* When sidebar collapsed, show items without section headers */}
+              {!sidebarOpen && section.items.map((item) => (
                 <Link
                   key={item.path}
                   to={item.path}
                   onClick={() => setMobileMenuOpen(false)}
+                  title={item.label}
                   className={cn(
-                    "group flex items-center gap-3 px-2.5 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150",
+                    "group flex items-center justify-center py-[7px] rounded-lg transition-all duration-150",
                     isActive(item.path)
-                      ? "bg-primary/10 text-foreground"
+                      ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   )}
                 >
-                  <div className={cn(
-                    "flex items-center justify-center w-5 h-5",
-                    isActive(item.path) && "text-primary"
-                  )}>
-                    <item.icon className={cn(
-                      "w-[15px] h-[15px] shrink-0 transition-colors duration-150",
-                      isActive(item.path) ? "text-primary" : "group-hover:text-foreground"
-                    )} />
-                  </div>
-                  {sidebarOpen && <span>{item.label}</span>}
-                  {item.label === "Live View" && sidebarOpen && (
-                    <span className="ml-auto flex h-1.5 w-1.5 relative">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-void-success opacity-60" />
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-void-success" />
-                    </span>
-                  )}
+                  <item.icon className="w-[15px] h-[15px]" />
                 </Link>
               ))}
-            </div>
-          </div>
-        ))}
+            </Collapsible>
+          );
+        })}
       </nav>
 
       {/* Footer */}

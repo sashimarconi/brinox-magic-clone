@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
+import { useQuery } from "@tanstack/react-query";
 
 interface Stats {
   onlineNow: number;
@@ -21,6 +22,12 @@ interface Stats {
   totalRevenue: number;
   paidRevenue: number;
   conversionRate: number;
+}
+
+interface ProductSale {
+  title: string;
+  total: number;
+  count: number;
 }
 
 const quickPeriods = [
@@ -40,11 +47,25 @@ const AdminDashboard = () => {
     totalOrders: 0, paidOrders: 0, totalRevenue: 0, paidRevenue: 0, conversionRate: 0,
   });
   const [revenueData, setRevenueData] = useState<{ hour: string; value: number }[]>([]);
+  const [productSales, setProductSales] = useState<ProductSale[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterOpen, setFilterOpen] = useState(false);
 
   const rangeStart = dateRange?.from ? startOfDay(dateRange.from) : startOfDay(new Date());
   const rangeEnd = dateRange?.to ? endOfDay(dateRange.to) : endOfDay(new Date());
+
+  // Fetch platform settings for banner
+  const { data: platformSettings } = useQuery({
+    queryKey: ["platform-settings"],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("platform_settings")
+        .select("key, value");
+      const map: Record<string, string> = {};
+      (data || []).forEach((row: any) => { map[row.key] = row.value || ""; });
+      return map;
+    },
+  });
 
   const fetchAll = async () => {
     setLoading(true);
@@ -52,14 +73,18 @@ const AdminDashboard = () => {
     const endISO = rangeEnd.toISOString();
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
-    const [onlineRes, eventsRes, ordersRes] = await Promise.all([
+    const [onlineRes, eventsRes, ordersRes, productsRes] = await Promise.all([
       supabase.from("visitor_sessions").select("session_id", { count: "exact", head: true }).gte("last_seen_at", fiveMinAgo),
       supabase.from("page_events").select("event_type, created_at").gte("created_at", startISO).lte("created_at", endISO),
-      supabase.from("orders").select("id, total, payment_status, created_at").gte("created_at", startISO).lte("created_at", endISO),
+      supabase.from("orders").select("id, total, payment_status, created_at, product_id").gte("created_at", startISO).lte("created_at", endISO),
+      supabase.from("products").select("id, title"),
     ]);
 
     const events = eventsRes.data || [];
     const orders = ordersRes.data || [];
+    const products = productsRes.data || [];
+    const productMap = new Map(products.map(p => [p.id, p.title]));
+
     const paid = orders.filter(o => o.payment_status === "paid" || o.payment_status === "approved");
     const pending = orders.filter(o => o.payment_status === "pending");
     const paidRevenue = paid.reduce((s, o) => s + Number(o.total), 0);
@@ -78,6 +103,20 @@ const AdminDashboard = () => {
       paidRevenue,
       conversionRate: checkouts > 0 ? (paid.length / checkouts) * 100 : 0,
     });
+
+    // Sales by product
+    const salesMap = new Map<string, { total: number; count: number }>();
+    paid.forEach(o => {
+      if (!o.product_id) return;
+      const existing = salesMap.get(o.product_id) || { total: 0, count: 0 };
+      existing.total += Number(o.total);
+      existing.count += 1;
+      salesMap.set(o.product_id, existing);
+    });
+    const salesByProduct: ProductSale[] = Array.from(salesMap.entries())
+      .map(([pid, data]) => ({ title: productMap.get(pid) || "Produto removido", ...data }))
+      .sort((a, b) => b.count - a.count);
+    setProductSales(salesByProduct);
 
     const isToday = dateRange?.from?.toDateString() === new Date().toDateString() && (!dateRange.to || dateRange.to.toDateString() === new Date().toDateString());
     const hours = Array.from({ length: 24 }, (_, i) => ({
@@ -136,6 +175,10 @@ const AdminDashboard = () => {
     { label: "Receita aprovada", value: formatCurrency(stats.paidRevenue), icon: DollarSign, color: "text-accent" },
     { label: "Conversão", value: `${stats.conversionRate.toFixed(1)}%`, icon: TrendingUp, color: "text-primary" },
   ];
+
+  const totalProductSales = productSales.reduce((s, p) => s + p.count, 0);
+  const bannerUrl = platformSettings?.dashboard_banner_url;
+  const bannerLink = platformSettings?.dashboard_banner_link;
 
   if (loading) {
     return (
@@ -204,6 +247,19 @@ const AdminDashboard = () => {
         </Popover>
       </div>
 
+      {/* Banner */}
+      {bannerUrl && (
+        <div className="rounded-xl overflow-hidden border border-border/60">
+          {bannerLink ? (
+            <a href={bannerLink} target="_blank" rel="noopener noreferrer">
+              <img src={bannerUrl} alt="Banner" className="w-full h-auto object-cover max-h-[200px]" />
+            </a>
+          ) : (
+            <img src={bannerUrl} alt="Banner" className="w-full h-auto object-cover max-h-[200px]" />
+          )}
+        </div>
+      )}
+
       {/* Stat Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {statCards.map((card) => (
@@ -267,63 +323,101 @@ const AdminDashboard = () => {
         </Card>
       </div>
 
-      {/* Revenue Chart */}
-      <Card className="border-border/60 bg-card">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2.5">
-              <TrendingUp className="h-4 w-4 text-accent" />
-              <span className="text-sm font-semibold text-foreground">Fluxo de Receita</span>
+      {/* Revenue Chart + Sales by Product */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Chart - 2 columns */}
+        <Card className="border-border/60 bg-card lg:col-span-2">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2.5">
+                <TrendingUp className="h-4 w-4 text-accent" />
+                <span className="text-sm font-semibold text-foreground">Valor em Vendas</span>
+              </div>
+              <span className="text-[11px] text-muted-foreground">{periodLabel}</span>
             </div>
-            <span className="text-[11px] text-muted-foreground">{periodLabel}</span>
-          </div>
-          <div className="h-[260px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={revenueData}>
-                <defs>
-                  <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(199, 89%, 48%)" stopOpacity={0.15} />
-                    <stop offset="100%" stopColor="hsl(199, 89%, 48%)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 15%, 14%)" vertical={false} />
-                <XAxis
-                  dataKey="hour"
-                  tick={{ fill: "hsl(220, 10%, 50%)", fontSize: 10 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fill: "hsl(220, 10%, 50%)", fontSize: 10 }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(v) => `R$ ${v}`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: "hsl(240, 6%, 10%)",
-                    border: "1px solid hsl(230, 15%, 16%)",
-                    borderRadius: 8,
-                    color: "hsl(210, 20%, 92%)",
-                    fontSize: 12,
-                    boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
-                  }}
-                  formatter={(value: number) => [formatCurrency(value), "Receita"]}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke="hsl(199, 89%, 48%)"
-                  strokeWidth={1.5}
-                  fill="url(#revenueGrad)"
-                  dot={false}
-                  activeDot={{ r: 4, fill: "hsl(199, 89%, 48%)", stroke: "hsl(240, 6%, 10%)", strokeWidth: 2 }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={revenueData}>
+                  <defs>
+                    <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(199, 89%, 48%)" stopOpacity={0.15} />
+                      <stop offset="100%" stopColor="hsl(199, 89%, 48%)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 15%, 14%)" vertical={false} />
+                  <XAxis
+                    dataKey="hour"
+                    tick={{ fill: "hsl(220, 10%, 50%)", fontSize: 10 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: "hsl(220, 10%, 50%)", fontSize: 10 }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v) => `R$ ${v}`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "hsl(240, 6%, 10%)",
+                      border: "1px solid hsl(230, 15%, 16%)",
+                      borderRadius: 8,
+                      color: "hsl(210, 20%, 92%)",
+                      fontSize: 12,
+                      boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+                    }}
+                    formatter={(value: number) => [formatCurrency(value), "Receita"]}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    stroke="hsl(199, 89%, 48%)"
+                    strokeWidth={1.5}
+                    fill="url(#revenueGrad)"
+                    dot={false}
+                    activeDot={{ r: 4, fill: "hsl(199, 89%, 48%)", stroke: "hsl(240, 6%, 10%)", strokeWidth: 2 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Sales by Product - 1 column */}
+        <Card className="border-border/60 bg-card">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="w-4 h-4 text-accent" />
+                <span className="text-sm font-semibold text-foreground">Vendas por Produto</span>
+              </div>
+              {totalProductSales > 0 && (
+                <span className="text-[10px] font-bold bg-accent/15 text-accent px-2 py-0.5 rounded-full">
+                  {totalProductSales}
+                </span>
+              )}
+            </div>
+
+            {productSales.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-8">Nenhuma venda no período</p>
+            ) : (
+              <div className="space-y-3 max-h-[240px] overflow-y-auto">
+                {productSales.map((product, idx) => (
+                  <div key={idx} className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate">{product.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{formatCurrency(product.total)}</p>
+                    </div>
+                    <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full shrink-0">
+                      {product.count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
