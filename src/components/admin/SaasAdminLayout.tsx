@@ -20,6 +20,18 @@ const SaasAdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const { data: platformSettings } = useQuery({
+    queryKey: ["platform-settings"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("platform_settings").select("key, value");
+      const map: Record<string, string> = {};
+      (data || []).forEach((row: any) => { map[row.key] = row.value || ""; });
+      return map;
+    },
+  });
+
+  const logoClosed = platformSettings?.sidebar_logo_collapsed;
+
   useEffect(() => {
     document.documentElement.classList.add("dark");
     return () => { document.documentElement.classList.remove("dark"); };
