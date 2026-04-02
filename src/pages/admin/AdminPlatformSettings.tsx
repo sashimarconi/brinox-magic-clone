@@ -181,16 +181,23 @@ const AdminPlatformSettings = () => {
     },
   ];
 
-  const configuredGateways = gateways?.filter((g) => g.public_key || g.secret_key) || [];
+  const getGatewayMeta = (name: string) => {
+    const raw = settings?.[`gateway_meta_${name}`];
+    if (raw) {
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+    return null;
+  };
 
-  const openEditGateway = (gw: any) => {
-    const defaults = GATEWAYS_DEFAULTS[gw.gateway_name];
+  const openEditGateway = (name: string) => {
+    const defaults = GATEWAYS_DEFAULTS[name];
+    const meta = getGatewayMeta(name);
     setGwForm({
-      display_name: (gw as any).display_name || defaults?.label || gw.gateway_name,
-      description: (gw as any).description || defaults?.description || "",
-      logo_url: (gw as any).logo_url || defaults?.logoUrl || "",
+      display_name: meta?.display_name || defaults?.label || name,
+      description: meta?.description || defaults?.description || "",
+      logo_url: meta?.logo_url || defaults?.logoUrl || "",
     });
-    setEditGateway(gw.id);
+    setEditGateway(name);
   };
 
   return (
