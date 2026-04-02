@@ -73,6 +73,25 @@ const AdminGateways = () => {
     },
   });
 
+  const { data: platformSettings } = useQuery({
+    queryKey: ["platform-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("platform_settings" as any).select("*");
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data as any[])?.forEach((row: any) => { map[row.key] = row.value || ""; });
+      return map;
+    },
+  });
+
+  const getGatewayMeta = (name: string) => {
+    const raw = platformSettings?.[`gateway_meta_${name}`];
+    if (raw) {
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+    return null;
+  };
+
   useEffect(() => {
     if (gateways && !loaded) {
       const newStates: Record<string, GatewayState> = {};
