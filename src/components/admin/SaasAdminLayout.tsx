@@ -3,6 +3,7 @@ import { useNavigate, Outlet, Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, BarChart3, LogOut, Shield, ChevronLeft, Menu, ClipboardList, TrendingUp, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 
 const navItems = [
   { label: "Métricas", path: "/admin", icon: BarChart3 },
