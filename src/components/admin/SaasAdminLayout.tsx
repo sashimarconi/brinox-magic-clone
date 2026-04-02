@@ -73,7 +73,7 @@ const SaasAdminLayout = () => {
             </div>
             {sidebarOpen && (
               <span className="font-bold text-[15px] tracking-tight text-foreground">
-                SaaS <span className="text-destructive">Admin</span>
+                Void <span className="text-destructive">Admin</span>
               </span>
             )}
           </Link>
@@ -124,7 +124,7 @@ const SaasAdminLayout = () => {
           </button>
           <div className="flex items-center gap-2">
             <Shield className="w-3.5 h-3.5 text-destructive" />
-            <span className="text-xs font-medium text-muted-foreground">Painel do SaaS Owner</span>
+            <span className="text-xs font-medium text-muted-foreground">Painel Admin Void</span>
           </div>
           <div className="flex-1" />
         </header>
