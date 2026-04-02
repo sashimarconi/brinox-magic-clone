@@ -243,6 +243,11 @@ const AdminGateways = () => {
           const configured = isConfigured(gw.name);
           const active = state.active;
 
+          const existing = gateways?.find((g) => g.gateway_name === gw.name);
+          const displayLabel = (existing as any)?.display_name || gw.label;
+          const displayDesc = (existing as any)?.description || gw.description;
+          const displayLogo = (existing as any)?.logo_url || gw.logoUrl;
+
           return (
             <div
               key={gw.name}
@@ -273,8 +278,8 @@ const AdminGateways = () => {
               {/* Logo */}
               <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center overflow-hidden shrink-0">
                 <img
-                  src={gw.logoUrl}
-                  alt={gw.label}
+                  src={displayLogo}
+                  alt={displayLabel}
                   className="w-9 h-9 object-contain"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                 />
@@ -283,7 +288,7 @@ const AdminGateways = () => {
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold text-foreground">{gw.label}</p>
+                  <p className="text-sm font-bold text-foreground">{displayLabel}</p>
                   {configured && (
                     <span className="text-[9px] font-semibold uppercase tracking-wider bg-primary/10 text-primary px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
                       <Shield className="w-2.5 h-2.5" />
