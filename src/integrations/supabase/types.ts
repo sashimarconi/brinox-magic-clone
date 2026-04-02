@@ -1070,6 +1070,36 @@ export type Database = {
         }
         Relationships: []
       }
+      utmify_settings: {
+        Row: {
+          active: boolean
+          api_token: string
+          created_at: string
+          id: string
+          platform_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          api_token: string
+          created_at?: string
+          id?: string
+          platform_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          active?: boolean
+          api_token?: string
+          created_at?: string
+          id?: string
+          platform_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       variant_groups: {
         Row: {
           created_at: string

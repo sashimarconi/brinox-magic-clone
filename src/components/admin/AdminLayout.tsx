@@ -50,7 +50,7 @@ const navSections = [
   {
     title: "Marketing",
     items: [
-      { label: "Pixels", path: "/dashboard/pixels", icon: Zap },
+      { label: "Integrações", path: "/dashboard/pixels", icon: Zap },
       { label: "Webhooks", path: "/dashboard/webhooks", icon: Webhook },
     ],
   },
