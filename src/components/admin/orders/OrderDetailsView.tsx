@@ -26,7 +26,7 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-border bg-card p-6 shadow-sm md:p-8">
+      <section className="rounded-[28px] border border-border bg-card p-4 shadow-sm sm:p-6 md:p-8">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div className="space-y-4">
             <Button variant="ghost" size="sm" onClick={onBack} className="-ml-3 gap-2 text-muted-foreground hover:text-foreground">
