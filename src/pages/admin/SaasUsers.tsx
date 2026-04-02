@@ -211,8 +211,30 @@ const SaasUsers = () => {
                         {user.plan.toUpperCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm font-mono text-muted-foreground">
-                      {user.transaction_fee_percent}%
+                    <TableCell>
+                      {editingFee === user.user_id ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            value={feeValue}
+                            onChange={(e) => setFeeValue(e.target.value)}
+                            className="w-16 h-7 text-xs px-1.5 font-mono"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="100"
+                            autoFocus
+                            onKeyDown={(e) => { if (e.key === "Enter") handleFeeSave(user.user_id); if (e.key === "Escape") setEditingFee(null); }}
+                          />
+                          <span className="text-xs text-muted-foreground">%</span>
+                          <button onClick={() => handleFeeSave(user.user_id)} className="p-0.5 text-accent hover:text-accent/80"><Check className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => setEditingFee(null)} className="p-0.5 text-muted-foreground hover:text-destructive"><X className="w-3.5 h-3.5" /></button>
+                        </div>
+                      ) : (
+                        <button onClick={() => handleFeeEdit(user.user_id, user.transaction_fee_percent)} className="flex items-center gap-1.5 text-sm font-mono text-muted-foreground hover:text-foreground transition-colors group">
+                          <span>{user.transaction_fee_percent}%</span>
+                          <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+                        </button>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {format(new Date(user.created_at), "dd/MM/yyyy")}
