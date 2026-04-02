@@ -80,7 +80,7 @@ const AdminLayout = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) navigate("/admin/login");
+      if (!session) navigate("/login");
       setLoading(false);
     };
 
