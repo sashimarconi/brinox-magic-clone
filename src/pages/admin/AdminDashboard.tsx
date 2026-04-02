@@ -241,8 +241,8 @@ const AdminDashboard = () => {
               <Shield className="w-5 h-5 text-void-success" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground font-medium">Domain Status</p>
-              <p className="text-sm font-bold text-void-success">Healthy</p>
+              <p className="text-xs text-muted-foreground font-medium">Status do Domínio</p>
+              <p className="text-sm font-bold text-void-success">Saudável</p>
             </div>
           </CardContent>
         </Card>
