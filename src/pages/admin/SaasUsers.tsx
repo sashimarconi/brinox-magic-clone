@@ -21,9 +21,9 @@ interface SaasUser {
 }
 
 const planColors: Record<string, string> = {
-  free: "bg-muted text-muted-foreground",
-  pro: "bg-void-cyan/20 text-void-cyan border-void-cyan/30",
-  enterprise: "bg-void-purple/20 text-void-purple border-void-purple/30",
+  free: "bg-muted text-muted-foreground border-border",
+  pro: "bg-accent/10 text-accent border-accent/20",
+  enterprise: "bg-primary/10 text-primary border-primary/20",
 };
 
 const SaasUsers = () => {
@@ -63,16 +63,16 @@ const SaasUsers = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-void-cyan" />
+        <div className="animate-spin rounded-full h-7 w-7 border-2 border-transparent border-t-accent" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-display font-bold">Gerenciar Usuários</h1>
-        <p className="text-muted-foreground text-sm">{users.length} usuário(s) cadastrado(s)</p>
+        <h1 className="text-2xl font-bold tracking-tight">Gerenciar Usuários</h1>
+        <p className="text-muted-foreground text-sm mt-1">{users.length} usuário(s) cadastrado(s)</p>
       </div>
 
       <div className="relative max-w-sm">
@@ -81,35 +81,35 @@ const SaasUsers = () => {
           placeholder="Buscar por email ou nome..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
+          className="pl-9 h-9 text-sm"
         />
       </div>
 
-      <Card className="bg-card/50 border-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="w-4 h-4 text-void-cyan" />
+      <Card className="border-border/60 bg-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <Users className="w-4 h-4 text-accent" />
             Usuários
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Usuário</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Plano</TableHead>
-                <TableHead>Taxa</TableHead>
-                <TableHead>Cadastro</TableHead>
-                <TableHead>Ações</TableHead>
+              <TableRow className="hover:bg-transparent border-border/60">
+                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Usuário</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Email</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Plano</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Taxa</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Cadastro</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map((user) => (
-                <TableRow key={user.user_id}>
+                <TableRow key={user.user_id} className="border-border/40 hover:bg-muted/30 transition-colors">
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-void-purple to-void-cyan flex items-center justify-center text-white text-xs font-bold">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-[10px] font-bold shrink-0">
                         {(user.full_name || user.email || "?").charAt(0).toUpperCase()}
                       </div>
                       <span className="text-sm font-medium">{user.full_name || "—"}</span>
@@ -117,11 +117,11 @@ const SaasUsers = () => {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{user.email}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={planColors[user.plan] || ""}>
+                    <Badge variant="outline" className={`text-[10px] font-medium ${planColors[user.plan] || ""}`}>
                       {user.plan.toUpperCase()}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm font-mono">
+                  <TableCell className="text-sm font-mono text-muted-foreground">
                     {user.transaction_fee_percent}%
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
@@ -132,7 +132,7 @@ const SaasUsers = () => {
                       value={user.plan}
                       onValueChange={(val) => handlePlanChange(user.user_id, val)}
                     >
-                      <SelectTrigger className="w-32 h-8 text-xs">
+                      <SelectTrigger className="w-28 h-7 text-[11px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -146,7 +146,7 @@ const SaasUsers = () => {
               ))}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-12 text-sm">
                     Nenhum usuário encontrado.
                   </TableCell>
                 </TableRow>

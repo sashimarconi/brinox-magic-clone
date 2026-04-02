@@ -56,10 +56,10 @@ const SaasAnalytics = () => {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (
-      <div className="bg-card border border-border rounded-lg p-3 shadow-xl">
-        <p className="text-xs text-muted-foreground mb-1">{label}</p>
+      <div className="bg-popover border border-border rounded-lg p-3" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
+        <p className="text-[11px] text-muted-foreground mb-1">{label}</p>
         {payload.map((entry: any, i: number) => (
-          <p key={i} className="text-sm font-medium" style={{ color: entry.color }}>
+          <p key={i} className="text-xs font-medium" style={{ color: entry.color }}>
             {entry.name}: {entry.name === "Receita" ? `R$ ${Number(entry.value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : entry.value}
           </p>
         ))}
@@ -70,29 +70,29 @@ const SaasAnalytics = () => {
   if (loading && !summary) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-void-cyan" />
+        <div className="animate-spin rounded-full h-7 w-7 border-2 border-transparent border-t-accent" />
       </div>
     );
   }
 
   const kpiCards = summary ? [
-    { title: "Page Views", value: summary.total_page_views.toLocaleString("pt-BR"), icon: Eye, color: "text-void-cyan" },
-    { title: "Sessões", value: summary.total_sessions.toLocaleString("pt-BR"), icon: Globe, color: "text-void-purple" },
-    { title: "Carrinhos Abandonados", value: summary.total_abandoned_carts.toLocaleString("pt-BR"), icon: ShoppingCart, color: "text-yellow-400" },
-    { title: "Pedidos no Período", value: summary.total_orders_period.toLocaleString("pt-BR"), icon: TrendingUp, color: "text-emerald-400" },
-    { title: "Receita no Período", value: `R$ ${Number(summary.total_revenue_period).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, icon: DollarSign, color: "text-green-400" },
-    { title: "Taxa de Conversão", value: `${summary.conversion_rate}%`, icon: Target, color: "text-red-400" },
+    { title: "Page Views", value: summary.total_page_views.toLocaleString("pt-BR"), icon: Eye, color: "text-accent" },
+    { title: "Sessões", value: summary.total_sessions.toLocaleString("pt-BR"), icon: Globe, color: "text-primary" },
+    { title: "Carrinhos Abandonados", value: summary.total_abandoned_carts.toLocaleString("pt-BR"), icon: ShoppingCart, color: "text-void-warning" },
+    { title: "Pedidos no Período", value: summary.total_orders_period.toLocaleString("pt-BR"), icon: TrendingUp, color: "text-void-success" },
+    { title: "Receita no Período", value: `R$ ${Number(summary.total_revenue_period).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, icon: DollarSign, color: "text-void-success" },
+    { title: "Taxa de Conversão", value: `${summary.conversion_rate}%`, icon: Target, color: "text-destructive" },
   ] : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold">Análises Gerais</h1>
-          <p className="text-muted-foreground text-sm">Dados consolidados de todos os usuários</p>
+          <h1 className="text-2xl font-bold tracking-tight">Análises Gerais</h1>
+          <p className="text-muted-foreground text-sm mt-1">Dados consolidados de todos os usuários</p>
         </div>
         <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-40 h-9 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -106,26 +106,26 @@ const SaasAnalytics = () => {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         {kpiCards.map((card) => (
-          <Card key={card.title} className="bg-card/50 border-border backdrop-blur-sm">
+          <Card key={card.title} className="border-border/60 bg-card hover:bg-muted/30 transition-colors duration-150">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-[11px] font-medium text-muted-foreground leading-tight">{card.title}</CardTitle>
-              <card.icon className={`w-4 h-4 shrink-0 ${card.color}`} />
+              <CardTitle className="text-[10px] font-medium text-muted-foreground leading-tight uppercase tracking-wide">{card.title}</CardTitle>
+              <card.icon className={`w-3.5 h-3.5 shrink-0 ${card.color}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold">{card.value}</div>
+              <div className="text-lg font-semibold">{card.value}</div>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* Revenue + Orders */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="bg-card/50 border-border backdrop-blur-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <Card className="border-border/60 bg-card">
           <CardHeader>
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-void-cyan" />
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-accent" />
               Receita Diária
             </CardTitle>
           </CardHeader>
@@ -134,36 +134,36 @@ const SaasAnalytics = () => {
               <AreaChart data={dailyOrders.map((d) => ({ ...d, day: formatDay(d.day) }))}>
                 <defs>
                   <linearGradient id="analyticsRevGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--void-cyan))" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(var(--void-cyan))" stopOpacity={0} />
+                    <stop offset="5%" stopColor="hsl(199, 89%, 48%)" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="hsl(199, 89%, 48%)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="day" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${v}`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 15%, 14%)" vertical={false} />
+                <XAxis dataKey="day" tick={{ fill: "hsl(220, 10%, 50%)", fontSize: 10 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fill: "hsl(220, 10%, 50%)", fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${v}`} />
                 <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="revenue" name="Receita" stroke="hsl(var(--void-cyan))" fill="url(#analyticsRevGrad)" strokeWidth={2} />
+                <Area type="monotone" dataKey="revenue" name="Receita" stroke="hsl(199, 89%, 48%)" fill="url(#analyticsRevGrad)" strokeWidth={1.5} dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card className="bg-card/50 border-border backdrop-blur-sm">
+        <Card className="border-border/60 bg-card">
           <CardHeader>
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-void-purple" />
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-primary" />
               Pedidos Diários
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={dailyOrders.map((d) => ({ ...d, day: formatDay(d.day) }))}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="day" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} tickLine={false} axisLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 15%, 14%)" vertical={false} />
+                <XAxis dataKey="day" tick={{ fill: "hsl(220, 10%, 50%)", fontSize: 10 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fill: "hsl(220, 10%, 50%)", fontSize: 10 }} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="order_count" name="Total" fill="hsl(var(--void-purple))" radius={[4, 4, 0, 0]} opacity={0.6} />
-                <Bar dataKey="paid_count" name="Aprovados" fill="hsl(var(--void-cyan))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="order_count" name="Total" fill="hsl(263, 70%, 58%)" radius={[3, 3, 0, 0]} opacity={0.5} />
+                <Bar dataKey="paid_count" name="Aprovados" fill="hsl(199, 89%, 48%)" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
