@@ -6,7 +6,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Image, Save } from "lucide-react";
+import { Upload, Save, Settings2, Pencil } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+const GATEWAYS_DEFAULTS: Record<string, { label: string; description: string; logoUrl: string }> = {
+  blackcatpay: {
+    label: "BlackCatPay",
+    description: "Gateway de pagamentos PIX rápido e seguro",
+    logoUrl: "https://app.cloudfycheckout.com/_next/image?url=%2Fgateways%2FblackCat.png&w=3840&q=75",
+  },
+  ghostspay: {
+    label: "GhostsPay",
+    description: "Gateway de pagamentos PIX com alta conversão",
+    logoUrl: "https://app.cloudfycheckout.com/gateways/ghostPay.svg",
+  },
+  duck: {
+    label: "Duck",
+    description: "Gateway de pagamentos PIX simples e eficiente",
+    logoUrl: "https://app.usecorvex.com.br/_next/image?url=https%3A%2F%2Fres.cloudinary.com%2Fduni5gxk4%2Fimage%2Fupload%2Fv1773135358%2Facquirers%2Flogos%2Fvgsat7jyqfqtbnby8zwg.jpg&w=3840&q=75",
+  },
+  hisounique: {
+    label: "Hiso Unique",
+    description: "Plataforma moderna e segura para pagamentos digitais",
+    logoUrl: "https://hisoftware-assets.s3.us-east-2.amazonaws.com/uploads/1768398933749-HIGH-SOFTWARE-LOGO-3-01.png",
+  },
+  paradise: {
+    label: "Paradise",
+    description: "Gateway PIX com checkout otimizado para conversão",
+    logoUrl: "https://multi.paradisepags.com/assets/images/a.png",
+  },
+};
 
 const AdminPlatformSettings = () => {
   const { toast } = useToast();
@@ -15,6 +44,9 @@ const AdminPlatformSettings = () => {
   const logoOpenRef = useRef<HTMLInputElement>(null);
   const logoClosedRef = useRef<HTMLInputElement>(null);
   const bannerRef = useRef<HTMLInputElement>(null);
+  const [editGateway, setEditGateway] = useState<string | null>(null);
+  const [gwForm, setGwForm] = useState({ display_name: "", description: "", logo_url: "" });
+  const gwLogoRef = useRef<HTMLInputElement>(null);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["platform-settings"],
@@ -28,6 +60,15 @@ const AdminPlatformSettings = () => {
         map[row.key] = row.value || "";
       });
       return map;
+    },
+  });
+
+  const { data: gateways } = useQuery({
+    queryKey: ["gateway-settings-platform"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("gateway_settings").select("*");
+      if (error) throw error;
+      return data;
     },
   });
 
@@ -48,6 +89,25 @@ const AdminPlatformSettings = () => {
     },
   });
 
+  const updateGateway = useMutation({
+    mutationFn: async ({ id, display_name, description, logo_url }: { id: string; display_name: string; description: string; logo_url: string }) => {
+      const { error } = await (supabase as any)
+        .from("gateway_settings")
+        .update({ display_name: display_name || null, description: description || null, logo_url: logo_url || null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gateway-settings-platform"] });
+      queryClient.invalidateQueries({ queryKey: ["gateway-settings"] });
+      setEditGateway(null);
+      toast({ title: "Gateway atualizado!" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    },
+  });
+
   const handleUpload = async (file: File, key: string) => {
     setUploading(key);
     try {
@@ -59,6 +119,24 @@ const AdminPlatformSettings = () => {
       if (error) throw error;
       const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(fileName);
       await updateSetting.mutateAsync({ key, value: urlData.publicUrl });
+    } catch (err: any) {
+      toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const handleGwLogoUpload = async (file: File) => {
+    setUploading("gw-logo");
+    try {
+      const ext = file.name.split(".").pop();
+      const fileName = `gateway-logo-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("product-images")
+        .upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(fileName);
+      setGwForm((prev) => ({ ...prev, logo_url: urlData.publicUrl }));
     } catch (err: any) {
       toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
     } finally {
@@ -95,13 +173,25 @@ const AdminPlatformSettings = () => {
     },
   ];
 
+  const configuredGateways = gateways?.filter((g) => g.public_key || g.secret_key) || [];
+
+  const openEditGateway = (gw: any) => {
+    const defaults = GATEWAYS_DEFAULTS[gw.gateway_name];
+    setGwForm({
+      display_name: (gw as any).display_name || defaults?.label || gw.gateway_name,
+      description: (gw as any).description || defaults?.description || "",
+      logo_url: (gw as any).logo_url || defaults?.logoUrl || "",
+    });
+    setEditGateway(gw.id);
+  };
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           Configurações da <span className="text-destructive">Plataforma</span>
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">Gerencie logos e banner do dashboard</p>
+        <p className="text-sm text-muted-foreground mt-1">Gerencie logos, banner e personalização dos gateways</p>
       </div>
 
       <div className="grid gap-5">
@@ -180,6 +270,146 @@ const AdminPlatformSettings = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Gateway Customization */}
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <Settings2 className="w-5 h-5 text-muted-foreground" />
+            Personalização dos Gateways
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Edite o nome, descrição e logo dos gateways configurados pelos usuários
+          </p>
+        </div>
+
+        {configuredGateways.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-6">Nenhum gateway configurado ainda</p>
+        )}
+
+        <div className="grid gap-3">
+          {configuredGateways.map((gw) => {
+            const defaults = GATEWAYS_DEFAULTS[gw.gateway_name];
+            const displayName = (gw as any).display_name || defaults?.label || gw.gateway_name;
+            const displayDesc = (gw as any).description || defaults?.description || "";
+            const displayLogo = (gw as any).logo_url || defaults?.logoUrl || "";
+
+            return (
+              <Card key={gw.id} className="border-border/60 bg-card">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                      {displayLogo && (
+                        <img
+                          src={displayLogo}
+                          alt={displayName}
+                          className="w-9 h-9 object-contain"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-foreground">{displayName}</p>
+                      <p className="text-xs text-muted-foreground truncate">{displayDesc}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 shrink-0"
+                      onClick={() => openEditGateway(gw)}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Editar
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Edit Gateway Dialog */}
+      <Dialog open={!!editGateway} onOpenChange={(open) => !open && setEditGateway(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Personalizar Gateway</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <Label className="text-xs">Nome de exibição</Label>
+              <Input
+                value={gwForm.display_name}
+                onChange={(e) => setGwForm((p) => ({ ...p, display_name: e.target.value }))}
+                placeholder="Ex: BlackCatPay"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Descrição</Label>
+              <Input
+                value={gwForm.description}
+                onChange={(e) => setGwForm((p) => ({ ...p, description: e.target.value }))}
+                placeholder="Gateway de pagamentos PIX..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Logo do Gateway</Label>
+              {gwForm.logo_url && (
+                <div className="rounded-lg border border-border/60 bg-muted/30 p-3 flex items-center justify-center">
+                  <img src={gwForm.logo_url} alt="Logo" className="max-h-[40px] object-contain" />
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Input
+                  value={gwForm.logo_url}
+                  onChange={(e) => setGwForm((p) => ({ ...p, logo_url: e.target.value }))}
+                  placeholder="URL da logo ou faça upload"
+                  className="flex-1"
+                />
+                <input
+                  ref={gwLogoRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleGwLogoUpload(file);
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={uploading === "gw-logo"}
+                  onClick={() => gwLogoRef.current?.click()}
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+
+            <Button
+              className="w-full"
+              onClick={() => {
+                if (editGateway) {
+                  updateGateway.mutate({
+                    id: editGateway,
+                    display_name: gwForm.display_name,
+                    description: gwForm.description,
+                    logo_url: gwForm.logo_url,
+                  });
+                }
+              }}
+              disabled={updateGateway.isPending}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Salvar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
