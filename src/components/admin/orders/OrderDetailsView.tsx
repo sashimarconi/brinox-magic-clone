@@ -26,7 +26,7 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-border bg-card p-6 shadow-sm md:p-8">
+      <section className="rounded-[28px] border border-border bg-card p-4 shadow-sm sm:p-6 md:p-8">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div className="space-y-4">
             <Button variant="ghost" size="sm" onClick={onBack} className="-ml-3 gap-2 text-muted-foreground hover:text-foreground">
@@ -64,9 +64,9 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_1fr_0.95fr]">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 xl:grid-cols-[1.15fr_1fr_0.95fr]">
         <Card className="rounded-[28px] border-border/80 shadow-sm">
-          <CardContent className="space-y-5 p-6">
+          <CardContent className="space-y-5 p-4 sm:p-6">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-foreground">
                 <UserRound className="h-5 w-5" />
@@ -118,7 +118,7 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
         </Card>
 
         <Card className="rounded-[28px] border-border/80 shadow-sm">
-          <CardContent className="space-y-5 p-6">
+          <CardContent className="space-y-5 p-4 sm:p-6">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-foreground">
                 <CreditCard className="h-5 w-5" />
@@ -197,7 +197,7 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
         </Card>
 
         <Card className="rounded-[28px] border-border/80 shadow-sm">
-          <CardContent className="space-y-5 p-6">
+          <CardContent className="space-y-5 p-4 sm:p-6">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-foreground">
                 <TimerReset className="h-5 w-5" />
@@ -253,7 +253,7 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
       </div>
 
       <Card className="rounded-[28px] border-border/80 shadow-sm">
-        <CardContent className="space-y-5 p-6">
+        <CardContent className="space-y-5 p-4 sm:p-6">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-foreground">
               <ShoppingBag className="h-5 w-5" />

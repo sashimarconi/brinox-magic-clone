@@ -86,51 +86,51 @@ const AdminAbandonedCarts = () => {
   return (
     <div className="space-y-6">
       <Card className="border-border">
-        <CardContent className="p-6">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+        <CardContent className="p-4 md:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">Vendas</p>
               <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-foreground">Carrinhos Abandonados</h1>
+                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">Carrinhos Abandonados</h1>
                 <p className="text-sm text-muted-foreground">Visualize e recupere carrinhos abandonados pelos clientes</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={fetchCarts} className="gap-2 self-start xl:self-auto">
+            <Button variant="outline" size="sm" onClick={fetchCarts} className="gap-2 self-start sm:self-auto">
               <RefreshCw className="h-4 w-4" />
               Atualizar
             </Button>
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-border bg-muted/40 p-4">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Total de Carrinhos</p>
-              <p className="mt-2 text-2xl font-semibold text-foreground">{stats.count}</p>
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-border bg-muted/40 p-3 sm:p-4">
+              <p className="text-[10px] sm:text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Total de Carrinhos</p>
+              <p className="mt-1 sm:mt-2 text-xl sm:text-2xl font-semibold text-foreground">{stats.count}</p>
             </div>
-            <div className="rounded-2xl border border-border bg-muted/40 p-4">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Valor Total</p>
-              <p className="mt-2 text-2xl font-semibold text-foreground">{formatCurrency(stats.totalValue)}</p>
+            <div className="rounded-2xl border border-border bg-muted/40 p-3 sm:p-4">
+              <p className="text-[10px] sm:text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Valor Total</p>
+              <p className="mt-1 sm:mt-2 text-xl sm:text-2xl font-semibold text-foreground">{formatCurrency(stats.totalValue)}</p>
             </div>
-            <div className="rounded-2xl border border-border bg-muted/40 p-4">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Média por Carrinho</p>
-              <p className="mt-2 text-2xl font-semibold text-foreground">{formatCurrency(stats.avg)}</p>
+            <div className="rounded-2xl border border-border bg-muted/40 p-3 sm:p-4">
+              <p className="text-[10px] sm:text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Média por Carrinho</p>
+              <p className="mt-1 sm:mt-2 text-xl sm:text-2xl font-semibold text-foreground">{formatCurrency(stats.avg)}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       <Card className="overflow-hidden border-border">
-        <CardContent className="space-y-5 p-4 md:p-6">
-          <div className="flex items-center gap-3">
+        <CardContent className="space-y-4 p-3 sm:p-4 md:p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="relative flex-1 xl:max-w-md">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-3 sm:left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar por nome ou email..."
-                className="h-11 rounded-2xl border-border bg-background pl-11"
+                className="h-10 sm:h-11 rounded-2xl border-border bg-background pl-9 sm:pl-11 text-sm"
               />
             </div>
-            <p className="text-sm text-muted-foreground ml-auto">
+            <p className="text-xs sm:text-sm text-muted-foreground sm:ml-auto">
               {filtered.length} de {carts.length} carrinhos
             </p>
           </div>
@@ -144,51 +144,88 @@ const AdminAbandonedCarts = () => {
               Nenhum carrinho abandonado encontrado.
             </div>
           ) : (
-            <div className="rounded-2xl border border-border bg-background overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-[11px] uppercase tracking-[0.18em]">Cliente</TableHead>
-                    <TableHead className="text-[11px] uppercase tracking-[0.18em]">Produto</TableHead>
-                    <TableHead className="text-[11px] uppercase tracking-[0.18em]">Valor</TableHead>
-                    <TableHead className="text-[11px] uppercase tracking-[0.18em]">Data</TableHead>
-                    <TableHead className="text-right text-[11px] uppercase tracking-[0.18em]">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((cart) => (
-                    <TableRow key={cart.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-                            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                          <div className="space-y-0.5">
-                            <p className="font-medium text-foreground">{cart.customer_name || "—"}</p>
-                            <p className="text-xs text-muted-foreground">{cart.customer_email || "—"}</p>
-                          </div>
+            <>
+              {/* Mobile card layout */}
+              <div className="space-y-3 md:hidden">
+                {filtered.map((cart) => (
+                  <div key={cart.id} className="rounded-2xl border border-border bg-background p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                          <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                         </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-foreground">{cart.product?.title || "—"}</TableCell>
-                      <TableCell className="font-semibold text-foreground">{formatCurrency(cart.total)}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{formatDateTime(cart.created_at)}</TableCell>
-                      <TableCell className="text-right">
-                        {cart.customer_phone && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openWhatsApp(cart.customer_phone, cart.customer_name)}
-                            className="gap-2 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </TableCell>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{cart.customer_name || "—"}</p>
+                          <p className="text-xs text-muted-foreground truncate">{cart.customer_email || "—"}</p>
+                        </div>
+                      </div>
+                      {cart.customer_phone && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openWhatsApp(cart.customer_phone, cart.customer_name)}
+                          className="shrink-0 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="truncate">{cart.product?.title || "—"}</span>
+                      <span className="font-semibold text-sm text-foreground whitespace-nowrap ml-2">{formatCurrency(cart.total)}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{formatDateTime(cart.created_at)}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop table layout */}
+              <div className="rounded-2xl border border-border bg-background overflow-x-auto hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="text-[11px] uppercase tracking-[0.18em]">Cliente</TableHead>
+                      <TableHead className="text-[11px] uppercase tracking-[0.18em]">Produto</TableHead>
+                      <TableHead className="text-[11px] uppercase tracking-[0.18em]">Valor</TableHead>
+                      <TableHead className="text-[11px] uppercase tracking-[0.18em]">Data</TableHead>
+                      <TableHead className="text-right text-[11px] uppercase tracking-[0.18em]">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.map((cart) => (
+                      <TableRow key={cart.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+                              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <div className="space-y-0.5">
+                              <p className="font-medium text-foreground">{cart.customer_name || "—"}</p>
+                              <p className="text-xs text-muted-foreground">{cart.customer_email || "—"}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-foreground">{cart.product?.title || "—"}</TableCell>
+                        <TableCell className="font-semibold text-foreground">{formatCurrency(cart.total)}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{formatDateTime(cart.created_at)}</TableCell>
+                        <TableCell className="text-right">
+                          {cart.customer_phone && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openWhatsApp(cart.customer_phone, cart.customer_name)}
+                              className="gap-2 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

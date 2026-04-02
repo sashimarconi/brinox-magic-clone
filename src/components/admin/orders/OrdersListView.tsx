@@ -53,31 +53,31 @@ export const OrdersListView = ({
   return (
     <div className="space-y-6">
       <Card className="border-border">
-        <CardContent className="p-6">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+        <CardContent className="p-4 md:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">Vendas</p>
               <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-foreground">Pedidos</h1>
+                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">Pedidos</h1>
                 <p className="text-sm text-muted-foreground">Gerencie pedidos pagos, pendentes e os cliques no botão de copiar PIX.</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={onRefresh} className="gap-2 self-start xl:self-auto">
+            <Button variant="outline" size="sm" onClick={onRefresh} className="gap-2 self-start sm:self-auto">
               <RefreshCw className="h-4 w-4" />
               Atualizar
             </Button>
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-5">
             {statCards.map((card) => (
-              <div key={card.label} className="rounded-2xl border border-border bg-muted/40 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">{card.label}</p>
-                    <p className="mt-2 text-2xl font-semibold text-foreground">{card.value}</p>
+              <div key={card.label} className="rounded-2xl border border-border bg-muted/40 p-3 sm:p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] sm:text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground truncate">{card.label}</p>
+                    <p className="mt-1 sm:mt-2 text-xl sm:text-2xl font-semibold text-foreground">{card.value}</p>
                   </div>
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-card shadow-sm">
-                    <card.icon className={cn("h-5 w-5", card.tone)} />
+                  <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-card shadow-sm">
+                    <card.icon className={cn("h-4 w-4 sm:h-5 sm:w-5", card.tone)} />
                   </div>
                 </div>
               </div>
@@ -87,24 +87,24 @@ export const OrdersListView = ({
       </Card>
 
       <Card className="overflow-hidden border-border">
-        <CardContent className="space-y-5 p-4 md:p-6">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex items-center gap-3 flex-1">
+        <CardContent className="space-y-4 p-3 sm:p-4 md:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 sm:gap-3 flex-1">
               <div className="relative flex-1 xl:max-w-md">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="pointer-events-none absolute left-3 sm:left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={search}
                   onChange={(event) => onSearchChange(event.target.value)}
-                  placeholder="Buscar por ID, cliente, e-mail, telefone..."
-                  className="h-11 rounded-2xl border-border bg-background pl-11"
+                  placeholder="Buscar..."
+                  className="h-10 sm:h-11 rounded-2xl border-border bg-background pl-9 sm:pl-11 text-sm"
                 />
               </div>
 
               <Popover open={filterOpen} onOpenChange={setFilterOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="gap-2 relative">
+                  <Button variant="outline" size="sm" className="gap-1.5 relative shrink-0">
                     <Filter className="h-4 w-4" />
-                    Filtrar
+                    <span className="hidden sm:inline">Filtrar</span>
                     {activeFilterCount > 0 && (
                       <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                         {activeFilterCount}
@@ -173,7 +173,7 @@ export const OrdersListView = ({
               </Popover>
             </div>
 
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {filteredOrders.length} de {orders.length} pedidos
             </p>
           </div>
@@ -187,59 +187,106 @@ export const OrdersListView = ({
               Nenhum pedido encontrado com os filtros atuais.
             </div>
           ) : (
-            <div className="rounded-2xl border border-border bg-background overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-[11px] uppercase tracking-[0.18em]">ID</TableHead>
-                    <TableHead className="text-[11px] uppercase tracking-[0.18em]">Cliente</TableHead>
-                    <TableHead className="text-[11px] uppercase tracking-[0.18em]">Produto</TableHead>
-                    <TableHead className="text-[11px] uppercase tracking-[0.18em]">Data</TableHead>
-                    <TableHead className="text-[11px] uppercase tracking-[0.18em]">Total</TableHead>
-                    <TableHead className="text-[11px] uppercase tracking-[0.18em]">Status</TableHead>
-                    <TableHead className="text-[11px] uppercase tracking-[0.18em]">Pix copiado</TableHead>
-                    <TableHead className="text-right text-[11px] uppercase tracking-[0.18em]">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.map((order) => {
-                    const variantLabel = getDisplayVariantLabel(order);
-                    return (
-                      <TableRow key={order.id}>
-                        <TableCell className="whitespace-nowrap font-semibold text-foreground">{getShortOrderId(order.id)}</TableCell>
-                        <TableCell>
-                          <div className="space-y-0.5">
-                            <p className="font-medium text-foreground">{order.customer_name}</p>
-                            <p className="text-xs text-muted-foreground">{order.customer_email}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-0.5">
-                            <p className="font-medium text-foreground">{order.product?.title || "Produto removido"}</p>
-                            {variantLabel ? <p className="text-xs text-muted-foreground">Variante: {variantLabel}</p> : null}
-                          </div>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{formatDateTime(order.created_at)}</TableCell>
-                        <TableCell className="whitespace-nowrap font-semibold text-foreground">{formatCurrency(order.total)}</TableCell>
-                        <TableCell><OrderStatusBadge order={order} /></TableCell>
-                        <TableCell className="text-center">
+            <>
+              {/* Mobile card layout */}
+              <div className="space-y-3 md:hidden">
+                {filteredOrders.map((order) => {
+                  const variantLabel = getDisplayVariantLabel(order);
+                  return (
+                    <div
+                      key={order.id}
+                      className="rounded-2xl border border-border bg-background p-4 space-y-3 cursor-pointer active:bg-muted/50 transition-colors"
+                      onClick={() => onSelectOrder(order.id)}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-foreground truncate">{order.customer_name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{order.customer_email}</p>
+                        </div>
+                        <OrderStatusBadge order={order} />
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-muted-foreground truncate">
+                            {order.product?.title || "Produto removido"}
+                            {variantLabel ? ` · ${variantLabel}` : ""}
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold text-foreground whitespace-nowrap">{formatCurrency(order.total)}</p>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{getShortOrderId(order.id)}</span>
+                        <div className="flex items-center gap-2">
                           {order.pix_copied ? (
-                            <CheckCircle2 className="h-5 w-5 text-marketplace-green inline-block" />
-                          ) : (
-                            <X className="h-5 w-5 text-muted-foreground/40 inline-block" />
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => onSelectOrder(order.id)} className="gap-2">
-                            <Eye className="h-4 w-4" />Ver
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+                            <span className="flex items-center gap-1 text-marketplace-green">
+                              <CheckCircle2 className="h-3.5 w-3.5" /> PIX copiado
+                            </span>
+                          ) : null}
+                          <span>{formatDateTime(order.created_at)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop table layout */}
+              <div className="rounded-2xl border border-border bg-background overflow-x-auto hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="text-[11px] uppercase tracking-[0.18em]">ID</TableHead>
+                      <TableHead className="text-[11px] uppercase tracking-[0.18em]">Cliente</TableHead>
+                      <TableHead className="text-[11px] uppercase tracking-[0.18em]">Produto</TableHead>
+                      <TableHead className="text-[11px] uppercase tracking-[0.18em]">Data</TableHead>
+                      <TableHead className="text-[11px] uppercase tracking-[0.18em]">Total</TableHead>
+                      <TableHead className="text-[11px] uppercase tracking-[0.18em]">Status</TableHead>
+                      <TableHead className="text-[11px] uppercase tracking-[0.18em]">Pix copiado</TableHead>
+                      <TableHead className="text-right text-[11px] uppercase tracking-[0.18em]">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredOrders.map((order) => {
+                      const variantLabel = getDisplayVariantLabel(order);
+                      return (
+                        <TableRow key={order.id}>
+                          <TableCell className="whitespace-nowrap font-semibold text-foreground">{getShortOrderId(order.id)}</TableCell>
+                          <TableCell>
+                            <div className="space-y-0.5">
+                              <p className="font-medium text-foreground">{order.customer_name}</p>
+                              <p className="text-xs text-muted-foreground">{order.customer_email}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-0.5">
+                              <p className="font-medium text-foreground">{order.product?.title || "Produto removido"}</p>
+                              {variantLabel ? <p className="text-xs text-muted-foreground">Variante: {variantLabel}</p> : null}
+                            </div>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap text-sm text-muted-foreground">{formatDateTime(order.created_at)}</TableCell>
+                          <TableCell className="whitespace-nowrap font-semibold text-foreground">{formatCurrency(order.total)}</TableCell>
+                          <TableCell><OrderStatusBadge order={order} /></TableCell>
+                          <TableCell className="text-center">
+                            {order.pix_copied ? (
+                              <CheckCircle2 className="h-5 w-5 text-marketplace-green inline-block" />
+                            ) : (
+                              <X className="h-5 w-5 text-muted-foreground/40 inline-block" />
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="sm" onClick={() => onSelectOrder(order.id)} className="gap-2">
+                              <Eye className="h-4 w-4" />Ver
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

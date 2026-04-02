@@ -92,67 +92,107 @@ const SaasUsers = () => {
             Usuários
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent border-border/60">
-                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Usuário</TableHead>
-                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Email</TableHead>
-                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Plano</TableHead>
-                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Taxa</TableHead>
-                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Cadastro</TableHead>
-                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((user) => (
-                <TableRow key={user.user_id} className="border-border/40 hover:bg-muted/30 transition-colors">
-                  <TableCell>
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-[10px] font-bold shrink-0">
-                        {(user.full_name || user.email || "?").charAt(0).toUpperCase()}
+        <CardContent className="p-0 sm:p-0">
+          {/* Mobile cards */}
+          <div className="space-y-3 p-3 md:hidden">
+            {filtered.map((user) => (
+              <div key={user.user_id} className="rounded-2xl border border-border bg-background p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-[11px] font-bold shrink-0">
+                    {(user.full_name || user.email || "?").charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{user.full_name || "—"}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                  <Badge variant="outline" className={`text-[10px] font-medium shrink-0 ${planColors[user.plan] || ""}`}>
+                    {user.plan.toUpperCase()}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Taxa: {user.transaction_fee_percent}%</span>
+                  <span>{format(new Date(user.created_at), "dd/MM/yyyy")}</span>
+                </div>
+                <Select value={user.plan} onValueChange={(val) => handlePlanChange(user.user_id, val)}>
+                  <SelectTrigger className="w-full h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="pro">Pro</SelectItem>
+                    <SelectItem value="enterprise">Enterprise</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <p className="text-center text-muted-foreground py-12 text-sm">Nenhum usuário encontrado.</p>
+            )}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent border-border/60">
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Usuário</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Email</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Plano</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Taxa</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Cadastro</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((user) => (
+                  <TableRow key={user.user_id} className="border-border/40 hover:bg-muted/30 transition-colors">
+                    <TableCell>
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+                          {(user.full_name || user.email || "?").charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-sm font-medium">{user.full_name || "—"}</span>
                       </div>
-                      <span className="text-sm font-medium">{user.full_name || "—"}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{user.email}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={`text-[10px] font-medium ${planColors[user.plan] || ""}`}>
-                      {user.plan.toUpperCase()}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-sm font-mono text-muted-foreground">
-                    {user.transaction_fee_percent}%
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {format(new Date(user.created_at), "dd/MM/yyyy")}
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      value={user.plan}
-                      onValueChange={(val) => handlePlanChange(user.user_id, val)}
-                    >
-                      <SelectTrigger className="w-28 h-7 text-[11px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="free">Free</SelectItem>
-                        <SelectItem value="pro">Pro</SelectItem>
-                        <SelectItem value="enterprise">Enterprise</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-12 text-sm">
-                    Nenhum usuário encontrado.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{user.email}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={`text-[10px] font-medium ${planColors[user.plan] || ""}`}>
+                        {user.plan.toUpperCase()}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm font-mono text-muted-foreground">
+                      {user.transaction_fee_percent}%
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {format(new Date(user.created_at), "dd/MM/yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={user.plan}
+                        onValueChange={(val) => handlePlanChange(user.user_id, val)}
+                      >
+                        <SelectTrigger className="w-28 h-7 text-[11px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="free">Free</SelectItem>
+                          <SelectItem value="pro">Pro</SelectItem>
+                          <SelectItem value="enterprise">Enterprise</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-12 text-sm">
+                      Nenhum usuário encontrado.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

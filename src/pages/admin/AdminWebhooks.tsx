@@ -141,16 +141,16 @@ const AdminWebhooks = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Webhooks</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Webhooks</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Configure webhooks para receber notificações em tempo real dos eventos da sua loja
+            Configure webhooks para receber notificações em tempo real
           </p>
         </div>
-        <Button onClick={openCreate} className="gap-2">
+        <Button onClick={openCreate} className="gap-2 self-start sm:self-auto shrink-0">
           <Plus className="h-4 w-4" />
-          Novo Webhook
+          <span className="hidden sm:inline">Novo Webhook</span><span className="sm:hidden">Novo</span>
         </Button>
       </div>
 
@@ -176,10 +176,10 @@ const AdminWebhooks = () => {
         <div className="space-y-3">
           {webhooks.map((wh) => (
             <Card key={wh.id} className="transition-all hover:shadow-md">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-1 flex-wrap">
                       <Globe className="h-4 w-4 text-primary shrink-0" />
                       <h3 className="font-semibold text-foreground truncate">{wh.name}</h3>
                       <Badge variant={wh.active ? "default" : "secondary"} className="shrink-0">
@@ -187,20 +187,20 @@ const AdminWebhooks = () => {
                       </Badge>
                     </div>
                     {wh.description && (
-                      <p className="text-xs text-muted-foreground ml-7 mb-2">{wh.description}</p>
+                      <p className="text-xs text-muted-foreground sm:ml-7 mb-2">{wh.description}</p>
                     )}
-                    <div className="flex items-center gap-2 ml-7 mb-2">
-                      <code className="text-xs bg-muted px-2 py-1 rounded truncate max-w-[400px]">
+                    <div className="flex items-center gap-2 sm:ml-7 mb-2">
+                      <code className="text-xs bg-muted px-2 py-1 rounded truncate block max-w-full overflow-hidden">
                         {wh.url}
                       </code>
                       <button
                         onClick={() => { navigator.clipboard.writeText(wh.url); toast.success("URL copiada!"); }}
-                        className="text-muted-foreground hover:text-foreground"
+                        className="text-muted-foreground hover:text-foreground shrink-0"
                       >
                         <Copy className="h-3 w-3" />
                       </button>
                     </div>
-                    <div className="flex flex-wrap gap-1.5 ml-7">
+                    <div className="flex flex-wrap gap-1.5 sm:ml-7">
                       {(Array.isArray(wh.events) ? wh.events : []).map((ev) => {
                         const evData = EVENTS.find((e) => e.key === ev);
                         return (
@@ -211,7 +211,7 @@ const AdminWebhooks = () => {
                       })}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-start">
                     <Switch
                       checked={wh.active}
                       onCheckedChange={(val) => toggleMutation.mutate({ id: wh.id, active: val })}

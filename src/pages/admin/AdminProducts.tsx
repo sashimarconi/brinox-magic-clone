@@ -288,37 +288,39 @@ const AdminProducts = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-foreground">Produtos</h2>
-        <Button onClick={() => { setEditingId(null); setForm(emptyForm); setDialogOpen(true); }} className="bg-marketplace-red hover:bg-marketplace-red/90">
-          <Plus className="w-4 h-4 mr-1" /> Novo Produto
+        <Button onClick={() => { setEditingId(null); setForm(emptyForm); setDialogOpen(true); }} className="bg-marketplace-red hover:bg-marketplace-red/90 shrink-0">
+          <Plus className="w-4 h-4 mr-1" /> <span className="hidden sm:inline">Novo Produto</span><span className="sm:hidden">Novo</span>
         </Button>
       </div>
 
       {/* Products list */}
       <div className="grid gap-3">
         {products?.map((product) => (
-          <div key={product.id} className="bg-card rounded-lg border border-border p-4 flex items-center gap-4">
-            {product.product_images?.[0] ? (
-              <img src={product.product_images[0].url} alt="" className="w-16 h-16 rounded-lg object-cover" />
-            ) : (
-              <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
-                <ImageIcon className="w-6 h-6 text-muted-foreground" />
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">{product.title}</p>
-              <p className="text-xs text-muted-foreground">
-                R$ {Number(product.sale_price).toFixed(2).replace(".", ",")} • {product.sold_count} vendidos
-              </p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`text-[10px] px-1.5 py-0.5 rounded ${product.active ? "bg-marketplace-green/10 text-marketplace-green" : "bg-muted text-muted-foreground"}`}>
-                  {product.active ? "Ativo" : "Inativo"}
-                </span>
-                <span className="text-[10px] text-muted-foreground">{product.checkout_type === "pix" ? "PIX" : "Link externo"}</span>
+          <div key={product.id} className="bg-card rounded-lg border border-border p-3 sm:p-4">
+            <div className="flex items-center gap-3 sm:gap-4">
+              {product.product_images?.[0] ? (
+                <img src={product.product_images[0].url} alt="" className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover shrink-0" />
+              ) : (
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                  <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">{product.title}</p>
+                <p className="text-xs text-muted-foreground">
+                  R$ {Number(product.sale_price).toFixed(2).replace(".", ",")} • {product.sold_count} vendidos
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${product.active ? "bg-marketplace-green/10 text-marketplace-green" : "bg-muted text-muted-foreground"}`}>
+                    {product.active ? "Ativo" : "Inativo"}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">{product.checkout_type === "pix" ? "PIX" : "Link externo"}</span>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border sm:mt-0 sm:pt-0 sm:border-0 justify-end">
               <Button variant="ghost" size="sm" title="Copiar link" onClick={() => {
                 const url = `${window.location.origin}/product/${product.slug}`;
                 navigator.clipboard.writeText(url);
@@ -374,7 +376,7 @@ const AdminProducts = () => {
               <Textarea value={form.description} onChange={(e) => updateField("description", e.target.value)} rows={3} />
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
                 <Label>Preço original</Label>
                 <Input type="number" step="0.01" value={form.original_price} onChange={(e) => updateField("original_price", parseFloat(e.target.value))} required />
@@ -389,7 +391,7 @@ const AdminProducts = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
                 <Label>Avaliação</Label>
                 <Input type="number" step="0.1" value={form.rating} onChange={(e) => updateField("rating", parseFloat(e.target.value))} />
@@ -404,7 +406,7 @@ const AdminProducts = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6">
               <div className="flex items-center gap-2">
                 <Switch checked={form.flash_sale} onCheckedChange={(v) => updateField("flash_sale", v)} />
                 <Label>Oferta Relâmpago</Label>

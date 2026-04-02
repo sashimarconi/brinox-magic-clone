@@ -104,74 +104,108 @@ const SaasOrders = () => {
             Pedidos
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 sm:p-0">
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <div className="animate-spin rounded-full h-6 w-6 border-2 border-transparent border-t-accent" />
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent border-border/60">
-                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Cliente</TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Produto</TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Total</TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Status</TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">PIX Copiado</TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Dono</TableHead>
-                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Data</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Mobile cards */}
+              <div className="space-y-3 p-3 md:hidden">
                 {filtered.map((order) => {
                   const st = statusMap[order.payment_status] || { label: order.payment_status, className: "" };
                   return (
-                    <TableRow key={order.order_id} className="border-border/40 hover:bg-muted/30 transition-colors">
-                      <TableCell>
-                        <div>
-                          <p className="text-sm font-medium">{order.customer_name}</p>
-                          <p className="text-[11px] text-muted-foreground">{order.customer_email}</p>
+                    <div key={order.order_id} className="rounded-2xl border border-border bg-background p-4 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{order.customer_name}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">{order.customer_email}</p>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="text-sm">{order.product_title || "—"}</p>
-                          {order.product_variant && (
-                            <p className="text-[11px] text-muted-foreground">{order.product_variant}</p>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm font-medium font-mono">
-                        R$ {Number(order.total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={`text-[10px] font-medium ${st.className}`}>{st.label}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {order.payment_method === "pix" ? (
-                          <Badge variant="outline" className={`text-[10px] font-medium ${order.pix_copied ? "bg-void-success/10 text-void-success border-void-success/20" : "bg-muted text-muted-foreground border-border"}`}>
-                            {order.pix_copied ? "Sim" : "Não"}
-                          </Badge>
-                        ) : "—"}
-                      </TableCell>
-                      <TableCell className="text-[11px] text-muted-foreground">
-                        {order.owner_email || "—"}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(order.created_at), "dd/MM/yyyy HH:mm")}
-                      </TableCell>
-                    </TableRow>
+                        <Badge variant="outline" className={`text-[10px] font-medium shrink-0 ${st.className}`}>{st.label}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground truncate">{order.product_title || "—"}</span>
+                        <span className="font-medium font-mono text-sm">R$ {Number(order.total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span className="truncate">Dono: {order.owner_email || "—"}</span>
+                        <span>{format(new Date(order.created_at), "dd/MM HH:mm")}</span>
+                      </div>
+                    </div>
                   );
                 })}
                 {filtered.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-12 text-sm">
-                      Nenhum pedido encontrado.
-                    </TableCell>
-                  </TableRow>
+                  <p className="text-center text-muted-foreground py-12 text-sm">Nenhum pedido encontrado.</p>
                 )}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Desktop table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent border-border/60">
+                      <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Cliente</TableHead>
+                      <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Produto</TableHead>
+                      <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Total</TableHead>
+                      <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Status</TableHead>
+                      <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">PIX Copiado</TableHead>
+                      <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Dono</TableHead>
+                      <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Data</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.map((order) => {
+                      const st = statusMap[order.payment_status] || { label: order.payment_status, className: "" };
+                      return (
+                        <TableRow key={order.order_id} className="border-border/40 hover:bg-muted/30 transition-colors">
+                          <TableCell>
+                            <div>
+                              <p className="text-sm font-medium">{order.customer_name}</p>
+                              <p className="text-[11px] text-muted-foreground">{order.customer_email}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="text-sm">{order.product_title || "—"}</p>
+                              {order.product_variant && (
+                                <p className="text-[11px] text-muted-foreground">{order.product_variant}</p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm font-medium font-mono">
+                            R$ {Number(order.total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={`text-[10px] font-medium ${st.className}`}>{st.label}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {order.payment_method === "pix" ? (
+                              <Badge variant="outline" className={`text-[10px] font-medium ${order.pix_copied ? "bg-void-success/10 text-void-success border-void-success/20" : "bg-muted text-muted-foreground border-border"}`}>
+                                {order.pix_copied ? "Sim" : "Não"}
+                              </Badge>
+                            ) : "—"}
+                          </TableCell>
+                          <TableCell className="text-[11px] text-muted-foreground">
+                            {order.owner_email || "—"}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {format(new Date(order.created_at), "dd/MM/yyyy HH:mm")}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {filtered.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-12 text-sm">
+                          Nenhum pedido encontrado.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
