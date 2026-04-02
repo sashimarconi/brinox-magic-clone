@@ -490,6 +490,25 @@ Deno.serve(async (req) => {
       } catch (pushErr) {
         console.error("Push notification error:", pushErr);
       }
+
+      // Send to Utmify (waiting_payment)
+      if (orderData?.id) {
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/send-utmify-order`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${serviceRoleKey}`,
+            },
+            body: JSON.stringify({
+              order_id: orderData.id,
+              status: "pending",
+            }),
+          });
+        } catch (utmifyErr) {
+          console.error("Utmify dispatch error:", utmifyErr);
+        }
+      }
     }
 
     return new Response(
