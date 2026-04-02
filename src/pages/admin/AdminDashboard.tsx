@@ -165,7 +165,7 @@ const AdminDashboard = () => {
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="end">
             <div className="p-3 border-b border-border">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Quick Period</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Período rápido</p>
               <div className="flex flex-wrap gap-2">
                 {quickPeriods.map((p) => (
                   <button
