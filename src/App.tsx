@@ -31,6 +31,8 @@ import AdminPlans from "./pages/admin/AdminPlans";
 import SaasAdminLayout from "./components/admin/SaasAdminLayout";
 import SaasMetrics from "./pages/admin/SaasMetrics";
 import SaasUsers from "./pages/admin/SaasUsers";
+import SaasAnalytics from "./pages/admin/SaasAnalytics";
+import SaasOrders from "./pages/admin/SaasOrders";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +53,8 @@ const App = () => (
           {/* SaaS Owner Admin */}
           <Route path="/admin" element={<SaasAdminLayout />}>
             <Route index element={<SaasMetrics />} />
+            <Route path="analytics" element={<SaasAnalytics />} />
+            <Route path="orders" element={<SaasOrders />} />
             <Route path="users" element={<SaasUsers />} />
           </Route>
           {/* User Dashboard */}
