@@ -8,15 +8,25 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, ArrowRight, Search, Settings, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import utmifyLogo from "@/assets/utmify-logo.png";
+import tiktokLogo from "@/assets/tiktok-logo.jpg";
 
-// Platform definitions for future expansion
 const PLATFORMS = [
+  {
+    id: "utmify",
+    name: "Utmify",
+    description: "Rastreamento de vendas e UTMs para otimização de campanhas",
+    icon: utmifyLogo,
+    color: "bg-[#0d1117]",
+    enabled: true,
+    isUtmify: true,
+  },
   {
     id: "tiktok",
     name: "TikTok Pixel",
     description: "Rastreie conversões e otimize campanhas no TikTok Ads",
-    icon: "🎵",
-    color: "bg-black text-white",
+    icon: tiktokLogo,
+    color: "bg-black",
     enabled: true,
   },
   {
@@ -61,7 +71,7 @@ const PLATFORMS = [
   },
 ];
 
-type View = "grid" | "list" | "create" | "edit";
+type View = "grid" | "list" | "create" | "edit" | "utmify";
 
 const AdminPixels = () => {
   const [view, setView] = useState<View>("grid");
@@ -75,22 +85,89 @@ const AdminPixels = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Pixel queries
   const { data: pixels, isLoading } = useQuery({
     queryKey: ["admin-tracking-pixels"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("tracking_pixels" as any)
+        .from("tracking_pixels")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as any[];
+      return data;
     },
   });
 
+  // Utmify queries
+  const { data: utmifySettings, isLoading: utmifyLoading } = useQuery({
+    queryKey: ["utmify-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("utmify_settings" as any)
+        .select("*")
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const [utmifyToken, setUtmifyToken] = useState("");
+  const [utmifyPlatformName, setUtmifyPlatformName] = useState("VoidTok");
+  const [utmifyActive, setUtmifyActive] = useState(true);
+
+  const saveUtmifyMutation = useMutation({
+    mutationFn: async () => {
+      if (utmifySettings?.id) {
+        const { error } = await supabase
+          .from("utmify_settings" as any)
+          .update({
+            api_token: utmifyToken.trim(),
+            platform_name: utmifyPlatformName.trim(),
+            active: utmifyActive,
+          })
+          .eq("id", utmifySettings.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("utmify_settings" as any)
+          .insert({
+            api_token: utmifyToken.trim(),
+            platform_name: utmifyPlatformName.trim(),
+            active: utmifyActive,
+          });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["utmify-settings"] });
+      toast({ title: "Utmify configurado com sucesso!" });
+    },
+    onError: (err: Error) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
+  });
+
+  const deleteUtmifyMutation = useMutation({
+    mutationFn: async () => {
+      if (!utmifySettings?.id) return;
+      const { error } = await supabase
+        .from("utmify_settings" as any)
+        .delete()
+        .eq("id", utmifySettings.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["utmify-settings"] });
+      setUtmifyToken("");
+      setUtmifyPlatformName("VoidTok");
+      setUtmifyActive(true);
+      toast({ title: "Configuração da Utmify removida!" });
+    },
+  });
+
+  // Pixel mutations
   const addMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
-        .from("tracking_pixels" as any)
+        .from("tracking_pixels")
         .insert({
           pixel_id: newPixelId.trim(),
           platform: activePlatform,
@@ -113,7 +190,7 @@ const AdminPixels = () => {
   const toggleMutation = useMutation({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
       const { error } = await supabase
-        .from("tracking_pixels" as any)
+        .from("tracking_pixels")
         .update({ active })
         .eq("id", id);
       if (error) throw error;
@@ -124,7 +201,7 @@ const AdminPixels = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from("tracking_pixels" as any)
+        .from("tracking_pixels")
         .delete()
         .eq("id", id);
       if (error) throw error;
@@ -138,7 +215,7 @@ const AdminPixels = () => {
   const updateMutation = useMutation({
     mutationFn: async ({ id, pixel_id, active }: { id: string; pixel_id: string; active: boolean }) => {
       const { error } = await supabase
-        .from("tracking_pixels" as any)
+        .from("tracking_pixels")
         .update({ pixel_id, active })
         .eq("id", id);
       if (error) throw error;
@@ -162,15 +239,136 @@ const AdminPixels = () => {
     p.pixel_id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const platform = PLATFORMS.find(p => p.id === activePlatform)!;
+  const platform = PLATFORMS.find(p => p.id === activePlatform);
+
+  const renderPlatformIcon = (p: typeof PLATFORMS[0], size = "w-10 h-10") => {
+    if (typeof p.icon === "string" && (p.icon.endsWith(".png") || p.icon.endsWith(".jpg"))) {
+      return (
+        <div className={`${size} rounded-xl ${p.color} flex items-center justify-center shrink-0 overflow-hidden`}>
+          <img src={p.icon} alt={p.name} className="w-full h-full object-cover rounded-xl" />
+        </div>
+      );
+    }
+    return (
+      <div className={`${size} rounded-xl ${p.color} flex items-center justify-center text-lg shrink-0`}>
+        {p.icon}
+      </div>
+    );
+  };
+
+  // ─── Utmify config view ───
+  if (view === "utmify") {
+    const hasExisting = !!utmifySettings;
+    const tokenValue = utmifyToken || utmifySettings?.api_token || "";
+    const platformNameValue = utmifyPlatformName || utmifySettings?.platform_name || "VoidTok";
+    const activeValue = utmifySettings ? (utmifyActive !== undefined ? utmifyActive : utmifySettings.active) : utmifyActive;
+
+    // Sync state on first render
+    if (utmifySettings && !utmifyToken && utmifySettings.api_token) {
+      setUtmifyToken(utmifySettings.api_token);
+      setUtmifyPlatformName(utmifySettings.platform_name || "VoidTok");
+      setUtmifyActive(utmifySettings.active);
+    }
+
+    return (
+      <div className="space-y-6 max-w-2xl">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <button onClick={() => setView("grid")} className="hover:text-foreground transition-colors">Integrações</button>
+          <span>/</span>
+          <span className="text-foreground">Utmify</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <img src={utmifyLogo} alt="Utmify" className="w-10 h-10 rounded-xl" />
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Utmify</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Rastreamento automático de vendas e UTMs</p>
+          </div>
+        </div>
+
+        <Card className="border-border">
+          <CardContent className="p-6 space-y-5">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-primary">Credencial de API (x-api-token)</Label>
+              <Input
+                type="password"
+                value={utmifyToken}
+                onChange={(e) => setUtmifyToken(e.target.value)}
+                placeholder="Ex: KVRxalfMiBfm8Rm1nP5YxfwYzArNsA0VLeWC"
+              />
+              <p className="text-xs text-muted-foreground">
+                Encontre em: Utmify → Integrações → Webhooks → Credenciais de API
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-primary">Nome da Plataforma</Label>
+              <Input
+                value={utmifyPlatformName}
+                onChange={(e) => setUtmifyPlatformName(e.target.value)}
+                placeholder="Ex: VoidTok"
+              />
+              <p className="text-xs text-muted-foreground">
+                Esse nome aparecerá nos pedidos dentro da Utmify (campo "platform")
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between py-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Integração Ativa</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Quando ativa, os pedidos serão enviados automaticamente para a Utmify
+                </p>
+              </div>
+              <Switch checked={utmifyActive} onCheckedChange={setUtmifyActive} />
+            </div>
+
+            <div className="flex justify-between pt-2">
+              {hasExisting && (
+                <Button
+                  variant="outline"
+                  className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                  onClick={() => deleteUtmifyMutation.mutate()}
+                  disabled={deleteUtmifyMutation.isPending}
+                >
+                  <Trash2 className="w-4 h-4 mr-1.5" />
+                  Remover
+                </Button>
+              )}
+              <div className="flex gap-3 ml-auto">
+                <Button variant="outline" onClick={() => setView("grid")}>Cancelar</Button>
+                <Button
+                  onClick={() => saveUtmifyMutation.mutate()}
+                  disabled={!utmifyToken.trim() || saveUtmifyMutation.isPending}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  Salvar
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+          <p className="text-xs font-semibold text-foreground">Como funciona:</p>
+          <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
+            <li>Quando um pedido PIX é <strong>gerado</strong>, enviamos com status <code className="text-primary/80">waiting_payment</code></li>
+            <li>Quando o pagamento é <strong>confirmado</strong>, enviamos com status <code className="text-primary/80">paid</code></li>
+            <li>Os dados de UTM são capturados automaticamente da URL do checkout</li>
+            <li>Cada conta de usuário usa sua própria credencial — dados completamente isolados</li>
+          </ul>
+        </div>
+      </div>
+    );
+  }
 
   // ─── Grid view (main integrations page) ───
   if (view === "grid") {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Rastreamento</h1>
-          <p className="text-sm text-muted-foreground mt-1">Integrações com pixels e ferramentas de rastreamento</p>
+          <h1 className="text-2xl font-bold text-foreground">Integrações</h1>
+          <p className="text-sm text-muted-foreground mt-1">Pixels, rastreamento e ferramentas de marketing</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -183,17 +381,24 @@ const AdminPixels = () => {
                   toast({ title: "Em breve", description: `${p.name} será implementado em breve!` });
                   return;
                 }
+                if (p.isUtmify) {
+                  setView("utmify");
+                  return;
+                }
                 setActivePlatform(p.id);
                 setView("list");
               }}
             >
               <CardContent className="p-5 flex flex-col h-full">
                 <div className="flex items-start gap-3 mb-4">
-                  <div className={`w-10 h-10 rounded-xl ${p.color} flex items-center justify-center text-lg shrink-0`}>
-                    {p.icon}
-                  </div>
+                  {renderPlatformIcon(p)}
                   <div className="min-w-0">
-                    <h3 className="text-sm font-semibold text-foreground">{p.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-foreground">{p.name}</h3>
+                      {p.id === "utmify" && utmifySettings?.active && (
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-marketplace-green/15 text-marketplace-green">Conectado</span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground mt-0.5">{p.description}</p>
                   </div>
                 </div>
@@ -222,12 +427,12 @@ const AdminPixels = () => {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <button onClick={() => setView("grid")} className="hover:text-foreground transition-colors">Integrações</button>
           <span>/</span>
-          <button onClick={() => setView("list")} className="hover:text-foreground transition-colors">{platform.name}</button>
+          <button onClick={() => setView("list")} className="hover:text-foreground transition-colors">{platform?.name}</button>
           <span>/</span>
           <span className="text-foreground">Criar</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-foreground">Criar {platform.name}</h1>
+        <h1 className="text-2xl font-bold text-foreground">Criar {platform?.name}</h1>
 
         <Card className="border-border">
           <CardContent className="p-6 space-y-5">
@@ -284,7 +489,7 @@ const AdminPixels = () => {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <button onClick={() => setView("grid")} className="hover:text-foreground transition-colors">Integrações</button>
           <span>/</span>
-          <button onClick={() => { setView("list"); setEditingPixel(null); }} className="hover:text-foreground transition-colors">{platform.name}</button>
+          <button onClick={() => { setView("list"); setEditingPixel(null); }} className="hover:text-foreground transition-colors">{platform?.name}</button>
           <span>/</span>
           <span className="text-foreground">Editar</span>
         </div>
@@ -337,13 +542,16 @@ const AdminPixels = () => {
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <button onClick={() => setView("grid")} className="hover:text-foreground transition-colors">Integrações</button>
         <span>/</span>
-        <span className="text-foreground">{platform.name}</span>
+        <span className="text-foreground">{platform?.name}</span>
       </div>
 
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{platform.name}</h1>
-          <p className="text-sm text-muted-foreground mt-1">Integração nativa com pixel do TikTok Ads para rastreio de suas vendas.</p>
+        <div className="flex items-center gap-3">
+          {platform && renderPlatformIcon(platform)}
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{platform?.name}</h1>
+            <p className="text-sm text-muted-foreground mt-1">Integração nativa com pixel do {platform?.name} para rastreio de suas vendas.</p>
+          </div>
         </div>
         <Button onClick={() => setView("create")} className="bg-primary hover:bg-primary/90 gap-1.5 shrink-0">
           <Plus className="w-4 h-4" /> Novo Pixel
@@ -380,9 +588,7 @@ const AdminPixels = () => {
             <Card key={pixel.id} className="border-border">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-lg ${platform.color} flex items-center justify-center text-sm shrink-0`}>
-                    {platform.icon}
-                  </div>
+                  {platform && renderPlatformIcon(platform, "w-9 h-9")}
                   <div>
                     <p className="text-sm font-medium text-foreground">{pixel.pixel_id}</p>
                     <p className="text-xs text-muted-foreground capitalize">{pixel.platform}</p>
