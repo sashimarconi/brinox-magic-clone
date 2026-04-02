@@ -48,8 +48,8 @@ const navSections = [
   {
     title: "Marketing",
     items: [
-      { label: "Pixels", path: "/admin/pixels", icon: Zap },
-      { label: "Webhooks", path: "/admin/webhooks", icon: Webhook },
+      { label: "Pixels", path: "/dashboard/pixels", icon: Zap },
+      { label: "Webhooks", path: "/dashboard/webhooks", icon: Webhook },
     ],
   },
   {
