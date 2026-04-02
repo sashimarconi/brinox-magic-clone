@@ -187,7 +187,7 @@ const AdminLayout = () => {
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-void-danger hover:bg-void-danger/10 transition-colors"
         >
           <LogOut className="w-4 h-4 shrink-0" />
-          {sidebarOpen && <span>Log Out</span>}
+          {sidebarOpen && <span>Sair</span>}
         </button>
       </div>
     </div>
