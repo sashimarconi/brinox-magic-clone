@@ -407,7 +407,7 @@ const AdminPlatformSettings = () => {
               onClick={() => {
                 if (editGateway) {
                   updateGateway.mutate({
-                    id: editGateway,
+                    gatewayName: editGateway,
                     display_name: gwForm.display_name,
                     description: gwForm.description,
                     logo_url: gwForm.logo_url,
