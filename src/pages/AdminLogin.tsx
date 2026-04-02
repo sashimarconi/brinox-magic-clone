@@ -26,7 +26,7 @@ const AdminLogin = () => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      toast({ title: "Access Denied", description: error.message, variant: "destructive" });
+      toast({ title: "Acesso negado", description: error.message, variant: "destructive" });
     } else {
       navigate("/admin");
     }
