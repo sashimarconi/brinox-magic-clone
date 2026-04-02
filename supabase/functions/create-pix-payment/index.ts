@@ -446,6 +446,7 @@ Deno.serve(async (req) => {
       pix_expires_at: safeExpiresAt,
       selected_bumps: body.selectedBumps,
       product_variant: body.productVariant || null,
+      utm_params: body.utmParams || {},
     }).select("id").single();
 
     if (orderError) {

@@ -436,6 +436,15 @@ const CheckoutPage = () => {
               .filter((b) => selectedBumps.includes(b.id))
               .map((b) => ({ id: b.id, title: b.title, price: Math.round(Number(b.price) * 100) })),
             productVariant: selectedVariant || undefined,
+            utmParams: {
+              src: searchParams.get("src") || null,
+              sck: searchParams.get("sck") || null,
+              utm_source: searchParams.get("utm_source") || null,
+              utm_campaign: searchParams.get("utm_campaign") || null,
+              utm_medium: searchParams.get("utm_medium") || null,
+              utm_content: searchParams.get("utm_content") || null,
+              utm_term: searchParams.get("utm_term") || null,
+            },
           }),
         }
       );
