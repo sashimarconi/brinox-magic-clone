@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Outlet, Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, BarChart3, LogOut, Shield, ChevronLeft, Menu } from "lucide-react";
+import { Users, BarChart3, LogOut, Shield, ChevronLeft, Menu, ClipboardList, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { label: "Métricas", path: "/admin", icon: BarChart3 },
+  { label: "Análises", path: "/admin/analytics", icon: TrendingUp },
+  { label: "Pedidos", path: "/admin/orders", icon: ClipboardList },
   { label: "Usuários", path: "/admin/users", icon: Users },
 ];
 
