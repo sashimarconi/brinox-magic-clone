@@ -106,7 +106,7 @@ const AdminLayout = () => {
   }
 
   const isActive = (path: string) => {
-    if (path === "/admin") return location.pathname === "/admin";
+    if (path === "/dashboard") return location.pathname === "/dashboard";
     return location.pathname.startsWith(path);
   };
 
