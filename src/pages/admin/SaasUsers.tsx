@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Search } from "lucide-react";
+import { Users, Search, Pencil, Check, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -30,6 +30,8 @@ const SaasUsers = () => {
   const [users, setUsers] = useState<SaasUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [editingFee, setEditingFee] = useState<string | null>(null);
+  const [feeValue, setFeeValue] = useState("");
 
   const fetchUsers = async () => {
     const { data, error } = await supabase.rpc("admin_list_users");
@@ -53,6 +55,30 @@ const SaasUsers = () => {
       toast({ title: "Plano atualizado!" });
       fetchUsers();
     }
+  };
+
+  const handleFeeEdit = (userId: string, currentFee: number) => {
+    setEditingFee(userId);
+    setFeeValue(String(currentFee));
+  };
+
+  const handleFeeSave = async (userId: string) => {
+    const fee = parseFloat(feeValue);
+    if (isNaN(fee) || fee < 0 || fee > 100) {
+      toast({ title: "Erro", description: "Taxa inválida (0-100%)", variant: "destructive" });
+      return;
+    }
+    const { error } = await (supabase as any).rpc("admin_update_user_fee", {
+      _target_user_id: userId,
+      _new_fee: fee,
+    });
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Taxa atualizada!" });
+      fetchUsers();
+    }
+    setEditingFee(null);
   };
 
   const filtered = users.filter((u) =>
@@ -110,7 +136,32 @@ const SaasUsers = () => {
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Taxa: {user.transaction_fee_percent}%</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Taxa:</span>
+                    {editingFee === user.user_id ? (
+                      <div className="flex items-center gap-1">
+                        <Input
+                          value={feeValue}
+                          onChange={(e) => setFeeValue(e.target.value)}
+                          className="w-16 h-6 text-xs px-1.5"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          autoFocus
+                          onKeyDown={(e) => { if (e.key === "Enter") handleFeeSave(user.user_id); if (e.key === "Escape") setEditingFee(null); }}
+                        />
+                        <span>%</span>
+                        <button onClick={() => handleFeeSave(user.user_id)} className="text-accent hover:text-accent/80"><Check className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => setEditingFee(null)} className="text-muted-foreground hover:text-destructive"><X className="w-3.5 h-3.5" /></button>
+                      </div>
+                    ) : (
+                      <button onClick={() => handleFeeEdit(user.user_id, user.transaction_fee_percent)} className="flex items-center gap-1 hover:text-foreground transition-colors">
+                        <span>{user.transaction_fee_percent}%</span>
+                        <Pencil className="w-3 h-3 opacity-50" />
+                      </button>
+                    )}
+                  </div>
                   <span>{format(new Date(user.created_at), "dd/MM/yyyy")}</span>
                 </div>
                 <Select value={user.plan} onValueChange={(val) => handlePlanChange(user.user_id, val)}>
@@ -160,8 +211,30 @@ const SaasUsers = () => {
                         {user.plan.toUpperCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm font-mono text-muted-foreground">
-                      {user.transaction_fee_percent}%
+                    <TableCell>
+                      {editingFee === user.user_id ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            value={feeValue}
+                            onChange={(e) => setFeeValue(e.target.value)}
+                            className="w-16 h-7 text-xs px-1.5 font-mono"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="100"
+                            autoFocus
+                            onKeyDown={(e) => { if (e.key === "Enter") handleFeeSave(user.user_id); if (e.key === "Escape") setEditingFee(null); }}
+                          />
+                          <span className="text-xs text-muted-foreground">%</span>
+                          <button onClick={() => handleFeeSave(user.user_id)} className="p-0.5 text-accent hover:text-accent/80"><Check className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => setEditingFee(null)} className="p-0.5 text-muted-foreground hover:text-destructive"><X className="w-3.5 h-3.5" /></button>
+                        </div>
+                      ) : (
+                        <button onClick={() => handleFeeEdit(user.user_id, user.transaction_fee_percent)} className="flex items-center gap-1.5 text-sm font-mono text-muted-foreground hover:text-foreground transition-colors group">
+                          <span>{user.transaction_fee_percent}%</span>
+                          <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+                        </button>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {format(new Date(user.created_at), "dd/MM/yyyy")}
