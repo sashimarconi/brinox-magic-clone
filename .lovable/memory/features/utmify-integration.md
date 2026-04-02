@@ -10,3 +10,6 @@ type: feature
 - Dados isolados: cada usuário configura sua própria credencial API da Utmify
 - Platform name configurável (aparece no campo "platform" dos pedidos na Utmify)
 - UI em /dashboard/pixels dentro da aba "Integrações" (antigo "Pixels")
+- Captura de parâmetros UTM (src, sck, utm_source, utm_campaign, utm_medium, utm_content, utm_term) da URL do checkout
+- UTMs armazenados na coluna `utm_params` (jsonb) da tabela `orders`
+- UTMs enviados automaticamente no campo `trackingParameters` do payload da Utmify
