@@ -221,10 +221,10 @@ const AdminGateways = () => {
 
       {/* Active gateway hero */}
       {activeGateway && (() => {
-        const activeGw = gateways?.find((g) => g.gateway_name === activeGateway.name);
-        const heroLabel = (activeGw as any)?.display_name || activeGateway.label;
-        const heroDesc = (activeGw as any)?.description || activeGateway.description;
-        const heroLogo = (activeGw as any)?.logo_url || activeGateway.logoUrl;
+        const meta = getGatewayMeta(activeGateway.name);
+        const heroLabel = meta?.display_name || activeGateway.label;
+        const heroDesc = meta?.description || activeGateway.description;
+        const heroLogo = meta?.logo_url || activeGateway.logoUrl;
         return (
         <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 p-5">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-10 -mt-10" />
