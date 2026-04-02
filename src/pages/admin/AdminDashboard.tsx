@@ -126,15 +126,15 @@ const AdminDashboard = () => {
   }, [dateRange]);
 
   const statCards = [
-    { label: "Live Visitors", value: String(stats.onlineNow), icon: Activity, live: true, color: "text-void-cyan", glow: "void-glow-cyan-sm" },
-    { label: "Visits", value: String(stats.visits), icon: Users, color: "text-void-purple-glow" },
+    { label: "Visitantes agora", value: String(stats.onlineNow), icon: Activity, live: true, color: "text-void-cyan", glow: "void-glow-cyan-sm" },
+    { label: "Visitas", value: String(stats.visits), icon: Users, color: "text-void-purple-glow" },
     { label: "Checkouts", value: String(stats.checkouts), icon: ShoppingCart, color: "text-void-warning" },
-    { label: "Pending Sales", value: String(stats.pendingOrders), icon: Package2, color: "text-marketplace-orange" },
-    { label: "Approved Sales", value: String(stats.paidOrders), icon: CheckCircle2, color: "text-void-success" },
-    { label: "Total Orders", value: String(stats.totalOrders), icon: Package2, color: "text-foreground" },
-    { label: "Total Revenue", value: formatCurrency(stats.totalRevenue), icon: DollarSign, color: "text-foreground" },
-    { label: "Approved Revenue", value: formatCurrency(stats.paidRevenue), icon: DollarSign, color: "text-void-cyan", glow: "void-glow-cyan-sm" },
-    { label: "Conversion", value: `${stats.conversionRate.toFixed(1)}%`, icon: TrendingUp, color: "text-void-purple-glow", glow: "void-glow-purple-sm" },
+    { label: "Vendas pendentes", value: String(stats.pendingOrders), icon: Package2, color: "text-marketplace-orange" },
+    { label: "Vendas aprovadas", value: String(stats.paidOrders), icon: CheckCircle2, color: "text-void-success" },
+    { label: "Pedidos totais", value: String(stats.totalOrders), icon: Package2, color: "text-foreground" },
+    { label: "Receita total", value: formatCurrency(stats.totalRevenue), icon: DollarSign, color: "text-foreground" },
+    { label: "Receita aprovada", value: formatCurrency(stats.paidRevenue), icon: DollarSign, color: "text-void-cyan", glow: "void-glow-cyan-sm" },
+    { label: "Conversão", value: `${stats.conversionRate.toFixed(1)}%`, icon: TrendingUp, color: "text-void-purple-glow", glow: "void-glow-purple-sm" },
   ];
 
   if (loading) {
