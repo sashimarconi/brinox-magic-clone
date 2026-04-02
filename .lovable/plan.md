@@ -1,58 +1,88 @@
 
 
-# PWA com Notificações Push de Vendas
+# Transformar VoidTok em SaaS Multi-Tenant
 
-## Resumo
+## Visao Geral
 
-Transformar o painel admin em um app instalável (PWA) com notificações push no celular. Quando uma venda for confirmada, o admin recebe uma notificação push no celular mesmo com o app em segundo plano.
+Transformar o painel admin single-tenant em um SaaS multi-tenant onde cada usuario registrado tem seu proprio dashboard isolado com produtos, lojas, pixels, reviews, gateways, etc.
 
-## Como funciona
+## Escopo da Mudanca
 
-1. Admin acessa o painel no celular → instala na tela inicial
-2. Clica em "Ativar notificações" nas configurações
-3. Quando uma venda é paga, recebe push notification no celular com valor e gateway
+### 1. Autenticacao (Registro + Login)
+- Criar pagina `/register` com formulario de cadastro (nome, email, senha)
+- Atualizar pagina `/login` (renomear de `/admin/login`)
+- Apos login/registro, redirecionar para `/dashboard`
+- Criar tabela `profiles` com `id`, `user_id`, `full_name`, `avatar_url`, `created_at`
+- Trigger para auto-criar perfil no signup
 
-## Implementação Técnica
+### 2. Rotas
+- `/admin/*` vira `/dashboard/*`
+- `/admin/login` vira `/login`
+- Nova rota `/register`
+- Atualizar `AdminLayout` para usar `/dashboard` como base
+- Atualizar todos os links internos de navegacao
 
-### 1. Manifesto PWA + ícones
-- Criar `public/manifest.json` com nome, cores, ícones e `display: "standalone"`
-- Adicionar `<link rel="manifest">` no `index.html`
-- Criar ícones PWA (192x192, 512x512)
+### 3. Isolamento de Dados (Multi-Tenancy)
+Adicionar coluna `user_id UUID NOT NULL DEFAULT auth.uid()` nas seguintes tabelas:
 
-### 2. Service Worker (`public/sw.js`)
-- Escuta evento `push` e exibe notificação nativa
-- Escuta `notificationclick` para abrir o painel
-- SEM cache/offline (evita problemas com preview do Lovable)
+| Tabela | Tem user_id? |
+|--------|-------------|
+| products | Nao - adicionar |
+| product_images | Nao - adicionar |
+| product_variants | Nao - adicionar |
+| variant_groups | Nao - adicionar |
+| reviews | Nao - adicionar |
+| review_products | Nao - adicionar |
+| trust_badges | Nao - adicionar |
+| stores | Nao - adicionar |
+| store_products | Nao - adicionar |
+| store_settings | Nao - adicionar |
+| orders | Nao - adicionar |
+| abandoned_carts | Nao - adicionar |
+| shipping_options | Nao - adicionar |
+| order_bumps | Nao - adicionar |
+| order_bump_products | Nao - adicionar |
+| gateway_settings | Nao - adicionar |
+| tracking_pixels | Nao - adicionar |
+| webhooks | Nao - adicionar |
+| checkout_settings | Nao - adicionar |
+| checkout_builder_config | Nao - adicionar |
+| product_page_builder_config | Nao - adicionar |
+| page_events | Nao - adicionar |
+| visitor_sessions | Nao - adicionar |
 
-### 3. Registro do Service Worker (`src/main.tsx`)
-- Registrar SW apenas em produção e fora de iframe/preview
-- Guard contra ambiente de desenvolvimento
+### 4. Atualizar RLS Policies
+Todas as tabelas acima terao suas policies atualizadas:
+- **SELECT (autenticado)**: `auth.uid() = user_id`
+- **INSERT**: `auth.uid() = user_id`
+- **UPDATE/DELETE**: `auth.uid() = user_id`
+- **SELECT (publico)** (produtos, lojas, reviews, etc.): manter leitura publica para vitrine
 
-### 4. Tabela `push_subscriptions`
-- Armazena `endpoint`, `p256dh`, `auth` (dados do Web Push)
-- RLS: inserir/deletar autenticado
+### 5. Atualizar Codigo Frontend
+- Todas as queries de INSERT precisam incluir `user_id` (ou usar o default `auth.uid()`)
+- Queries de SELECT no dashboard nao precisam filtrar manualmente (RLS cuida disso)
+- Atualizar `AdminLayout.tsx`: trocar rotas `/admin` por `/dashboard`
+- Atualizar `App.tsx`: novas rotas
 
-### 5. Componente de ativação (`src/components/admin/PushNotificationToggle.tsx`)
-- Botão para o admin ativar/desativar notificações
-- Solicita permissão do navegador → salva subscription no banco
-- Exibido no dashboard ou settings do admin
+### 6. Vitrine Publica
+- A vitrine publica (`/product/:slug`, `/loja/:slug`, `/checkout/:slug`) continua funcionando normalmente
+- Produtos e lojas continuam com SELECT publico
+- Orders e abandoned_carts continuam com INSERT publico
 
-### 6. Edge Function `send-push-notification`
-- Recebe evento de venda (chamada pelo `payment-webhook`)
-- Busca todas as subscriptions ativas
-- Envia push via Web Push API (biblioteca `web-push`)
-- Precisa de VAPID keys (geradas e salvas como secrets)
+## Detalhes Tecnicos
 
-### 7. Integração no `payment-webhook`
-- Após marcar pedido como pago, chama a edge function `send-push-notification`
+**Migracao SQL** (resumo):
+- ~24 ALTER TABLE ADD COLUMN user_id
+- DROP + CREATE de ~40 RLS policies
+- CREATE TABLE profiles + trigger
+- Habilitar signup no auth
 
-## Secrets necessários
-- `VAPID_PUBLIC_KEY` — chave pública (também usada no frontend)
-- `VAPID_PRIVATE_KEY` — chave privada (apenas backend)
-- Serão geradas automaticamente via script
+**Arquivos a modificar**:
+- `src/App.tsx` - rotas
+- `src/pages/AdminLogin.tsx` -> `src/pages/Login.tsx` + `src/pages/Register.tsx`
+- `src/components/admin/AdminLayout.tsx` - paths
+- Todos os ~20 arquivos em `src/pages/admin/` - nenhuma mudanca de query necessaria (RLS filtra)
+- Edge functions que fazem insert precisam passar user_id quando aplicavel
 
-## Limitações
-- iOS Safari suporta push notifications a partir do iOS 16.4 (PWA instalada)
-- Android Chrome funciona perfeitamente
-- Notificações só funcionam no app publicado, não no preview do editor
+**Risco**: Dados existentes no banco nao terao `user_id` preenchido. A migracao pode atribuir os dados existentes ao primeiro usuario ou deixar NULL (precisando de tratamento).
 
