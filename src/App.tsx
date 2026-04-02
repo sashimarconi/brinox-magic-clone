@@ -28,6 +28,9 @@ import AdminLiveView from "./pages/admin/AdminLiveView";
 import AdminAbandonedCarts from "./pages/admin/AdminAbandonedCarts";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminPlans from "./pages/admin/AdminPlans";
+import SaasAdminLayout from "./components/admin/SaasAdminLayout";
+import SaasMetrics from "./pages/admin/SaasMetrics";
+import SaasUsers from "./pages/admin/SaasUsers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
