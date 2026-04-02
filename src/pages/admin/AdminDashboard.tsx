@@ -276,7 +276,7 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-void-cyan" />
-              <span className="text-sm font-display font-bold text-foreground">Revenue Flow</span>
+              <span className="text-sm font-display font-bold text-foreground">Fluxo de Receita</span>
             </div>
             <span className="text-xs text-muted-foreground">{periodLabel}</span>
           </div>
