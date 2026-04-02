@@ -2,11 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import ProductPage from "./pages/ProductPage";
 import StorePage from "./pages/StorePage";
-import AdminLogin from "./pages/AdminLogin";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -41,8 +42,13 @@ const App = () => (
           <Route path="/product/:slug" element={<ProductPage />} />
           <Route path="/loja/:slug" element={<StorePage />} />
           <Route path="/checkout/:slug" element={<CheckoutPage />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          {/* Legacy redirect */}
+          <Route path="/admin/login" element={<Navigate to="/login" replace />} />
+          <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/admin/*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="live-view" element={<AdminLiveView />} />
             <Route path="analytics" element={<AdminAnalytics />} />

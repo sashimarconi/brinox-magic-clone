@@ -114,7 +114,7 @@ const AdminLayout = () => {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-4 flex items-center justify-between border-b border-border">
-        <Link to="/admin" className="flex items-center gap-2.5 group">
+        <Link to="/dashboard" className="flex items-center gap-2.5 group">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-void-purple to-void-cyan flex items-center justify-center void-glow-purple-sm group-hover:void-glow-purple transition-shadow">
             <span className="text-white font-display font-black text-sm">V</span>
           </div>
