@@ -298,19 +298,16 @@ const AdminPlatformSettings = () => {
           </p>
         </div>
 
-        {configuredGateways.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-6">Nenhum gateway configurado ainda</p>
-        )}
-
         <div className="grid gap-3">
-          {configuredGateways.map((gw) => {
-            const defaults = GATEWAYS_DEFAULTS[gw.gateway_name];
-            const displayName = (gw as any).display_name || defaults?.label || gw.gateway_name;
-            const displayDesc = (gw as any).description || defaults?.description || "";
-            const displayLogo = (gw as any).logo_url || defaults?.logoUrl || "";
+          {gatewayNames.map((name) => {
+            const defaults = GATEWAYS_DEFAULTS[name];
+            const meta = getGatewayMeta(name);
+            const displayName = meta?.display_name || defaults?.label || name;
+            const displayDesc = meta?.description || defaults?.description || "";
+            const displayLogo = meta?.logo_url || defaults?.logoUrl || "";
 
             return (
-              <Card key={gw.id} className="border-border/60 bg-card">
+              <Card key={name} className="border-border/60 bg-card">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center overflow-hidden shrink-0">
@@ -331,7 +328,7 @@ const AdminPlatformSettings = () => {
                       variant="outline"
                       size="sm"
                       className="gap-1.5 shrink-0"
-                      onClick={() => openEditGateway(gw)}
+                      onClick={() => openEditGateway(name)}
                     >
                       <Pencil className="w-3.5 h-3.5" />
                       Editar
