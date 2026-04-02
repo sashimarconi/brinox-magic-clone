@@ -84,16 +84,30 @@ const AdminPlatformSettings = () => {
   });
 
   const updateGateway = useMutation({
-    mutationFn: async ({ id, display_name, description, logo_url }: { id: string; display_name: string; description: string; logo_url: string }) => {
-      const { error } = await (supabase as any)
-        .from("gateway_settings")
-        .update({ display_name: display_name || null, description: description || null, logo_url: logo_url || null })
-        .eq("id", id);
-      if (error) throw error;
+    mutationFn: async ({ gatewayName, display_name, description, logo_url }: { gatewayName: string; display_name: string; description: string; logo_url: string }) => {
+      const meta = JSON.stringify({ display_name, description, logo_url });
+      const key = `gateway_meta_${gatewayName}`;
+      // Upsert into platform_settings
+      const { data: existing } = await (supabase as any)
+        .from("platform_settings")
+        .select("id")
+        .eq("key", key)
+        .maybeSingle();
+      if (existing) {
+        const { error } = await (supabase as any)
+          .from("platform_settings")
+          .update({ value: meta, updated_at: new Date().toISOString() })
+          .eq("key", key);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any)
+          .from("platform_settings")
+          .insert({ key, value: meta });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gateway-settings-platform"] });
-      queryClient.invalidateQueries({ queryKey: ["gateway-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["platform-settings"] });
       setEditGateway(null);
       toast({ title: "Gateway atualizado!" });
     },
