@@ -1304,6 +1304,10 @@ export type Database = {
           total_users: number
         }[]
       }
+      admin_update_user_fee: {
+        Args: { _new_fee: number; _target_user_id: string }
+        Returns: undefined
+      }
       admin_update_user_plan: {
         Args: {
           _new_plan: Database["public"]["Enums"]["plan_type"]
