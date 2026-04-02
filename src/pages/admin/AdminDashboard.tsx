@@ -1,13 +1,13 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, ShoppingCart, TrendingUp, DollarSign, CheckCircle2, Package2, CalendarDays, Filter } from "lucide-react";
+import { Users, ShoppingCart, TrendingUp, DollarSign, CheckCircle2, Package2, CalendarDays, Activity, Shield, Zap } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { format, subDays, startOfDay, endOfDay, eachHourOfInterval, startOfHour, isWithinInterval } from "date-fns";
+import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 
@@ -24,10 +24,10 @@ interface Stats {
 }
 
 const quickPeriods = [
-  { label: "Hoje", days: 0 },
-  { label: "7 dias", days: 7 },
-  { label: "15 dias", days: 15 },
-  { label: "30 dias", days: 30 },
+  { label: "Today", days: 0 },
+  { label: "7 days", days: 7 },
+  { label: "15 days", days: 15 },
+  { label: "30 days", days: 30 },
 ];
 
 const AdminDashboard = () => {
@@ -79,7 +79,6 @@ const AdminDashboard = () => {
       conversionRate: checkouts > 0 ? (paid.length / checkouts) * 100 : 0,
     });
 
-    // Build hourly revenue chart for today range
     const isToday = dateRange?.from?.toDateString() === new Date().toDateString() && (!dateRange.to || dateRange.to.toDateString() === new Date().toDateString());
     const hours = Array.from({ length: 24 }, (_, i) => ({
       hour: `${String(i).padStart(2, "0")}h`,
@@ -92,7 +91,6 @@ const AdminDashboard = () => {
         hours[h].value += Number(o.total);
       });
     } else {
-      // Group by day instead
       const dayMap = new Map<string, number>();
       paid.forEach(o => {
         const key = new Date(o.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
@@ -121,59 +119,62 @@ const AdminDashboard = () => {
   const formatCurrency = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 
   const periodLabel = useMemo(() => {
-    if (!dateRange?.from) return "Selecionar período";
+    if (!dateRange?.from) return "Select period";
     const from = format(dateRange.from, "dd/MM/yyyy");
     const to = dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : from;
     return from === to ? from : `${from} — ${to}`;
   }, [dateRange]);
 
   const statCards = [
-    { label: "Visitantes agora", value: String(stats.onlineNow), icon: Users, live: true, tone: "text-marketplace-green" },
-    { label: "Visitas", value: String(stats.visits), icon: TrendingUp, tone: "text-marketplace-blue" },
-    { label: "Checkouts", value: String(stats.checkouts), icon: ShoppingCart, tone: "text-marketplace-yellow" },
-    { label: "Vendas pendentes", value: String(stats.pendingOrders), icon: Package2, tone: "text-marketplace-orange" },
-    { label: "Vendas aprovadas", value: String(stats.paidOrders), icon: CheckCircle2, tone: "text-marketplace-green" },
-    { label: "Pedidos totais", value: String(stats.totalOrders), icon: Package2, tone: "text-foreground" },
-    { label: "Receita total", value: formatCurrency(stats.totalRevenue), icon: DollarSign, tone: "text-foreground" },
-    { label: "Receita aprovada", value: formatCurrency(stats.paidRevenue), icon: DollarSign, tone: "text-marketplace-green" },
-    { label: "Conversão", value: `${stats.conversionRate.toFixed(1)}%`, icon: TrendingUp, tone: "text-primary" },
+    { label: "Live Visitors", value: String(stats.onlineNow), icon: Activity, live: true, color: "text-void-cyan", glow: "void-glow-cyan-sm" },
+    { label: "Visits", value: String(stats.visits), icon: Users, color: "text-void-purple-glow" },
+    { label: "Checkouts", value: String(stats.checkouts), icon: ShoppingCart, color: "text-void-warning" },
+    { label: "Pending Sales", value: String(stats.pendingOrders), icon: Package2, color: "text-marketplace-orange" },
+    { label: "Approved Sales", value: String(stats.paidOrders), icon: CheckCircle2, color: "text-void-success" },
+    { label: "Total Orders", value: String(stats.totalOrders), icon: Package2, color: "text-foreground" },
+    { label: "Total Revenue", value: formatCurrency(stats.totalRevenue), icon: DollarSign, color: "text-foreground" },
+    { label: "Approved Revenue", value: formatCurrency(stats.paidRevenue), icon: DollarSign, color: "text-void-cyan", glow: "void-glow-cyan-sm" },
+    { label: "Conversion", value: `${stats.conversionRate.toFixed(1)}%`, icon: TrendingUp, color: "text-void-purple-glow", glow: "void-glow-purple-sm" },
   ];
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-void-cyan" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Visão geral da sua loja</p>
+          <h1 className="text-2xl font-display font-black text-foreground">
+            Command <span className="void-text-gradient">Center</span>
+          </h1>
+          <p className="text-sm text-muted-foreground">Real-time store overview</p>
         </div>
 
         <Popover open={filterOpen} onOpenChange={setFilterOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2 border-border hover:border-void-purple/50 hover:text-void-cyan transition-all">
               <CalendarDays className="h-4 w-4" />
               {periodLabel}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="end">
             <div className="p-3 border-b border-border">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Período rápido</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Quick Period</p>
               <div className="flex flex-wrap gap-2">
                 {quickPeriods.map((p) => (
                   <button
                     key={p.label}
                     className={cn(
-                      "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                      "rounded-full border px-3 py-1 text-xs font-medium transition-all",
                       dateRange?.from?.toDateString() === (p.days === 0 ? new Date() : subDays(new Date(), p.days)).toDateString()
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-muted text-muted-foreground hover:text-foreground"
+                        ? "border-void-cyan bg-void-cyan/10 text-void-cyan void-glow-cyan-sm"
+                        : "border-border bg-muted text-muted-foreground hover:text-foreground hover:border-void-purple/50"
                     )}
                     onClick={() => {
                       setDateRange({
@@ -203,37 +204,79 @@ const AdminDashboard = () => {
         </Popover>
       </div>
 
+      {/* Stat Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {statCards.map((card) => (
-          <Card key={card.label} className="border-border">
+          <Card key={card.label} className={cn(
+            "border-border bg-card/80 backdrop-blur-sm hover:border-void-navy-border hover:bg-card transition-all duration-200 group",
+            card.glow && "hover:" + card.glow
+          )}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <span className="text-xs font-medium text-muted-foreground">{card.label}</span>
                 {card.live && (
-                  <span className="flex items-center gap-1 text-[9px] text-marketplace-green font-semibold bg-marketplace-green/10 px-1.5 py-0.5 rounded-full">
+                  <span className="flex items-center gap-1 text-[9px] text-void-cyan font-semibold bg-void-cyan/10 px-1.5 py-0.5 rounded-full">
                     <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-marketplace-green opacity-75" />
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-marketplace-green" />
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-void-cyan opacity-75" />
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-void-cyan" />
                     </span>
                     LIVE
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <card.icon className={cn("w-4 h-4 shrink-0", card.tone)} />
-                <p className="text-xl font-bold text-foreground truncate">{card.value}</p>
+                <card.icon className={cn("w-4 h-4 shrink-0 transition-all", card.color, "group-hover:scale-110")} />
+                <p className="text-xl font-display font-bold text-foreground truncate">{card.value}</p>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <Card className="border-border">
+      {/* Store Health */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <Card className="border-border bg-card/80 backdrop-blur-sm">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg bg-void-success/10 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-void-success" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Domain Status</p>
+              <p className="text-sm font-bold text-void-success">Healthy</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border bg-card/80 backdrop-blur-sm">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg bg-void-cyan/10 flex items-center justify-center">
+              <Zap className="w-5 h-5 text-void-cyan" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Pixels</p>
+              <p className="text-sm font-bold text-void-cyan">Active</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border bg-card/80 backdrop-blur-sm">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg bg-void-purple/10 flex items-center justify-center">
+              <Activity className="w-5 h-5 text-void-purple" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Gateway</p>
+              <p className="text-sm font-bold text-void-purple-glow">Online</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Revenue Chart */}
+      <Card className="border-border bg-card/80 backdrop-blur-sm">
         <CardContent className="p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-marketplace-red" />
-              <span className="text-sm font-semibold text-foreground">Valor em Vendas</span>
+              <TrendingUp className="h-4 w-4 text-void-cyan" />
+              <span className="text-sm font-display font-bold text-foreground">Revenue Flow</span>
             </div>
             <span className="text-xs text-muted-foreground">{periodLabel}</span>
           </div>
@@ -242,40 +285,42 @@ const AdminDashboard = () => {
               <AreaChart data={revenueData}>
                 <defs>
                   <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(348, 83%, 47%)" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="hsl(348, 83%, 47%)" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="hsl(180, 100%, 50%)" stopOpacity={0.3} />
+                    <stop offset="50%" stopColor="hsl(270, 100%, 53%)" stopOpacity={0.1} />
+                    <stop offset="100%" stopColor="hsl(270, 100%, 53%)" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 40%, 18%)" />
                 <XAxis
                   dataKey="hour"
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                  tick={{ fill: "hsl(230, 15%, 55%)", fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                  tick={{ fill: "hsl(230, 15%, 55%)", fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v) => `R$ ${v}`}
                 />
                 <Tooltip
                   contentStyle={{
-                    background: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
+                    background: "hsl(240, 10%, 8%)",
+                    border: "1px solid hsl(230, 40%, 18%)",
                     borderRadius: 12,
-                    color: "hsl(var(--foreground))",
+                    color: "hsl(0, 0%, 95%)",
+                    boxShadow: "0 0 20px hsl(180, 100%, 50%, 0.1)",
                   }}
-                  formatter={(value: number) => [formatCurrency(value), "Receita"]}
+                  formatter={(value: number) => [formatCurrency(value), "Revenue"]}
                 />
                 <Area
                   type="monotone"
                   dataKey="value"
-                  stroke="hsl(348, 83%, 47%)"
+                  stroke="hsl(180, 100%, 50%)"
                   strokeWidth={2}
                   fill="url(#revenueGrad)"
                   dot={false}
-                  activeDot={{ r: 5, fill: "hsl(348, 83%, 47%)", stroke: "hsl(var(--card))", strokeWidth: 2 }}
+                  activeDot={{ r: 5, fill: "hsl(180, 100%, 50%)", stroke: "hsl(240, 10%, 8%)", strokeWidth: 2 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
