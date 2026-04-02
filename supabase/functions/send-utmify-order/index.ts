@@ -29,7 +29,7 @@ serve(async (req) => {
     // Fetch order with product info
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("*, products(id, title, sale_price, slug)")
+      .select("*, products(id, title, sale_price, slug), utm_params")
       .eq("id", order_id)
       .single();
 
