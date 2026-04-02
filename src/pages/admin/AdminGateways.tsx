@@ -201,21 +201,26 @@ const AdminGateways = () => {
       </div>
 
       {/* Active gateway hero */}
-      {activeGateway && (
+      {activeGateway && (() => {
+        const activeGw = gateways?.find((g) => g.gateway_name === activeGateway.name);
+        const heroLabel = (activeGw as any)?.display_name || activeGateway.label;
+        const heroDesc = (activeGw as any)?.description || activeGateway.description;
+        const heroLogo = (activeGw as any)?.logo_url || activeGateway.logoUrl;
+        return (
         <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 p-5">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-10 -mt-10" />
           <div className="absolute bottom-0 left-0 w-20 h-20 bg-primary/5 rounded-full -ml-6 -mb-6" />
           <div className="relative flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center overflow-hidden shadow-sm">
-              <img src={activeGateway.logoUrl} alt={activeGateway.label} className="w-10 h-10 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              <img src={heroLogo} alt={heroLabel} className="w-10 h-10 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-primary" />
                 <span className="text-xs font-semibold text-primary uppercase tracking-wider">Gateway Ativo</span>
               </div>
-              <p className="text-lg font-bold text-foreground mt-0.5">{activeGateway.label}</p>
-              <p className="text-xs text-muted-foreground">{activeGateway.description}</p>
+              <p className="text-lg font-bold text-foreground mt-0.5">{heroLabel}</p>
+              <p className="text-xs text-muted-foreground">{heroDesc}</p>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -223,7 +228,8 @@ const AdminGateways = () => {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
