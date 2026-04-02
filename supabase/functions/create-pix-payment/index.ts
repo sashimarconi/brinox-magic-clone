@@ -7,6 +7,16 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const UtmParamsSchema = z.object({
+  src: z.string().nullable().optional(),
+  sck: z.string().nullable().optional(),
+  utm_source: z.string().nullable().optional(),
+  utm_campaign: z.string().nullable().optional(),
+  utm_medium: z.string().nullable().optional(),
+  utm_content: z.string().nullable().optional(),
+  utm_term: z.string().nullable().optional(),
+}).optional().default({});
+
 const BodySchema = z.object({
   productId: z.string().uuid(),
   productTitle: z.string().min(1).max(500),
@@ -29,6 +39,7 @@ const BodySchema = z.object({
     )
     .optional()
     .default([]),
+  utmParams: UtmParamsSchema,
 });
 
 function getWebhookFields(webhookUrl: string) {
