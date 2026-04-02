@@ -376,7 +376,7 @@ const AdminProducts = () => {
               <Textarea value={form.description} onChange={(e) => updateField("description", e.target.value)} rows={3} />
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
                 <Label>Preço original</Label>
                 <Input type="number" step="0.01" value={form.original_price} onChange={(e) => updateField("original_price", parseFloat(e.target.value))} required />
