@@ -3,9 +3,11 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import {
   Zap, ShieldCheck, TrendingUp, Store, Paintbrush, Eye, BarChart3,
-  Globe, CreditCard, Smartphone, Package, Infinity as InfinityIcon, Settings2,
-  ArrowRight, CheckCircle2, Layers, Link2, Bell, ShoppingCart
+  Globe, CreditCard, Smartphone, Package, Settings2,
+  ArrowRight, CheckCircle2, Layers, Link2, Bell, ShoppingCart,
+  type LucideIcon,
 } from "lucide-react";
+import { Infinity as InfinityIcon } from "lucide-react";
 
 /* ── Animated purple blob background ── */
 const HeroBackground = () => (
