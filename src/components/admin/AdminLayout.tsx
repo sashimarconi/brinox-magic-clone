@@ -189,7 +189,7 @@ const AdminLayout = () => {
             )
           ) : (
             logoClosed ? (
-              <img src={logoClosed} alt="Logo" className="w-14 h-14 object-contain" />
+              <img src={logoClosed} alt="Logo" className="w-12 h-12 object-contain" />
             ) : (
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <span className="text-white font-bold text-xs">V</span>
@@ -275,7 +275,7 @@ const AdminLayout = () => {
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   )}
                 >
-                  <item.icon className="w-[15px] h-[15px]" />
+                  <item.icon className="w-5 h-5" />
                 </Link>
               ))}
             </Collapsible>
@@ -289,14 +289,14 @@ const AdminLayout = () => {
           to="/"
           className="flex items-center gap-3 px-2.5 py-[7px] rounded-lg text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors group"
         >
-          <ExternalLink className="w-[15px] h-[15px] shrink-0" />
+          <ExternalLink className={cn("shrink-0", sidebarOpen ? "w-[15px] h-[15px]" : "w-5 h-5")} />
           {sidebarOpen && <span>Ver Loja</span>}
         </Link>
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-2.5 py-[7px] rounded-lg text-[13px] text-muted-foreground hover:text-destructive hover:bg-destructive/8 transition-colors"
         >
-          <LogOut className="w-[15px] h-[15px] shrink-0" />
+          <LogOut className={cn("shrink-0", sidebarOpen ? "w-[15px] h-[15px]" : "w-5 h-5")} />
           {sidebarOpen && <span>Sair</span>}
         </button>
       </div>
@@ -309,7 +309,7 @@ const AdminLayout = () => {
       <aside
         className={cn(
           "hidden md:flex flex-col fixed top-0 left-0 h-screen border-r border-border/60 z-50 transition-all duration-200",
-          sidebarOpen ? "w-[220px]" : "w-16"
+          sidebarOpen ? "w-[220px]" : "w-[68px]"
         )}
         style={{
           background: theme === "dark" ? 'hsl(240 6% 7% / 0.95)' : 'hsl(0 0% 100% / 0.95)',
@@ -335,7 +335,7 @@ const AdminLayout = () => {
       </aside>
 
       {/* Main content */}
-      <div className={cn("flex-1 transition-all duration-200", sidebarOpen ? "md:ml-[220px]" : "md:ml-16")}>
+      <div className={cn("flex-1 transition-all duration-200", sidebarOpen ? "md:ml-[220px]" : "md:ml-[68px]")}>
         <header className="sticky top-0 z-30 h-14 border-b border-border/60 flex items-center px-5 gap-3" style={{ background: theme === "dark" ? 'hsl(240 6% 7% / 0.8)' : 'hsl(0 0% 100% / 0.8)', backdropFilter: 'blur(20px)' }}>
           <button className="md:hidden text-muted-foreground hover:text-foreground transition-colors" onClick={() => setMobileMenuOpen(true)}>
             <Menu className="w-5 h-5" />
