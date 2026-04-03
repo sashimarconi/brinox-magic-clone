@@ -5,7 +5,7 @@ import {
   Package, Star, ShieldCheck, LogOut, Menu, CreditCard, Truck, Tag,
   BarChart3, LayoutDashboard, ClipboardList, Store, PenTool, Radio,
   ChevronLeft, ExternalLink, ShoppingCart, Webhook, Bell, Zap, Crown,
-  ChevronDown, Sun, Moon
+  ChevronDown, Sun, Moon, Globe
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SaleNotification from "@/components/admin/SaleNotification";
@@ -57,6 +57,7 @@ const navSections = [
   {
     title: "Configurações",
     items: [
+      { label: "Domínios", path: "/dashboard/domains", icon: Globe },
       { label: "Notificações", path: "/dashboard/notifications", icon: Bell },
       { label: "Plano & Limites", path: "/dashboard/plans", icon: Crown },
     ],

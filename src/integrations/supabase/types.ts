@@ -122,6 +122,36 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_domains: {
+        Row: {
+          created_at: string
+          domain: string
+          id: string
+          updated_at: string
+          user_id: string
+          verification_token: string
+          verified: boolean
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          verification_token?: string
+          verified?: boolean
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          verification_token?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       gateway_settings: {
         Row: {
           active: boolean | null
