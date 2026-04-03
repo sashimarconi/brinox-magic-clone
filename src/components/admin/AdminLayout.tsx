@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import SaleNotification from "@/components/admin/SaleNotification";
 import PushNotificationToggle from "@/components/admin/PushNotificationToggle";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 
 const navSections = [
@@ -218,82 +219,86 @@ const AdminLayout = () => {
       </div>
 
       {/* Nav items */}
-      <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
-        {navSections.map((section, sIdx) => {
-          const isExpanded = expandedSections.has(sIdx);
-          const hasActive = section.items.some(i => isActive(i.path));
+      <div className="flex-1 overflow-hidden px-3 py-3">
+        <ScrollArea className="h-full" type="auto">
+          <nav className="space-y-1 pr-2">
+            {navSections.map((section, sIdx) => {
+              const isExpanded = expandedSections.has(sIdx);
+              const hasActive = section.items.some(i => isActive(i.path));
 
-          return (
-            <Collapsible key={section.title} open={isExpanded} onOpenChange={() => toggleSection(sIdx)}>
-              {sidebarOpen ? (
-                <CollapsibleTrigger className="w-full flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-muted/40 transition-colors group">
-                  <span className={cn(
-                    "text-[11px] font-semibold uppercase tracking-[0.12em]",
-                    hasActive ? "text-primary" : "text-muted-foreground/60"
-                  )}>
-                    {section.title}
-                  </span>
-                  <ChevronDown className={cn(
-                    "w-3 h-3 text-muted-foreground/50 transition-transform duration-200",
-                    !isExpanded && "-rotate-90"
-                  )} />
-                </CollapsibleTrigger>
-              ) : null}
-
-              <CollapsibleContent className="space-y-0.5 mt-0.5">
-                {section.items.map((item) => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      "group flex items-center gap-3 px-2.5 py-[7px] rounded-lg text-[14px] font-medium transition-all duration-150",
-                      isActive(item.path)
-                        ? "bg-primary/10 text-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    )}
-                  >
-                    <div className={cn(
-                      "flex items-center justify-center w-5 h-5",
-                      isActive(item.path) && "text-primary"
-                    )}>
-                      <item.icon className={cn(
-                        "w-[15px] h-[15px] shrink-0 transition-colors duration-150",
-                        isActive(item.path) ? "text-primary" : "group-hover:text-foreground"
-                      )} />
-                    </div>
-                    {sidebarOpen && <span>{item.label}</span>}
-                    {item.label === "Live View" && sidebarOpen && (
-                      <span className="ml-auto flex h-1.5 w-1.5 relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-void-success opacity-60" />
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-void-success" />
+              return (
+                <Collapsible key={section.title} open={isExpanded} onOpenChange={() => toggleSection(sIdx)}>
+                  {sidebarOpen ? (
+                    <CollapsibleTrigger className="w-full flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-muted/40 transition-colors group">
+                      <span className={cn(
+                        "text-[11px] font-semibold uppercase tracking-[0.12em]",
+                        hasActive ? "text-primary" : "text-muted-foreground/60"
+                      )}>
+                        {section.title}
                       </span>
-                    )}
-                  </Link>
-                ))}
-              </CollapsibleContent>
+                      <ChevronDown className={cn(
+                        "w-3 h-3 text-muted-foreground/50 transition-transform duration-200",
+                        !isExpanded && "-rotate-90"
+                      )} />
+                    </CollapsibleTrigger>
+                  ) : null}
 
-              {/* When sidebar collapsed, show items without section headers */}
-              {!sidebarOpen && section.items.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                  title={item.label}
-                  className={cn(
-                    "group flex items-center justify-center h-11 rounded-xl transition-all duration-150",
-                    isActive(item.path)
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  )}
-                >
-                  <item.icon className="w-[22px] h-[22px]" />
-                </Link>
-              ))}
-            </Collapsible>
-          );
-        })}
-      </nav>
+                  <CollapsibleContent className="space-y-0.5 mt-0.5">
+                    {section.items.map((item) => (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={cn(
+                          "group flex items-center gap-3 px-2.5 py-[7px] rounded-lg text-[14px] font-medium transition-all duration-150",
+                          isActive(item.path)
+                            ? "bg-primary/10 text-foreground"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        )}
+                      >
+                        <div className={cn(
+                          "flex items-center justify-center w-5 h-5",
+                          isActive(item.path) && "text-primary"
+                        )}>
+                          <item.icon className={cn(
+                            "w-[15px] h-[15px] shrink-0 transition-colors duration-150",
+                            isActive(item.path) ? "text-primary" : "group-hover:text-foreground"
+                          )} />
+                        </div>
+                        {sidebarOpen && <span>{item.label}</span>}
+                        {item.label === "Live View" && sidebarOpen && (
+                          <span className="ml-auto flex h-1.5 w-1.5 relative">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-void-success opacity-60" />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-void-success" />
+                          </span>
+                        )}
+                      </Link>
+                    ))}
+                  </CollapsibleContent>
+
+                  {/* When sidebar collapsed, show items without section headers */}
+                  {!sidebarOpen && section.items.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setMobileMenuOpen(false)}
+                      title={item.label}
+                      className={cn(
+                        "group flex items-center justify-center h-11 rounded-xl transition-all duration-150",
+                        isActive(item.path)
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      )}
+                    >
+                      <item.icon className="w-[22px] h-[22px]" />
+                    </Link>
+                  ))}
+                </Collapsible>
+              );
+            })}
+          </nav>
+        </ScrollArea>
+      </div>
 
       {/* Footer */}
       <div className="p-3 border-t border-border/60 space-y-0.5">
