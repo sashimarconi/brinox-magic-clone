@@ -176,7 +176,7 @@ const AdminLayout = () => {
         <Link to="/dashboard" className="flex items-center gap-2.5 group">
           {sidebarOpen ? (
             logoOpen ? (
-              <img src={logoOpen} alt="Logo" className="h-7 object-contain" />
+              <img src={logoOpen} alt="Logo" className="h-9 max-w-[160px] object-contain" />
             ) : (
               <>
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
@@ -189,7 +189,7 @@ const AdminLayout = () => {
             )
           ) : (
             logoClosed ? (
-              <img src={logoClosed} alt="Logo" className="w-8 h-8 object-contain" />
+              <img src={logoClosed} alt="Logo" className="w-10 h-10 object-contain" />
             ) : (
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <span className="text-white font-bold text-xs">V</span>
