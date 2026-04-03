@@ -34,6 +34,7 @@ import SaasUsers from "./pages/admin/SaasUsers";
 import SaasAnalytics from "./pages/admin/SaasAnalytics";
 import SaasOrders from "./pages/admin/SaasOrders";
 import AdminPlatformSettings from "./pages/admin/AdminPlatformSettings";
+import AdminDomains from "./pages/admin/AdminDomains";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
