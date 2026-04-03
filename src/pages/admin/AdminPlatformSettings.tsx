@@ -43,10 +43,9 @@ const AdminPlatformSettings = () => {
   const [uploading, setUploading] = useState<string | null>(null);
   const logoOpenRef = useRef<HTMLInputElement>(null);
   const logoClosedRef = useRef<HTMLInputElement>(null);
+  const logoOpenLightRef = useRef<HTMLInputElement>(null);
+  const logoClosedLightRef = useRef<HTMLInputElement>(null);
   const bannerRef = useRef<HTMLInputElement>(null);
-  const [editGateway, setEditGateway] = useState<string | null>(null);
-  const [gwForm, setGwForm] = useState({ display_name: "", description: "", logo_url: "" });
-  const gwLogoRef = useRef<HTMLInputElement>(null);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["platform-settings"],
