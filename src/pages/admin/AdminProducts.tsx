@@ -48,7 +48,7 @@ const emptyForm: ProductForm = {
   free_shipping: true,
   shipping_cost: 0,
   estimated_delivery: "",
-  checkout_type: "external",
+  checkout_type: "pix",
   external_checkout_url: "",
   thank_you_url: "",
   rating: 5.0,
