@@ -161,8 +161,12 @@ const AdminLayout = () => {
     });
   };
 
-  const logoOpen = platformSettings?.sidebar_logo_open;
-  const logoClosed = platformSettings?.sidebar_logo_collapsed;
+  const logoOpen = theme === "light" && platformSettings?.sidebar_logo_open_light
+    ? platformSettings.sidebar_logo_open_light
+    : platformSettings?.sidebar_logo_open;
+  const logoClosed = theme === "light" && platformSettings?.sidebar_logo_collapsed_light
+    ? platformSettings.sidebar_logo_collapsed_light
+    : platformSettings?.sidebar_logo_collapsed;
 
   const SidebarNav = () => (
     <div className="flex flex-col h-full">
