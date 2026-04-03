@@ -30,7 +30,7 @@ const SaasAdminLayout = () => {
     },
   });
 
-  const logoClosed = platformSettings?.sidebar_logo_collapsed;
+  const logoClosed = platformSettings?.sidebar_logo_collapsed || platformSettings?.sidebar_logo_collapsed_light;
 
   useEffect(() => {
     document.documentElement.classList.add("dark");
