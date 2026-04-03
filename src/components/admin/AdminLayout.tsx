@@ -172,8 +172,17 @@ const AdminLayout = () => {
   const SidebarNav = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="h-14 px-4 flex items-center justify-between border-b border-border/60">
-        <Link to="/dashboard" className="flex items-center gap-2.5 group">
+      <div className={cn(
+        "border-b border-border/60 flex items-center",
+        sidebarOpen ? "h-14 px-4 justify-between" : "relative h-[76px] px-2 justify-center"
+      )}>
+        <Link
+          to="/dashboard"
+          className={cn(
+            "group flex items-center",
+            sidebarOpen ? "gap-2.5" : "w-full justify-center"
+          )}
+        >
           {sidebarOpen ? (
             logoOpen ? (
               <img src={logoOpen} alt="Logo" className="h-9 max-w-[160px] object-contain" />
@@ -189,17 +198,20 @@ const AdminLayout = () => {
             )
           ) : (
             logoClosed ? (
-              <img src={logoClosed} alt="Logo" className="w-12 h-12 object-contain" />
+              <img src={logoClosed} alt="Logo" className="w-16 h-16 object-contain" />
             ) : (
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-white font-bold text-xs">V</span>
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <span className="text-white font-bold text-sm">V</span>
               </div>
             )
           )}
         </Link>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="hidden md:flex text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted"
+          className={cn(
+            "hidden md:flex text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted",
+            sidebarOpen ? "" : "absolute right-1 top-2"
+          )}
         >
           <ChevronLeft className={cn("w-3.5 h-3.5 transition-transform duration-200", !sidebarOpen && "rotate-180")} />
         </button>
@@ -269,13 +281,13 @@ const AdminLayout = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   title={item.label}
                   className={cn(
-                    "group flex items-center justify-center py-[7px] rounded-lg transition-all duration-150",
+                    "group flex items-center justify-center h-11 rounded-xl transition-all duration-150",
                     isActive(item.path)
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   )}
                 >
-                  <item.icon className="w-5 h-5" />
+                  <item.icon className="w-[22px] h-[22px]" />
                 </Link>
               ))}
             </Collapsible>
@@ -309,7 +321,7 @@ const AdminLayout = () => {
       <aside
         className={cn(
           "hidden md:flex flex-col fixed top-0 left-0 h-screen border-r border-border/60 z-50 transition-all duration-200",
-          sidebarOpen ? "w-[220px]" : "w-[68px]"
+          sidebarOpen ? "w-[220px]" : "w-[84px]"
         )}
         style={{
           background: theme === "dark" ? 'hsl(240 6% 7% / 0.95)' : 'hsl(0 0% 100% / 0.95)',
@@ -335,7 +347,7 @@ const AdminLayout = () => {
       </aside>
 
       {/* Main content */}
-      <div className={cn("flex-1 transition-all duration-200", sidebarOpen ? "md:ml-[220px]" : "md:ml-[68px]")}>
+      <div className={cn("flex-1 transition-all duration-200", sidebarOpen ? "md:ml-[220px]" : "md:ml-[84px]")}>
         <header className="sticky top-0 z-30 h-14 border-b border-border/60 flex items-center px-5 gap-3" style={{ background: theme === "dark" ? 'hsl(240 6% 7% / 0.8)' : 'hsl(0 0% 100% / 0.8)', backdropFilter: 'blur(20px)' }}>
           <button className="md:hidden text-muted-foreground hover:text-foreground transition-colors" onClick={() => setMobileMenuOpen(true)}>
             <Menu className="w-5 h-5" />
