@@ -365,11 +365,11 @@ const LandingPage = () => {
             </p>
           </FadeIn>
           <div className="grid md:grid-cols-3 gap-5">
-            {[
-              { icon: Store, title: "Lojas Ilimitadas", desc: "Crie quantas lojas precisar, todas gerenciadas em um único painel." },
-              { icon: Settings2, title: "Gestão Centralizada", desc: "Controle todas as suas lojas através de uma única interface intuitiva." },
-              { icon: InfinityIcon, title: "Possibilidades Infinitas", desc: "Expanda seus negócios sem restrições, com total liberdade para crescer." },
-            ].map(({ icon: Icon, title, desc }, i) => (
+            {([
+              { icon: Store as LucideIcon, title: "Lojas Ilimitadas", desc: "Crie quantas lojas precisar, todas gerenciadas em um único painel." },
+              { icon: Settings2 as LucideIcon, title: "Gestão Centralizada", desc: "Controle todas as suas lojas através de uma única interface intuitiva." },
+              { icon: InfinityIcon as LucideIcon, title: "Possibilidades Infinitas", desc: "Expanda seus negócios sem restrições, com total liberdade para crescer." },
+            ] as const).map(({ icon: Icon, title, desc }, i) => (
               <FadeIn key={title} delay={i * 0.1}>
                 <GlassCard className="p-7 text-left h-full">
                   <Icon className="w-6 h-6 text-[hsl(263,70%,58%)] mb-5" />
