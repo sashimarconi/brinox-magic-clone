@@ -57,6 +57,7 @@ const navSections = [
   {
     title: "Configurações",
     items: [
+      { label: "Domínios", path: "/dashboard/domains", icon: Globe },
       { label: "Notificações", path: "/dashboard/notifications", icon: Bell },
       { label: "Plano & Limites", path: "/dashboard/plans", icon: Crown },
     ],
