@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Image as ImageIcon, Palette, ChevronDown, ChevronUp, Link2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Image as ImageIcon, Palette, ChevronDown, ChevronUp, Link2, Upload, X, DollarSign, Tag, Zap, Truck, Star } from "lucide-react";
 import { toast as sonnerToast } from "sonner";
 
 interface ProductForm {
@@ -58,6 +58,58 @@ const emptyForm: ProductForm = {
   video_url: "",
 };
 
+// Format cents input: "19990" -> "199,90"
+const formatCentsInput = (raw: string): string => {
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "";
+  const num = parseInt(digits, 10);
+  const reais = Math.floor(num / 100);
+  const centavos = num % 100;
+  return `${reais},${centavos.toString().padStart(2, "0")}`;
+};
+
+const parseCentsDisplay = (display: string): number => {
+  if (!display) return 0;
+  const clean = display.replace(/\./g, "").replace(",", ".");
+  return parseFloat(clean) || 0;
+};
+
+const numberToDisplay = (num: number): string => {
+  if (!num) return "";
+  return num.toFixed(2).replace(".", ",");
+};
+
+const CurrencyInput = ({ value, onChange, label, icon }: { value: number; onChange: (v: number) => void; label: string; icon?: React.ReactNode }) => {
+  const [display, setDisplay] = useState(numberToDisplay(value));
+
+  useEffect(() => {
+    setDisplay(numberToDisplay(value));
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, "");
+    const formatted = formatCentsInput(raw);
+    setDisplay(formatted);
+    onChange(parseCentsDisplay(formatted));
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">R$</span>
+        <Input
+          value={display}
+          onChange={handleChange}
+          placeholder="0,00"
+          className="pl-9"
+          inputMode="numeric"
+        />
+      </div>
+    </div>
+  );
+};
+
 const AdminProducts = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
@@ -72,8 +124,25 @@ const AdminProducts = () => {
   const [newVariantName, setNewVariantName] = useState("");
   const [newVariantColor, setNewVariantColor] = useState("");
   const [newVariantThumbnail, setNewVariantThumbnail] = useState("");
+  const [creationImages, setCreationImages] = useState<{ url: string; alt: string }[]>([]);
+  const [newCreationImageUrl, setNewCreationImageUrl] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Auto-calculate discount
+  useEffect(() => {
+    if (form.original_price > 0 && form.sale_price > 0 && form.sale_price < form.original_price) {
+      const discount = Math.round(((form.original_price - form.sale_price) / form.original_price) * 100);
+      if (discount !== form.discount_percent) {
+        setForm(prev => ({ ...prev, discount_percent: discount }));
+      }
+    } else if (form.original_price > 0 && form.sale_price >= form.original_price) {
+      if (form.discount_percent !== 0) {
+        setForm(prev => ({ ...prev, discount_percent: 0 }));
+      }
+    }
+  }, [form.original_price, form.sale_price]);
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["admin-products"],
@@ -142,16 +211,29 @@ const AdminProducts = () => {
       if (editingId) {
         const { error } = await supabase.from("products").update(data).eq("id", editingId);
         if (error) throw error;
+        return editingId;
       } else {
-        const { error } = await supabase.from("products").insert(data);
+        const { data: inserted, error } = await supabase.from("products").insert(data).select("id").single();
         if (error) throw error;
+        return inserted.id;
       }
     },
-    onSuccess: () => {
+    onSuccess: async (productId: string) => {
+      // Save creation images if any
+      if (!editingId && creationImages.length > 0) {
+        const imagesToInsert = creationImages.map((img, i) => ({
+          product_id: productId,
+          url: img.url,
+          alt: img.alt || null,
+          sort_order: i,
+        }));
+        await supabase.from("product_images").insert(imagesToInsert);
+      }
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       setDialogOpen(false);
       setEditingId(null);
       setForm(emptyForm);
+      setCreationImages([]);
       toast({ title: editingId ? "Produto atualizado!" : "Produto criado!" });
     },
     onError: (err: Error) => {
@@ -272,6 +354,7 @@ const AdminProducts = () => {
       active: product.active ?? true,
       video_url: product.video_url || "",
     });
+    setCreationImages([]);
     setDialogOpen(true);
   };
 
@@ -284,13 +367,38 @@ const AdminProducts = () => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleImageUpload = async (file: File, forCreation: boolean = false) => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: "Arquivo muito grande", description: "Máximo 10MB", variant: "destructive" });
+      return;
+    }
+    setUploadingImage(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const fileName = `images/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from("product-images").upload(fileName, file);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(fileName);
+      if (forCreation) {
+        setCreationImages(prev => [...prev, { url: urlData.publicUrl, alt: "" }]);
+      } else if (selectedProductId) {
+        addImageMutation.mutate({ product_id: selectedProductId, url: urlData.publicUrl, alt: "" });
+      }
+      toast({ title: "Imagem enviada!" });
+    } catch (err: any) {
+      toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   if (isLoading) return <p className="text-muted-foreground">Carregando...</p>;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-foreground">Produtos</h2>
-        <Button onClick={() => { setEditingId(null); setForm(emptyForm); setDialogOpen(true); }} className="bg-marketplace-red hover:bg-marketplace-red/90 shrink-0">
+        <Button onClick={() => { setEditingId(null); setForm(emptyForm); setCreationImages([]); setDialogOpen(true); }} className="bg-marketplace-red hover:bg-marketplace-red/90 shrink-0">
           <Plus className="w-4 h-4 mr-1" /> <span className="hidden sm:inline">Novo Produto</span><span className="sm:hidden">Novo</span>
         </Button>
       </div>
@@ -348,123 +456,240 @@ const AdminProducts = () => {
         )}
       </div>
 
-      {/* Product form dialog */}
+      {/* Product form dialog — improved visual */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingId ? "Editar Produto" : "Novo Produto"}</DialogTitle>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle className="text-xl font-bold">{editingId ? "Editar Produto" : "Novo Produto"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label>Slug (URL)</Label>
-                <Input value={form.slug} onChange={(e) => updateField("slug", e.target.value)} placeholder="meu-produto" required />
+          <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-6">
+            
+            {/* Section: Basic Info */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground border-b border-border pb-2">
+                <Tag className="w-4 h-4 text-primary" />
+                Informações Básicas
               </div>
-              <div className="space-y-1">
-                <Label>Tag Promo</Label>
-                <Input value={form.promo_tag} onChange={(e) => updateField("promo_tag", e.target.value)} placeholder="Promo do Mês" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Título</Label>
+                  <Input value={form.title} onChange={(e) => updateField("title", e.target.value)} placeholder="Nome do produto" required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Slug (URL)</Label>
+                  <Input value={form.slug} onChange={(e) => updateField("slug", e.target.value)} placeholder="meu-produto" required />
+                </div>
               </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label>Título</Label>
-              <Input value={form.title} onChange={(e) => updateField("title", e.target.value)} required />
-            </div>
-
-            <div className="space-y-1">
-              <Label>Descrição</Label>
-              <Textarea value={form.description} onChange={(e) => updateField("description", e.target.value)} rows={3} />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <Label>Preço original</Label>
-                <Input type="number" step="0.01" value={form.original_price} onChange={(e) => updateField("original_price", parseFloat(e.target.value))} required />
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">Descrição</Label>
+                <Textarea value={form.description} onChange={(e) => updateField("description", e.target.value)} rows={3} placeholder="Descreva seu produto..." />
               </div>
-              <div className="space-y-1">
-                <Label>Preço venda</Label>
-                <Input type="number" step="0.01" value={form.sale_price} onChange={(e) => updateField("sale_price", parseFloat(e.target.value))} required />
-              </div>
-              <div className="space-y-1">
-                <Label>Desconto %</Label>
-                <Input type="number" value={form.discount_percent} onChange={(e) => updateField("discount_percent", parseInt(e.target.value))} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Tag Promocional</Label>
+                  <Input value={form.promo_tag} onChange={(e) => updateField("promo_tag", e.target.value)} placeholder="Promo do Mês" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Entrega Estimada</Label>
+                  <Input value={form.estimated_delivery} onChange={(e) => updateField("estimated_delivery", e.target.value)} placeholder="20 de março" />
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <Label>Avaliação</Label>
-                <Input type="number" step="0.1" value={form.rating} onChange={(e) => updateField("rating", parseFloat(e.target.value))} />
-              </div>
-              <div className="space-y-1">
-                <Label>Nº Avaliações</Label>
-                <Input type="number" value={form.review_count} onChange={(e) => updateField("review_count", parseInt(e.target.value))} />
-              </div>
-              <div className="space-y-1">
-                <Label>Vendidos</Label>
-                <Input type="number" value={form.sold_count} onChange={(e) => updateField("sold_count", parseInt(e.target.value))} />
-              </div>
-            </div>
+            {/* Section: Images (only on creation) */}
+            {!editingId && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground border-b border-border pb-2">
+                  <ImageIcon className="w-4 h-4 text-primary" />
+                  Imagens do Produto
+                </div>
+                
+                {/* Image thumbnails */}
+                {creationImages.length > 0 && (
+                  <div className="flex flex-wrap gap-3">
+                    {creationImages.map((img, i) => (
+                      <div key={i} className="relative group">
+                        <img src={img.url} alt="" className="w-20 h-20 rounded-lg object-cover border border-border" />
+                        <button
+                          type="button"
+                          onClick={() => setCreationImages(prev => prev.filter((_, idx) => idx !== i))}
+                          className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-            <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-              <div className="flex items-center gap-2">
-                <Switch checked={form.flash_sale} onCheckedChange={(v) => updateField("flash_sale", v)} />
-                <Label>Oferta Relâmpago</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={form.free_shipping} onCheckedChange={(v) => updateField("free_shipping", v)} />
-                <Label>Frete Grátis</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={form.active} onCheckedChange={(v) => updateField("active", v)} />
-                <Label>Ativo</Label>
-              </div>
-            </div>
-
-            {form.flash_sale && (
-              <div className="space-y-1">
-                <Label>Termina em</Label>
-                <Input value={form.flash_sale_ends_in} onChange={(e) => updateField("flash_sale_ends_in", e.target.value)} placeholder="2 dia(s)" />
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Cole a URL da imagem"
+                    value={newCreationImageUrl}
+                    onChange={(e) => setNewCreationImageUrl(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-10"
+                    disabled={!newCreationImageUrl}
+                    onClick={() => {
+                      setCreationImages(prev => [...prev, { url: newCreationImageUrl, alt: "" }]);
+                      setNewCreationImageUrl("");
+                    }}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      multiple
+                      onChange={async (e) => {
+                        const files = e.target.files;
+                        if (!files) return;
+                        for (let i = 0; i < files.length; i++) {
+                          await handleImageUpload(files[i], true);
+                        }
+                        e.target.value = "";
+                      }}
+                    />
+                    <Button type="button" variant="outline" size="sm" className="h-10" asChild disabled={uploadingImage}>
+                      <span><Upload className="w-4 h-4 mr-1" /> {uploadingImage ? "..." : "Upload"}</span>
+                    </Button>
+                  </label>
+                </div>
+                <p className="text-[10px] text-muted-foreground">Adicione imagens via URL ou upload. Máximo 10MB por imagem.</p>
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label>Custo frete</Label>
-                <Input type="number" step="0.01" value={form.shipping_cost} onChange={(e) => updateField("shipping_cost", parseFloat(e.target.value))} />
+            {/* Section: Pricing */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground border-b border-border pb-2">
+                <DollarSign className="w-4 h-4 text-primary" />
+                Preços
               </div>
-              <div className="space-y-1">
-                <Label>Entrega estimada</Label>
-                <Input value={form.estimated_delivery} onChange={(e) => updateField("estimated_delivery", e.target.value)} placeholder="20 de março" />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <CurrencyInput
+                  label="Preço Original"
+                  value={form.original_price}
+                  onChange={(v) => updateField("original_price", v)}
+                />
+                <CurrencyInput
+                  label="Preço com Desconto"
+                  value={form.sale_price}
+                  onChange={(v) => updateField("sale_price", v)}
+                />
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Desconto %</Label>
+                  <div className="relative">
+                    <Input
+                      value={form.discount_percent}
+                      readOnly
+                      className="bg-muted/50 cursor-not-allowed pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-bold">%</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Calculado automaticamente</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <CurrencyInput
+                  label="Custo do Frete"
+                  value={form.shipping_cost}
+                  onChange={(v) => updateField("shipping_cost", v)}
+                />
               </div>
             </div>
 
-            <div className="space-y-1">
-              <Label>Tipo de Checkout</Label>
-              <Select value={form.checkout_type} onValueChange={(v) => updateField("checkout_type", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="external">Link Externo</SelectItem>
-                  <SelectItem value="pix">PIX (API)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {form.checkout_type === "external" && (
-              <div className="space-y-1">
-                <Label>URL do Checkout</Label>
-                <Input value={form.external_checkout_url} onChange={(e) => updateField("external_checkout_url", e.target.value)} placeholder="https://pay.hotmart.com/..." />
+            {/* Section: Flash Sale & Toggles */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground border-b border-border pb-2">
+                <Zap className="w-4 h-4 text-primary" />
+                Promoção & Entrega
               </div>
-            )}
-
-            <div className="space-y-1">
-              <Label>Página de Obrigado (Upsell)</Label>
-              <Input value={form.thank_you_url} onChange={(e) => updateField("thank_you_url", e.target.value)} placeholder="https://seusite.com/obrigado" />
-              <p className="text-xs text-muted-foreground">Link externo para redirecionar o cliente após o pagamento ser confirmado</p>
+              <div className="flex flex-wrap items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Switch checked={form.flash_sale} onCheckedChange={(v) => updateField("flash_sale", v)} />
+                  <Label className="text-sm">Oferta Relâmpago</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={form.free_shipping} onCheckedChange={(v) => updateField("free_shipping", v)} />
+                  <Label className="text-sm">Frete Grátis</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={form.active} onCheckedChange={(v) => updateField("active", v)} />
+                  <Label className="text-sm">Ativo</Label>
+                </div>
+              </div>
+              {form.flash_sale && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Termina em</Label>
+                  <Input value={form.flash_sale_ends_in} onChange={(e) => updateField("flash_sale_ends_in", e.target.value)} placeholder="2 dia(s)" />
+                </div>
+              )}
             </div>
 
-            <div className="space-y-2">
-              <Label>Vídeo (opcional)</Label>
+            {/* Section: Social Proof */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground border-b border-border pb-2">
+                <Star className="w-4 h-4 text-primary" />
+                Prova Social
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Avaliação</Label>
+                  <Input type="number" step="0.1" min="0" max="5" value={form.rating} onChange={(e) => updateField("rating", parseFloat(e.target.value))} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Nº Avaliações</Label>
+                  <Input type="number" value={form.review_count} onChange={(e) => updateField("review_count", parseInt(e.target.value))} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Vendidos</Label>
+                  <Input type="number" value={form.sold_count} onChange={(e) => updateField("sold_count", parseInt(e.target.value))} />
+                </div>
+              </div>
+            </div>
+
+            {/* Section: Checkout */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground border-b border-border pb-2">
+                <Truck className="w-4 h-4 text-primary" />
+                Checkout & Links
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">Tipo de Checkout</Label>
+                <Select value={form.checkout_type} onValueChange={(v) => updateField("checkout_type", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="external">Link Externo</SelectItem>
+                    <SelectItem value="pix">PIX (API)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {form.checkout_type === "external" && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">URL do Checkout</Label>
+                  <Input value={form.external_checkout_url} onChange={(e) => updateField("external_checkout_url", e.target.value)} placeholder="https://pay.hotmart.com/..." />
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">Página de Obrigado (Upsell)</Label>
+                <Input value={form.thank_you_url} onChange={(e) => updateField("thank_you_url", e.target.value)} placeholder="https://seusite.com/obrigado" />
+                <p className="text-[10px] text-muted-foreground">Link externo para redirecionar após pagamento confirmado</p>
+              </div>
+            </div>
+
+            {/* Section: Video */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground border-b border-border pb-2">
+                <ImageIcon className="w-4 h-4 text-primary" />
+                Vídeo (opcional)
+              </div>
               <div className="flex gap-2">
                 <Input
                   value={form.video_url}
@@ -496,19 +721,18 @@ const AdminProducts = () => {
                       toast({ title: "Vídeo enviado!" });
                     }}
                   />
-                  <Button type="button" variant="outline" size="sm" className="h-9" asChild>
-                    <span>Upload</span>
+                  <Button type="button" variant="outline" size="sm" className="h-10" asChild>
+                    <span><Upload className="w-4 h-4 mr-1" /> Upload</span>
                   </Button>
                 </label>
               </div>
               {form.video_url && (
                 <video src={form.video_url} className="w-full h-32 rounded-lg object-cover" muted />
               )}
-              <p className="text-[10px] text-muted-foreground">Cole uma URL ou faça upload. Será exibido como primeiro item na galeria.</p>
             </div>
 
-            <Button type="submit" className="w-full bg-marketplace-red hover:bg-marketplace-red/90" disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? "Salvando..." : "Salvar"}
+            <Button type="submit" className="w-full bg-marketplace-red hover:bg-marketplace-red/90 h-11 text-base font-semibold" disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? "Salvando..." : "Salvar Produto"}
             </Button>
           </form>
         </DialogContent>
@@ -532,7 +756,24 @@ const AdminProducts = () => {
             ))}
 
             <div className="border-t border-border pt-3 space-y-2">
-              <Input placeholder="URL da imagem" value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} />
+              <div className="flex gap-2">
+                <Input placeholder="URL da imagem" value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} className="flex-1" />
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) await handleImageUpload(file, false);
+                      e.target.value = "";
+                    }}
+                  />
+                  <Button type="button" variant="outline" size="sm" className="h-10" asChild disabled={uploadingImage}>
+                    <span><Upload className="w-4 h-4" /></span>
+                  </Button>
+                </label>
+              </div>
               <Input placeholder="Texto alternativo" value={newImageAlt} onChange={(e) => setNewImageAlt(e.target.value)} />
               <Button
                 className="w-full"
@@ -582,7 +823,6 @@ const AdminProducts = () => {
               </div>
             </div>
 
-            {/* Existing groups */}
             {variantGroups?.length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-4">
                 Crie uma categoria (ex: "Tamanho", "Cor") para adicionar opções de variante.
@@ -595,7 +835,6 @@ const AdminProducts = () => {
 
               return (
                 <div key={group.id} className="border border-border rounded-lg overflow-hidden">
-                  {/* Group header */}
                   <div
                     className="flex items-center justify-between px-3 py-2.5 bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
                     onClick={() => setExpandedGroupId(isExpanded ? null : group.id)}
@@ -621,10 +860,8 @@ const AdminProducts = () => {
                     </Button>
                   </div>
 
-                  {/* Group content */}
                   {isExpanded && (
                     <div className="p-3 space-y-3">
-                      {/* Existing variants in this group */}
                       {groupVariants.map((v) => (
                         <div key={v.id} className="flex items-center gap-3 bg-muted/20 p-2 rounded-lg">
                           {v.thumbnail_url ? (
@@ -646,7 +883,6 @@ const AdminProducts = () => {
                         </div>
                       ))}
 
-                      {/* Add new variant to this group */}
                       <div className="border-t border-border pt-3 space-y-2">
                         <p className="text-xs font-medium text-muted-foreground">Adicionar opção</p>
                         <Input
