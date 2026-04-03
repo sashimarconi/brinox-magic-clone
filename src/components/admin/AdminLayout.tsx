@@ -275,7 +275,7 @@ const AdminLayout = () => {
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   )}
                 >
-                  <item.icon className="w-[15px] h-[15px]" />
+                  <item.icon className="w-5 h-5" />
                 </Link>
               ))}
             </Collapsible>
