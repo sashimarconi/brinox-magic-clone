@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
+import voidtokLogo from "@/assets/voidtok-logo.png";
 import {
   Zap, ShieldCheck, TrendingUp, Store, Paintbrush, Eye, BarChart3,
   Globe, CreditCard, Smartphone, Package, Settings2,
@@ -135,10 +136,7 @@ const LandingPage = () => {
       <nav className="fixed top-0 w-full z-50 border-b border-white/[0.04]">
         <div className="absolute inset-0 bg-[hsl(240,10%,3.5%)/0.6] backdrop-blur-2xl" />
         <div className="relative max-w-7xl mx-auto flex items-center justify-between px-6 h-16">
-          <span className="text-xl font-bold tracking-tight">
-            <span className="text-[hsl(263,70%,58%)]">Void</span>
-            <span className="text-white/90">Tok</span>
-          </span>
+          <img src={voidtokLogo} alt="VoidTok" className="h-9 object-contain" />
           <div className="hidden md:flex items-center gap-8 text-[13px] text-white/40 font-medium">
             <a href="#recursos" className="hover:text-white transition-colors duration-300">Recursos</a>
             <a href="#funcionalidades" className="hover:text-white transition-colors duration-300">Funcionalidades</a>
@@ -162,6 +160,7 @@ const LandingPage = () => {
           </FadeIn>
 
           <FadeIn delay={0.1}>
+            <img src={voidtokLogo} alt="VoidTok" className="h-14 md:h-20 object-contain mx-auto mt-6" />
             <h1 className="mt-8 text-5xl sm:text-6xl md:text-[5.5rem] font-extrabold tracking-tight leading-[1.05]">
               VENDA QUE{" "}
               <span className="relative">
