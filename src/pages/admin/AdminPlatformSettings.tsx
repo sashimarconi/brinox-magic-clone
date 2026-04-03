@@ -162,15 +162,27 @@ const AdminPlatformSettings = () => {
   const items = [
     {
       key: "sidebar_logo_open",
-      label: "Logo da Sidebar (Aberta)",
-      desc: "Logo exibida quando a sidebar está expandida. Recomendado: 160×32 px (PNG transparente)",
+      label: "Logo da Sidebar Aberta (Dark)",
+      desc: "Logo exibida no tema escuro quando a sidebar está expandida. Recomendado: 160×32 px (PNG transparente)",
       ref: logoOpenRef,
     },
     {
+      key: "sidebar_logo_open_light",
+      label: "Logo da Sidebar Aberta (Light)",
+      desc: "Logo exibida no tema claro quando a sidebar está expandida. Recomendado: 160×32 px (PNG transparente)",
+      ref: logoOpenLightRef,
+    },
+    {
       key: "sidebar_logo_collapsed",
-      label: "Logo da Sidebar (Fechada)",
-      desc: "Ícone exibido quando a sidebar está colapsada. Recomendado: 32×32 px (PNG transparente)",
+      label: "Logo da Sidebar Fechada (Dark)",
+      desc: "Ícone exibido no tema escuro quando a sidebar está colapsada. Recomendado: 32×32 px (PNG transparente)",
       ref: logoClosedRef,
+    },
+    {
+      key: "sidebar_logo_collapsed_light",
+      label: "Logo da Sidebar Fechada (Light)",
+      desc: "Ícone exibido no tema claro quando a sidebar está colapsada. Recomendado: 32×32 px (PNG transparente)",
+      ref: logoClosedLightRef,
     },
     {
       key: "dashboard_banner_url",
