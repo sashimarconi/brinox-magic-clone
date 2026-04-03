@@ -309,7 +309,7 @@ const AdminLayout = () => {
       <aside
         className={cn(
           "hidden md:flex flex-col fixed top-0 left-0 h-screen border-r border-border/60 z-50 transition-all duration-200",
-          sidebarOpen ? "w-[220px]" : "w-16"
+          sidebarOpen ? "w-[220px]" : "w-[68px]"
         )}
         style={{
           background: theme === "dark" ? 'hsl(240 6% 7% / 0.95)' : 'hsl(0 0% 100% / 0.95)',
