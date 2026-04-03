@@ -172,8 +172,17 @@ const AdminLayout = () => {
   const SidebarNav = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="h-14 px-4 flex items-center justify-between border-b border-border/60">
-        <Link to="/dashboard" className="flex items-center gap-2.5 group">
+      <div className={cn(
+        "border-b border-border/60 flex items-center",
+        sidebarOpen ? "h-14 px-4 justify-between" : "relative h-[76px] px-2 justify-center"
+      )}>
+        <Link
+          to="/dashboard"
+          className={cn(
+            "group flex items-center",
+            sidebarOpen ? "gap-2.5" : "w-full justify-center"
+          )}
+        >
           {sidebarOpen ? (
             logoOpen ? (
               <img src={logoOpen} alt="Logo" className="h-9 max-w-[160px] object-contain" />
@@ -189,17 +198,20 @@ const AdminLayout = () => {
             )
           ) : (
             logoClosed ? (
-              <img src={logoClosed} alt="Logo" className="w-12 h-12 object-contain" />
+              <img src={logoClosed} alt="Logo" className="w-16 h-16 object-contain" />
             ) : (
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-white font-bold text-xs">V</span>
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <span className="text-white font-bold text-sm">V</span>
               </div>
             )
           )}
         </Link>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="hidden md:flex text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted"
+          className={cn(
+            "hidden md:flex text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted",
+            sidebarOpen ? "" : "absolute right-1 top-2"
+          )}
         >
           <ChevronLeft className={cn("w-3.5 h-3.5 transition-transform duration-200", !sidebarOpen && "rotate-180")} />
         </button>
