@@ -335,7 +335,7 @@ const AdminLayout = () => {
       </aside>
 
       {/* Main content */}
-      <div className={cn("flex-1 transition-all duration-200", sidebarOpen ? "md:ml-[220px]" : "md:ml-16")}>
+      <div className={cn("flex-1 transition-all duration-200", sidebarOpen ? "md:ml-[220px]" : "md:ml-[68px]")}>
         <header className="sticky top-0 z-30 h-14 border-b border-border/60 flex items-center px-5 gap-3" style={{ background: theme === "dark" ? 'hsl(240 6% 7% / 0.8)' : 'hsl(0 0% 100% / 0.8)', backdropFilter: 'blur(20px)' }}>
           <button className="md:hidden text-muted-foreground hover:text-foreground transition-colors" onClick={() => setMobileMenuOpen(true)}>
             <Menu className="w-5 h-5" />
