@@ -216,7 +216,7 @@ const AdminLayout = () => {
               {sidebarOpen ? (
                 <CollapsibleTrigger className="w-full flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-muted/40 transition-colors group">
                   <span className={cn(
-                    "text-[10px] font-semibold uppercase tracking-[0.14em]",
+                    "text-[11px] font-semibold uppercase tracking-[0.12em]",
                     hasActive ? "text-primary" : "text-muted-foreground/60"
                   )}>
                     {section.title}
@@ -235,7 +235,7 @@ const AdminLayout = () => {
                     to={item.path}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      "group flex items-center gap-3 px-2.5 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150",
+                      "group flex items-center gap-3 px-2.5 py-[7px] rounded-lg text-[14px] font-medium transition-all duration-150",
                       isActive(item.path)
                         ? "bg-primary/10 text-foreground"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
