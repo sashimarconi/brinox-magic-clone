@@ -82,7 +82,7 @@ const SaasAdminLayout = () => {
         <div className="h-14 px-4 flex items-center justify-between border-b border-border/60">
           <Link to="/admin" className="flex items-center gap-2.5 group">
             {logoClosed ? (
-              <img src={logoClosed} alt="Logo" className="w-8 h-8 object-contain" />
+              <img src={logoClosed} alt="Logo" className="w-14 h-14 object-contain" />
             ) : (
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-destructive to-void-warning flex items-center justify-center">
                 <Shield className="w-4 h-4 text-white" />

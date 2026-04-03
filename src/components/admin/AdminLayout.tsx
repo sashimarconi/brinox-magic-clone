@@ -189,7 +189,7 @@ const AdminLayout = () => {
             )
           ) : (
             logoClosed ? (
-              <img src={logoClosed} alt="Logo" className="w-10 h-10 object-contain" />
+              <img src={logoClosed} alt="Logo" className="w-14 h-14 object-contain" />
             ) : (
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <span className="text-white font-bold text-xs">V</span>
