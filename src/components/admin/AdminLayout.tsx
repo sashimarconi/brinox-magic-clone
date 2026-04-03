@@ -289,14 +289,14 @@ const AdminLayout = () => {
           to="/"
           className="flex items-center gap-3 px-2.5 py-[7px] rounded-lg text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors group"
         >
-          <ExternalLink className="w-[15px] h-[15px] shrink-0" />
+          <ExternalLink className={cn("shrink-0", sidebarOpen ? "w-[15px] h-[15px]" : "w-5 h-5")} />
           {sidebarOpen && <span>Ver Loja</span>}
         </Link>
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-2.5 py-[7px] rounded-lg text-[13px] text-muted-foreground hover:text-destructive hover:bg-destructive/8 transition-colors"
         >
-          <LogOut className="w-[15px] h-[15px] shrink-0" />
+          <LogOut className={cn("shrink-0", sidebarOpen ? "w-[15px] h-[15px]" : "w-5 h-5")} />
           {sidebarOpen && <span>Sair</span>}
         </button>
       </div>
