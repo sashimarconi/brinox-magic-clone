@@ -91,12 +91,22 @@ const AdminLayout = () => {
     },
   });
 
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    return (localStorage.getItem("admin-theme") as "dark" | "light") || "dark";
+  });
+
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.add("dark");
-    localStorage.setItem("admin-theme", "dark");
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    localStorage.setItem("admin-theme", theme);
     return () => { root.classList.remove("dark"); };
-  }, []);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === "dark" ? "light" : "dark");
 
   useEffect(() => {
     const checkAuth = async () => {
