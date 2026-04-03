@@ -351,7 +351,7 @@ const LandingPage = () => {
         <div className="max-w-6xl mx-auto relative">
           <FadeIn>
             <Badge dotColor="hsl(199,89%,48%)">
-              <Infinity className="w-3 h-3 inline mr-1" />
+              <InfinityIcon className="w-3 h-3 inline mr-1" />
               LOJAS ILIMITADAS
             </Badge>
             <h2 className="mt-8 text-4xl md:text-5xl font-bold tracking-tight mb-5">
@@ -366,7 +366,7 @@ const LandingPage = () => {
             {[
               { icon: Store, title: "Lojas Ilimitadas", desc: "Crie quantas lojas precisar, todas gerenciadas em um único painel." },
               { icon: Settings2, title: "Gestão Centralizada", desc: "Controle todas as suas lojas através de uma única interface intuitiva." },
-              { icon: Infinity, title: "Possibilidades Infinitas", desc: "Expanda seus negócios sem restrições, com total liberdade para crescer." },
+              { icon: InfinityIcon, title: "Possibilidades Infinitas", desc: "Expanda seus negócios sem restrições, com total liberdade para crescer." },
             ].map(({ icon: Icon, title, desc }, i) => (
               <FadeIn key={title} delay={i * 0.1}>
                 <GlassCard className="p-7 text-left h-full">
