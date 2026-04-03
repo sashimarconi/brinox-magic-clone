@@ -5,7 +5,7 @@ import {
   Package, Star, ShieldCheck, LogOut, Menu, CreditCard, Truck, Tag,
   BarChart3, LayoutDashboard, ClipboardList, Store, PenTool, Radio,
   ChevronLeft, ExternalLink, ShoppingCart, Webhook, Bell, Zap, Crown,
-  ChevronDown
+  ChevronDown, Sun, Moon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SaleNotification from "@/components/admin/SaleNotification";
@@ -91,12 +91,22 @@ const AdminLayout = () => {
     },
   });
 
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    return (localStorage.getItem("admin-theme") as "dark" | "light") || "dark";
+  });
+
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.add("dark");
-    localStorage.setItem("admin-theme", "dark");
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    localStorage.setItem("admin-theme", theme);
     return () => { root.classList.remove("dark"); };
-  }, []);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === "dark" ? "light" : "dark");
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -151,8 +161,12 @@ const AdminLayout = () => {
     });
   };
 
-  const logoOpen = platformSettings?.sidebar_logo_open;
-  const logoClosed = platformSettings?.sidebar_logo_collapsed;
+  const logoOpen = theme === "light" && platformSettings?.sidebar_logo_open_light
+    ? platformSettings.sidebar_logo_open_light
+    : platformSettings?.sidebar_logo_open;
+  const logoClosed = theme === "light" && platformSettings?.sidebar_logo_collapsed_light
+    ? platformSettings.sidebar_logo_collapsed_light
+    : platformSettings?.sidebar_logo_collapsed;
 
   const SidebarNav = () => (
     <div className="flex flex-col h-full">
@@ -289,14 +303,17 @@ const AdminLayout = () => {
   );
 
   return (
-    <div className="min-h-screen void-gradient-bg flex">
+    <div className={cn("min-h-screen flex", theme === "dark" ? "void-gradient-bg" : "bg-background")}>
       {/* Desktop sidebar */}
       <aside
         className={cn(
           "hidden md:flex flex-col fixed top-0 left-0 h-screen border-r border-border/60 z-50 transition-all duration-200",
           sidebarOpen ? "w-[220px]" : "w-16"
         )}
-        style={{ background: 'hsl(240 6% 7% / 0.95)', backdropFilter: 'blur(20px)' }}
+        style={{
+          background: theme === "dark" ? 'hsl(240 6% 7% / 0.95)' : 'hsl(0 0% 100% / 0.95)',
+          backdropFilter: 'blur(20px)'
+        }}
       >
         <SidebarNav />
       </aside>
@@ -318,12 +335,19 @@ const AdminLayout = () => {
 
       {/* Main content */}
       <div className={cn("flex-1 transition-all duration-200", sidebarOpen ? "md:ml-[220px]" : "md:ml-16")}>
-        <header className="sticky top-0 z-30 h-14 border-b border-border/60 flex items-center px-5 gap-3" style={{ background: 'hsl(240 6% 7% / 0.8)', backdropFilter: 'blur(20px)' }}>
+        <header className="sticky top-0 z-30 h-14 border-b border-border/60 flex items-center px-5 gap-3" style={{ background: theme === "dark" ? 'hsl(240 6% 7% / 0.8)' : 'hsl(0 0% 100% / 0.8)', backdropFilter: 'blur(20px)' }}>
           <button className="md:hidden text-muted-foreground hover:text-foreground transition-colors" onClick={() => setMobileMenuOpen(true)}>
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             <PushNotificationToggle />
             <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <span className="text-white text-[10px] font-bold">VT</span>
