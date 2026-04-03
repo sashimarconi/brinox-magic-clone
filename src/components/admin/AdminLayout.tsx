@@ -216,7 +216,7 @@ const AdminLayout = () => {
               {sidebarOpen ? (
                 <CollapsibleTrigger className="w-full flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-muted/40 transition-colors group">
                   <span className={cn(
-                    "text-[10px] font-semibold uppercase tracking-[0.14em]",
+                    "text-[11px] font-semibold uppercase tracking-[0.12em]",
                     hasActive ? "text-primary" : "text-muted-foreground/60"
                   )}>
                     {section.title}
