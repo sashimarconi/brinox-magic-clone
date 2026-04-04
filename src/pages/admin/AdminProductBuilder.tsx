@@ -7,10 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { PRODUCT_THEMES, type ProductThemePreset } from "@/data/productThemes";
 import {
   GripVertical, Eye, EyeOff, Palette, Type, Layout, Sparkles,
   Save, Smartphone, Monitor, Upload, Image, DollarSign, Truck,
   ShieldCheck, Store, Star, FileText, ShoppingBag, ChevronDown, ChevronRight,
+  Layers, Check,
 } from "lucide-react";
 
 interface Section {
@@ -117,10 +119,11 @@ const AdminProductBuilder = () => {
   const queryClient = useQueryClient();
   const [config, setConfig] = useState<ProductBuilderConfig>(DEFAULT_CONFIG);
   const [configId, setConfigId] = useState<string | null>(null);
-  const [activePanel, setActivePanel] = useState<string>("layout");
+  const [activePanel, setActivePanel] = useState<string>("temas");
   const [previewMode, setPreviewMode] = useState<"mobile" | "desktop">("mobile");
   const [dragItem, setDragItem] = useState<number | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [activeThemeId, setActiveThemeId] = useState<string>("tiktok-shop");
   const logoInputRef = useRef<HTMLInputElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -161,9 +164,22 @@ const AdminProductBuilder = () => {
           texts: { ...DEFAULT_CONFIG.texts, ...(parsed.texts || {}) },
           conversion: { ...DEFAULT_CONFIG.conversion, ...(parsed.conversion || {}) },
         });
+        if (parsed.theme_id) setActiveThemeId(parsed.theme_id);
       }
     }
   }, [data]);
+
+  const applyTheme = (theme: ProductThemePreset) => {
+    const logoUrl = config.appearance.header_logo_url;
+    setConfig({
+      sections: theme.config.sections.map((s) => ({ ...s })),
+      appearance: { ...theme.config.appearance, header_logo_url: logoUrl },
+      texts: { ...theme.config.texts },
+      conversion: { ...theme.config.conversion },
+    });
+    setActiveThemeId(theme.id);
+    toast({ title: `Tema "${theme.name}" aplicado!`, description: "Personalize à vontade e salve quando quiser." });
+  };
 
   // Reload iframe when config changes
   const reloadPreview = () => {
@@ -174,10 +190,10 @@ const AdminProductBuilder = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!configId) return;
+      const configWithTheme = { ...config, theme_id: activeThemeId };
       const { error } = await supabase
         .from("product_page_builder_config" as any)
-        .update({ config: config as any, updated_at: new Date().toISOString() } as any)
+        .update({ config: configWithTheme as any, updated_at: new Date().toISOString() } as any)
         .eq("id", configId);
       if (error) throw error;
 
@@ -253,6 +269,7 @@ const AdminProductBuilder = () => {
   };
 
   const panels = [
+    { id: "temas", label: "Temas", icon: <Layers className="w-4 h-4" />, desc: "Escolha um estilo base" },
     { id: "layout", label: "Layout", icon: <Layout className="w-4 h-4" />, desc: "Seções e ordem" },
     { id: "aparencia", label: "Aparência", icon: <Palette className="w-4 h-4" />, desc: "Cores, logo e estilo" },
     { id: "textos", label: "Textos", icon: <Type className="w-4 h-4" />, desc: "Rótulos e textos" },
@@ -293,6 +310,50 @@ const AdminProductBuilder = () => {
 
               {activePanel === panel.id && (
                 <div className="p-4 border-b border-border bg-muted/20 space-y-4">
+                  {/* ===== TEMAS ===== */}
+                  {panel.id === "temas" && (
+                    <div className="space-y-2">
+                      {PRODUCT_THEMES.map((theme) => (
+                        <button
+                          key={theme.id}
+                          onClick={() => applyTheme(theme)}
+                          className={`w-full text-left rounded-xl border-2 p-3 transition-all ${
+                            activeThemeId === theme.id
+                              ? "border-primary bg-primary/5 shadow-md"
+                              : "border-border bg-card hover:border-muted-foreground/30"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            {/* Mini preview */}
+                            <div
+                              className="w-12 h-16 rounded-lg border border-border/50 flex flex-col items-center justify-end overflow-hidden shrink-0"
+                              style={{ backgroundColor: theme.preview.bgColor }}
+                            >
+                              <div
+                                className="w-8 h-2 rounded-sm mb-1.5"
+                                style={{ backgroundColor: theme.preview.buttonColor }}
+                              />
+                              <div
+                                className="w-full h-2"
+                                style={{ backgroundColor: theme.preview.headerColor }}
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm">{theme.emoji}</span>
+                                <span className="text-xs font-semibold text-foreground">{theme.name}</span>
+                                {activeThemeId === theme.id && (
+                                  <Check className="w-3.5 h-3.5 text-primary ml-auto shrink-0" />
+                                )}
+                              </div>
+                              <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{theme.description}</p>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   {/* ===== LAYOUT ===== */}
                   {panel.id === "layout" && (
                     <div className="space-y-1">
