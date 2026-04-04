@@ -310,6 +310,50 @@ const AdminProductBuilder = () => {
 
               {activePanel === panel.id && (
                 <div className="p-4 border-b border-border bg-muted/20 space-y-4">
+                  {/* ===== TEMAS ===== */}
+                  {panel.id === "temas" && (
+                    <div className="space-y-2">
+                      {PRODUCT_THEMES.map((theme) => (
+                        <button
+                          key={theme.id}
+                          onClick={() => applyTheme(theme)}
+                          className={`w-full text-left rounded-xl border-2 p-3 transition-all ${
+                            activeThemeId === theme.id
+                              ? "border-primary bg-primary/5 shadow-md"
+                              : "border-border bg-card hover:border-muted-foreground/30"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            {/* Mini preview */}
+                            <div
+                              className="w-12 h-16 rounded-lg border border-border/50 flex flex-col items-center justify-end overflow-hidden shrink-0"
+                              style={{ backgroundColor: theme.preview.bgColor }}
+                            >
+                              <div
+                                className="w-8 h-2 rounded-sm mb-1.5"
+                                style={{ backgroundColor: theme.preview.buttonColor }}
+                              />
+                              <div
+                                className="w-full h-2"
+                                style={{ backgroundColor: theme.preview.headerColor }}
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm">{theme.emoji}</span>
+                                <span className="text-xs font-semibold text-foreground">{theme.name}</span>
+                                {activeThemeId === theme.id && (
+                                  <Check className="w-3.5 h-3.5 text-primary ml-auto shrink-0" />
+                                )}
+                              </div>
+                              <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{theme.description}</p>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   {/* ===== LAYOUT ===== */}
                   {panel.id === "layout" && (
                     <div className="space-y-1">
