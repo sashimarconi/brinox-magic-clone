@@ -269,6 +269,7 @@ const AdminProductBuilder = () => {
   };
 
   const panels = [
+    { id: "temas", label: "Temas", icon: <Layers className="w-4 h-4" />, desc: "Escolha um estilo base" },
     { id: "layout", label: "Layout", icon: <Layout className="w-4 h-4" />, desc: "Seções e ordem" },
     { id: "aparencia", label: "Aparência", icon: <Palette className="w-4 h-4" />, desc: "Cores, logo e estilo" },
     { id: "textos", label: "Textos", icon: <Type className="w-4 h-4" />, desc: "Rótulos e textos" },
