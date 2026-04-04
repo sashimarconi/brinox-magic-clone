@@ -164,9 +164,22 @@ const AdminProductBuilder = () => {
           texts: { ...DEFAULT_CONFIG.texts, ...(parsed.texts || {}) },
           conversion: { ...DEFAULT_CONFIG.conversion, ...(parsed.conversion || {}) },
         });
+        if (parsed.theme_id) setActiveThemeId(parsed.theme_id);
       }
     }
   }, [data]);
+
+  const applyTheme = (theme: ProductThemePreset) => {
+    const logoUrl = config.appearance.header_logo_url;
+    setConfig({
+      sections: theme.config.sections.map((s) => ({ ...s })),
+      appearance: { ...theme.config.appearance, header_logo_url: logoUrl },
+      texts: { ...theme.config.texts },
+      conversion: { ...theme.config.conversion },
+    });
+    setActiveThemeId(theme.id);
+    toast({ title: `Tema "${theme.name}" aplicado!`, description: "Personalize à vontade e salve quando quiser." });
+  };
 
   // Reload iframe when config changes
   const reloadPreview = () => {
