@@ -7,10 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { PRODUCT_THEMES, type ProductThemePreset } from "@/data/productThemes";
 import {
   GripVertical, Eye, EyeOff, Palette, Type, Layout, Sparkles,
   Save, Smartphone, Monitor, Upload, Image, DollarSign, Truck,
   ShieldCheck, Store, Star, FileText, ShoppingBag, ChevronDown, ChevronRight,
+  Layers, Check,
 } from "lucide-react";
 
 interface Section {
