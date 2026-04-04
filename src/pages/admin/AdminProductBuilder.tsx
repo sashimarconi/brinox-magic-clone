@@ -119,10 +119,11 @@ const AdminProductBuilder = () => {
   const queryClient = useQueryClient();
   const [config, setConfig] = useState<ProductBuilderConfig>(DEFAULT_CONFIG);
   const [configId, setConfigId] = useState<string | null>(null);
-  const [activePanel, setActivePanel] = useState<string>("layout");
+  const [activePanel, setActivePanel] = useState<string>("temas");
   const [previewMode, setPreviewMode] = useState<"mobile" | "desktop">("mobile");
   const [dragItem, setDragItem] = useState<number | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [activeThemeId, setActiveThemeId] = useState<string>("tiktok-shop");
   const logoInputRef = useRef<HTMLInputElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
