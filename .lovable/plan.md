@@ -1,52 +1,36 @@
 
 
-# Remover limite de views de todos os planos
+## Sistema de Temas para o Builder de Produto
 
-Atualizar o sistema para que todos os planos (Free, Pro, Enterprise) tenham views/mês ilimitados. A única diferença entre planos será a taxa de transação e o preço mensal.
+### Conceito
+Adicionar um seletor de "Temas" no topo do Product Builder, onde cada tema é um preset completo de configurações (cores, layout, textos, seções habilitadas). O tema atual (TikTok Shop) vira o primeiro preset, e novos temas podem ser adicionados facilmente.
 
-## Mudanças
+### Implementação
 
-### 1. Migration SQL
-- Remover colunas `monthly_views_used`, `monthly_views_limit`, `views_reset_at` da tabela `user_plans`
-- Remover função `increment_plan_views`
-- Atualizar `admin_list_users` para não retornar campos de views
-- Atualizar `admin_update_user_plan` para não setar `monthly_views_limit`
+**1. Criar arquivo de presets de temas** (`src/data/productThemes.ts`)
+- Cada tema: `id`, `name`, `description`, `thumbnail` (emoji ou ícone), e um objeto `ProductBuilderConfig` completo
+- Temas iniciais:
+  - **TikTok Shop** (atual) — fundo claro, botão vermelho, layout mobile-first
+  - **Shopify Classic** — visual clean, botão verde, bordas arredondadas suaves
+  - **Dark Premium** — fundo escuro, botão dourado, visual luxo
+  - **Minimal** — cores neutras, sem badges de conversão, foco no produto
 
-### 2. `src/lib/plans.ts`
-- Remover `monthlyViews` do `PlanLimits` (e todo o tipo `PlanLimits` se ficar vazio)
-- Adicionar `transactionFeePercent` e `monthlyPrice` ao `PlanInfo`
-- Free: 2.5%, R$0 | Pro: 2.0%, R$147 | Enterprise: 1.5%, R$497
+**2. Atualizar `AdminProductBuilder.tsx`**
+- Adicionar seção "Tema" no topo com cards visuais para cada tema
+- Ao selecionar um tema, preencher todas as configs (appearance, texts, conversion, sections) com os valores do preset
+- Mostrar confirmação antes de sobrescrever configs customizadas
+- Após aplicar o tema, o usuário ainda pode personalizar livremente (o tema é só o ponto de partida)
 
-### 3. `src/hooks/usePlanLimits.ts`
-- Remover toda lógica de views (monthlyViewsUsed, monthlyViewsLimit)
-- Remover contagem de recursos
-- Simplificar para retornar apenas plan info
+**3. Atualizar `product_page_builder_config`**
+- Adicionar campo `theme_id` ao JSON `config` salvo no banco para lembrar qual tema base foi usado (sem migration, é só um campo dentro do JSONB)
 
-### 4. `src/pages/admin/AdminPlans.tsx`
-- Remover card de "Visualizações/mês"
-- Remover grid de uso de recursos
-- Mostrar: plano atual, taxa de transação, preço mensal
-- Comparativo focado em taxa e preço
+**4. Atualizar `ProductPage.tsx`**
+- Nenhuma mudança necessária — o ProductPage já consome o `config` JSONB dinamicamente, então qualquer preset de tema funciona automaticamente
 
-### 5. `src/pages/admin/SaasUsers.tsx`
-- Remover coluna "Views (mês)" da tabela de usuários
+### Visual dos cards de tema
+Cards com preview miniatura, nome e descrição curta. O tema ativo fica com borda destacada em cyan. Botão "Aplicar tema" com confirmação.
 
-### 6. `src/hooks/usePageTracking.ts`
-- Remover chamada a `increment_plan_views` se existir
-
-### 7. Tabela `invoices` (nova)
-- Criar tabela para registrar taxas por pedido pago (order_id, user_id, order_total, fee_percent, fee_amount, created_at)
-- RLS: usuário lê próprias invoices
-- Trigger: ao marcar order como `paid`, insere invoice automaticamente
-
-### 8. Memory
-- Atualizar `mem://features/plan-system`
-
-## Arquivos
-- Nova migration SQL
-- `src/lib/plans.ts`
-- `src/hooks/usePlanLimits.ts`
-- `src/pages/admin/AdminPlans.tsx`
-- `src/pages/admin/SaasUsers.tsx`
-- `src/hooks/usePageTracking.ts` (se referencia views)
+### Arquivos modificados
+- `src/data/productThemes.ts` (novo)
+- `src/pages/admin/AdminProductBuilder.tsx` (seletor de temas)
 
