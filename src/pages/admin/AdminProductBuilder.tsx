@@ -190,10 +190,10 @@ const AdminProductBuilder = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!configId) return;
+      const configWithTheme = { ...config, theme_id: activeThemeId };
       const { error } = await supabase
         .from("product_page_builder_config" as any)
-        .update({ config: config as any, updated_at: new Date().toISOString() } as any)
+        .update({ config: configWithTheme as any, updated_at: new Date().toISOString() } as any)
         .eq("id", configId);
       if (error) throw error;
 
