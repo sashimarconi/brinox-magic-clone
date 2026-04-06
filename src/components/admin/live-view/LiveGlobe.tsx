@@ -1,29 +1,9 @@
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import Globe, { GlobeMethods } from "react-globe.gl";
-import * as topojson from "topojson-client";
-import type { Topology } from "topojson-specification";
-
-interface VisitorPoint {
-  lat: number;
-  lng: number;
-  size: number;
-  id: string;
-}
-
-interface ArcData {
-  startLat: number;
-  startLng: number;
-  endLat: number;
-  endLng: number;
-}
+import { useMemo } from "react";
 
 interface LiveGlobeProps {
   visitors: { session_id: string; latitude?: number | null; longitude?: number | null }[];
   className?: string;
 }
-
-const SERVER_LAT = -23.55;
-const SERVER_LNG = -46.63;
 
 function sessionToCoords(sessionId: string): { lat: number; lng: number } {
   let hash = 0;
@@ -36,122 +16,109 @@ function sessionToCoords(sessionId: string): { lat: number; lng: number } {
   return { lat, lng };
 }
 
+// Convert lat/lng to x/y percentage on a simple equirectangular projection
+function toXY(lat: number, lng: number) {
+  const x = ((lng + 180) / 360) * 100;
+  const y = ((90 - lat) / 180) * 100;
+  return { x, y };
+}
+
 export default function LiveGlobe({ visitors, className }: LiveGlobeProps) {
-  const globeRef = useRef<GlobeMethods | undefined>(undefined);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [polygons, setPolygons] = useState<any[]>([]);
-  const [dimensions, setDimensions] = useState({ width: 400, height: 400 });
-
-  useEffect(() => {
-    fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json")
-      .then(r => r.json())
-      .then((topoData: Topology) => {
-        const land = topojson.feature(topoData, topoData.objects.land);
-        const features = (land as any).features || [land];
-        setPolygons(features);
-      })
-      .catch(console.error);
-  }, []);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const obs = new ResizeObserver(entries => {
-      const { width, height } = entries[0].contentRect;
-      if (width > 0 && height > 0) {
-        setDimensions({ width, height });
-      }
-    });
-    obs.observe(containerRef.current);
-    return () => obs.disconnect();
-  }, []);
-
-  const points: VisitorPoint[] = useMemo(() => {
+  const points = useMemo(() => {
     return visitors.map(v => {
-      // Use real coordinates if available, fallback to hash-based
       const hasReal = v.latitude != null && v.longitude != null && v.latitude !== 0 && v.longitude !== 0;
       const lat = hasReal ? v.latitude! : sessionToCoords(v.session_id).lat;
       const lng = hasReal ? v.longitude! : sessionToCoords(v.session_id).lng;
-      return { lat, lng, size: 0.6, id: v.session_id };
+      return { ...toXY(lat, lng), id: v.session_id };
     });
   }, [visitors]);
 
-  const arcs: ArcData[] = useMemo(() => {
-    return points.map(p => ({
-      startLat: p.lat,
-      startLng: p.lng,
-      endLat: SERVER_LAT,
-      endLng: SERVER_LNG,
-    }));
-  }, [points]);
-
-  const serverPoint = useMemo(() => [
-    { lat: SERVER_LAT, lng: SERVER_LNG, size: 1.2, id: "server", color: "#a78bfa" }
-  ], []);
-
-  const handleGlobeReady = useCallback(() => {
-    if (globeRef.current) {
-      globeRef.current.pointOfView({ lat: -15, lng: -50, altitude: 2.5 }, 1000);
-
-      const controls = globeRef.current.controls();
-      if (controls) {
-        (controls as any).autoRotate = false;
-        (controls as any).enableDamping = true;
-        (controls as any).dampingFactor = 0.1;
-        (controls as any).minDistance = 200;
-        (controls as any).maxDistance = 600;
-        (controls as any).rotateSpeed = 0.5;
-        (controls as any).zoomSpeed = 0.8;
-      }
-    }
-  }, []);
-
-  const allPoints = useMemo(() => [...points, ...serverPoint], [points, serverPoint]);
+  const serverPoint = toXY(-23.55, -46.63);
 
   return (
-    <div
-      ref={containerRef}
-      className={className}
-      style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
-    >
-      {polygons.length > 0 && dimensions.width > 0 && (
-        <Globe
-          ref={globeRef}
-          width={dimensions.width}
-          height={dimensions.height}
-          onGlobeReady={handleGlobeReady}
-          globeImageUrl=""
-          backgroundColor="rgba(0,0,0,0)"
-          showAtmosphere={true}
-          atmosphereColor="#6c3ce0"
-          atmosphereAltitude={0.15}
+    <div className={className} style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}>
+      {/* Dark map background with grid */}
+      <div className="absolute inset-0 bg-[#0c0a1a] rounded-xl overflow-hidden">
+        {/* Grid lines */}
+        <svg className="absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg">
+          {/* Horizontal lines */}
+          {Array.from({ length: 9 }, (_, i) => {
+            const y = ((i + 1) / 10) * 100;
+            return <line key={`h${i}`} x1="0%" y1={`${y}%`} x2="100%" y2={`${y}%`} stroke="#8b5cf6" strokeWidth="0.5" />;
+          })}
+          {/* Vertical lines */}
+          {Array.from({ length: 17 }, (_, i) => {
+            const x = ((i + 1) / 18) * 100;
+            return <line key={`v${i}`} x1={`${x}%`} y1="0%" x2={`${x}%`} y2="100%" stroke="#8b5cf6" strokeWidth="0.5" />;
+          })}
+        </svg>
 
-          polygonsData={polygons}
-          polygonCapColor={() => "rgba(100, 60, 200, 0.15)"}
-          polygonSideColor={() => "rgba(100, 60, 200, 0.05)"}
-          polygonStrokeColor={() => "rgba(140, 100, 230, 0.4)"}
-          polygonAltitude={0.006}
+        {/* Continent outlines - simplified SVG paths */}
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1000 500" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          {/* South America */}
+          <path d="M280,220 L290,210 L310,215 L320,230 L315,260 L310,280 L300,310 L295,340 L285,360 L275,370 L270,350 L265,320 L270,290 L275,260 L280,240 Z" fill="rgba(139,92,246,0.15)" stroke="rgba(139,92,246,0.4)" strokeWidth="1" />
+          {/* North America */}
+          <path d="M180,80 L220,70 L260,75 L280,90 L285,110 L290,130 L280,150 L270,170 L260,180 L250,190 L240,185 L220,180 L200,170 L190,150 L180,130 L175,110 L180,90 Z" fill="rgba(139,92,246,0.15)" stroke="rgba(139,92,246,0.4)" strokeWidth="1" />
+          {/* Africa */}
+          <path d="M490,200 L510,190 L530,195 L540,210 L545,230 L540,260 L535,280 L525,300 L510,310 L500,300 L495,280 L490,260 L488,240 L490,220 Z" fill="rgba(139,92,246,0.15)" stroke="rgba(139,92,246,0.4)" strokeWidth="1" />
+          {/* Europe */}
+          <path d="M480,100 L500,95 L520,100 L530,110 L525,130 L515,140 L505,145 L495,140 L485,130 L480,120 Z" fill="rgba(139,92,246,0.15)" stroke="rgba(139,92,246,0.4)" strokeWidth="1" />
+          {/* Asia */}
+          <path d="M540,80 L600,70 L660,75 L720,85 L750,100 L760,120 L740,140 L710,160 L680,170 L650,175 L620,170 L590,160 L560,145 L545,130 L540,110 Z" fill="rgba(139,92,246,0.15)" stroke="rgba(139,92,246,0.4)" strokeWidth="1" />
+          {/* Australia */}
+          <path d="M740,290 L770,280 L800,285 L810,300 L800,320 L780,325 L760,320 L745,310 Z" fill="rgba(139,92,246,0.15)" stroke="rgba(139,92,246,0.4)" strokeWidth="1" />
+        </svg>
 
-          pointsData={allPoints}
-          pointLat="lat"
-          pointLng="lng"
-          pointColor={(d: any) => d.color || "#4ADE80"}
-          pointAltitude={0.02}
-          pointRadius="size"
-          pointsMerge={false}
+        {/* Connection arcs from visitors to server */}
+        <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+          {points.map(p => (
+            <line
+              key={`arc-${p.id}`}
+              x1={`${p.x}%`}
+              y1={`${p.y}%`}
+              x2={`${serverPoint.x}%`}
+              y2={`${serverPoint.y}%`}
+              stroke="url(#arcGradient)"
+              strokeWidth="1"
+              opacity="0.4"
+            />
+          ))}
+          <defs>
+            <linearGradient id="arcGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#4ADE80" />
+              <stop offset="100%" stopColor="#a78bfa" />
+            </linearGradient>
+          </defs>
+        </svg>
 
-          arcsData={arcs}
-          arcStartLat="startLat"
-          arcStartLng="startLng"
-          arcEndLat="endLat"
-          arcEndLng="endLng"
-          arcColor={() => ["rgba(74, 222, 128, 0.6)", "rgba(167, 139, 250, 0.6)"]}
-          arcAltitude={0.15}
-          arcStroke={0.5}
-          arcDashLength={0.4}
-          arcDashGap={0.2}
-          arcDashAnimateTime={2000}
+        {/* Visitor points */}
+        {points.map(p => (
+          <div
+            key={p.id}
+            className="absolute w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"
+            style={{
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+              transform: "translate(-50%, -50%)",
+              boxShadow: "0 0 8px rgba(74, 222, 128, 0.6)",
+            }}
+          />
+        ))}
+
+        {/* Server point */}
+        <div
+          className="absolute w-3.5 h-3.5 rounded-full bg-violet-400 animate-pulse"
+          style={{
+            left: `${serverPoint.x}%`,
+            top: `${serverPoint.y}%`,
+            transform: "translate(-50%, -50%)",
+            boxShadow: "0 0 12px rgba(167, 139, 250, 0.8)",
+          }}
         />
-      )}
+
+        {/* Ambient glow */}
+        <div className="absolute inset-0 bg-gradient-to-b from-violet-950/20 via-transparent to-violet-950/30 pointer-events-none" />
+      </div>
     </div>
   );
 }
