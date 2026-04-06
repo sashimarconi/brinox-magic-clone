@@ -77,6 +77,44 @@ function toAbsoluteUrl(baseUrl: string, value?: string | null) {
   return `${base}${path}`;
 }
 
+async function getGatewayForProductOwner(supabase: ReturnType<typeof createClient>, productId: string) {
+  const { data: product, error: productError } = await supabase
+    .from("products")
+    .select("id, user_id")
+    .eq("id", productId)
+    .maybeSingle();
+
+  if (productError) {
+    throw new Error(`Erro ao buscar produto: ${productError.message}`);
+  }
+
+  if (!product) {
+    throw new Error("Produto não encontrado");
+  }
+
+  if (!product.user_id) {
+    throw new Error("Produto sem proprietário configurado");
+  }
+
+  const { data: gateway, error: gatewayError } = await supabase
+    .from("gateway_settings")
+    .select("*")
+    .eq("user_id", product.user_id)
+    .eq("active", true)
+    .limit(1)
+    .maybeSingle();
+
+  if (gatewayError) {
+    throw new Error(`Erro ao buscar gateway: ${gatewayError.message}`);
+  }
+
+  if (!gateway?.secret_key) {
+    throw new Error("Gateway de pagamento não configurado para o dono do produto");
+  }
+
+  return gateway;
+}
+
 // ─── Gateway-specific payment callers ───
 
 async function callBlackCatPay(gateway: any, body: any, items: any[], webhookUrl: string) {
@@ -336,17 +374,13 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Get active gateway
-    const { data: gateway, error: gwError } = await supabase
-      .from("gateway_settings")
-      .select("*")
-      .eq("active", true)
-      .limit(1)
-      .single();
-
-    if (gwError || !gateway?.secret_key) {
+    let gateway;
+    try {
+      gateway = await getGatewayForProductOwner(supabase, body.productId);
+    } catch (gatewayLookupError: any) {
+      console.error("Gateway lookup error:", gatewayLookupError?.message || gatewayLookupError);
       return new Response(
-        JSON.stringify({ error: "Gateway de pagamento não configurado" }),
+        JSON.stringify({ error: gatewayLookupError?.message || "Gateway de pagamento não configurado" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
