@@ -228,7 +228,10 @@ async function callHisoUnique(gateway: any, body: any, items: any[], webhookUrl:
         name: body.customerName,
         email: body.customerEmail,
         phone: body.customerPhone.replace(/\D/g, ""),
-        document: body.customerDocument.replace(/\D/g, ""),
+        document: {
+          number: body.customerDocument.replace(/\D/g, ""),
+          type: body.customerDocument.replace(/\D/g, "").length <= 11 ? "cpf" : "cnpj",
+        },
       },
       items: items.map((item) => ({
         title: item.title,
