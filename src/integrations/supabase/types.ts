@@ -1260,7 +1260,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      custom_domains_public: {
+        Row: {
+          created_at: string | null
+          domain: string | null
+          id: string | null
+          updated_at: string | null
+          user_id: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          domain?: string | null
+          id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          domain?: string | null
+          id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_analytics_summary: {
