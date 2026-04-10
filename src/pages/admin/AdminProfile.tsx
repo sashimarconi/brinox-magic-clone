@@ -199,15 +199,13 @@ const AdminProfile = () => {
                 <p className="text-lg font-bold mt-1 capitalize">{planType}</p>
               </div>
               <div className="rounded-lg border p-4">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Produtos</p>
-                <p className="text-lg font-bold mt-1">
-                  {plan.maxProducts === Infinity ? "Ilimitados" : `Até ${plan.maxProducts}`}
-                </p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Taxa por Transação</p>
+                <p className="text-lg font-bold mt-1">{plan.transactionFeePercent}%</p>
               </div>
               <div className="rounded-lg border p-4">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Lojas</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Mensalidade</p>
                 <p className="text-lg font-bold mt-1">
-                  {plan.maxStores === Infinity ? "Ilimitadas" : `Até ${plan.maxStores}`}
+                  {plan.monthlyPrice === 0 ? "Grátis" : `R$ ${plan.monthlyPrice}`}
                 </p>
               </div>
             </div>
