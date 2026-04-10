@@ -206,11 +206,23 @@ function clampTranslate(tx: number, ty: number, scale: number, cw: number, ch: n
 function geoToPath(geometry: any, w: number, h: number): string {
   if (!geometry) return "";
   const parts: string[] = [];
-  const ring = (coords: number[][]) =>
-    coords.map((c, i) => {
-      const [x, y] = project(c[1], c[0], w, h);
-      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-    }).join("") + "Z";
+
+  const ring = (coords: number[][]) => {
+    const segments: string[] = [];
+    let cmd = "M";
+    for (let i = 0; i < coords.length; i++) {
+      const [x, y] = project(coords[i][1], coords[i][0], w, h);
+      // If the longitude jump between consecutive points is > 180°, it crosses the antimeridian
+      if (i > 0 && Math.abs(coords[i][0] - coords[i - 1][0]) > 180) {
+        segments.push("Z");
+        cmd = "M";
+      }
+      segments.push(`${cmd}${x.toFixed(1)},${y.toFixed(1)}`);
+      cmd = "L";
+    }
+    segments.push("Z");
+    return segments.join("");
+  };
 
   if (geometry.type === "Polygon") {
     geometry.coordinates.forEach((r: number[][]) => parts.push(ring(r)));
