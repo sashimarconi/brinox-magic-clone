@@ -61,6 +61,7 @@ const navSections = [
       { label: "Domínios", path: "/dashboard/domains", icon: Globe },
       { label: "Notificações", path: "/dashboard/notifications", icon: Bell },
       { label: "Plano & Limites", path: "/dashboard/plans", icon: Crown },
+      { label: "Segurança", path: "/dashboard/security", icon: ShieldCheck },
     ],
   },
 ];
