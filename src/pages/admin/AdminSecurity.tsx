@@ -60,7 +60,7 @@ const AdminSecurity = () => {
     try {
       // Unenroll any unverified factors first
       const { data: factors } = await supabase.auth.mfa.listFactors();
-      for (const f of factors?.totp?.filter((f) => f.status === "unverified") || []) {
+      for (const f of factors?.totp?.filter((f) => (f.status as string) === "unverified") || []) {
         await supabase.auth.mfa.unenroll({ factorId: f.id });
       }
 
