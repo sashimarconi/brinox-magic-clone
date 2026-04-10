@@ -37,6 +37,7 @@ import SaasAnalytics from "./pages/admin/SaasAnalytics";
 import SaasOrders from "./pages/admin/SaasOrders";
 import AdminPlatformSettings from "./pages/admin/AdminPlatformSettings";
 import AdminDomains from "./pages/admin/AdminDomains";
+import AdminSecurity from "./pages/admin/AdminSecurity";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -93,6 +94,7 @@ const AppRoutes = () => {
         <Route path="stores" element={<AdminStores />} />
         <Route path="plans" element={<AdminPlans />} />
         <Route path="domains" element={<AdminDomains />} />
+        <Route path="security" element={<AdminSecurity />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>

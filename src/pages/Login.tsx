@@ -6,11 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Lock } from "lucide-react";
+import MfaVerify from "@/components/auth/MfaVerify";
+import MfaEnroll from "@/components/auth/MfaEnroll";
+
+type LoginStep = "credentials" | "mfa-verify" | "mfa-enroll";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<LoginStep>("credentials");
+  const [mfaFactorId, setMfaFactorId] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -26,11 +32,48 @@ const Login = () => {
 
     if (error) {
       toast({ title: "Acesso negado", description: error.message, variant: "destructive" });
-    } else {
+      setLoading(false);
+      return;
+    }
+
+    // Check MFA factors
+    try {
+      const { data: factors, error: mfaError } = await supabase.auth.mfa.listFactors();
+      if (mfaError) throw mfaError;
+
+      const verifiedFactors = factors.totp.filter((f) => (f.status as string) === "verified");
+
+      if (verifiedFactors.length > 0) {
+        // Has verified TOTP factor — need verification
+        setMfaFactorId(verifiedFactors[0].id);
+        setStep("mfa-verify");
+      } else {
+        // No 2FA — show enrollment
+        setStep("mfa-enroll");
+      }
+    } catch {
+      // If MFA check fails, just proceed
       navigate("/dashboard");
     }
+
     setLoading(false);
   };
+
+  const handleMfaSuccess = () => {
+    navigate("/dashboard");
+  };
+
+  const handleMfaSkip = () => {
+    navigate("/dashboard");
+  };
+
+  if (step === "mfa-verify") {
+    return <MfaVerify factorId={mfaFactorId} onSuccess={handleMfaSuccess} />;
+  }
+
+  if (step === "mfa-enroll") {
+    return <MfaEnroll onSuccess={handleMfaSuccess} onSkip={handleMfaSkip} />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 void-gradient-bg relative overflow-hidden">
