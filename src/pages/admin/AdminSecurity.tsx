@@ -44,7 +44,7 @@ const AdminSecurity = () => {
     try {
       const { data, error } = await supabase.auth.mfa.listFactors();
       if (error) throw error;
-      const verified = data.totp.filter((f) => f.status === "verified");
+      const verified = data.totp.filter((f) => (f.status as string) === "verified");
       setMfaEnabled(verified.length > 0);
       if (verified.length > 0) setFactorId(verified[0].id);
     } catch (err: any) {
