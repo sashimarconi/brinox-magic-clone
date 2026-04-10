@@ -1,36 +1,27 @@
 
+## Plano: Adicionar página de Perfil ao painel
 
-## Sistema de Temas para o Builder de Produto
+### O que será feito
+Criar uma nova página "Meu Perfil" no dashboard onde o usuário pode visualizar e editar seus dados pessoais (nome, email, avatar). Também será adicionado um link na sidebar e no avatar do header.
 
-### Conceito
-Adicionar um seletor de "Temas" no topo do Product Builder, onde cada tema é um preset completo de configurações (cores, layout, textos, seções habilitadas). O tema atual (TikTok Shop) vira o primeiro preset, e novos temas podem ser adicionados facilmente.
+### Estrutura
 
-### Implementação
+**1. Nova página `src/pages/admin/AdminProfile.tsx`**
+- Busca dados do usuário via `supabase.auth.getUser()` e da tabela `profiles`
+- Exibe: email (somente leitura), nome completo (editável), avatar (editável com URL)
+- Exibe info do plano atual (via `usePlanLimits`)
+- Exibe data de criação da conta
+- Botão para salvar alterações no perfil (atualiza tabela `profiles`)
+- Layout consistente com as outras páginas admin (Cards, inputs, labels)
 
-**1. Criar arquivo de presets de temas** (`src/data/productThemes.ts`)
-- Cada tema: `id`, `name`, `description`, `thumbnail` (emoji ou ícone), e um objeto `ProductBuilderConfig` completo
-- Temas iniciais:
-  - **TikTok Shop** (atual) — fundo claro, botão vermelho, layout mobile-first
-  - **Shopify Classic** — visual clean, botão verde, bordas arredondadas suaves
-  - **Dark Premium** — fundo escuro, botão dourado, visual luxo
-  - **Minimal** — cores neutras, sem badges de conversão, foco no produto
+**2. Rota no `src/App.tsx`**
+- Adicionar `<Route path="profile" element={<AdminProfile />} />` dentro do grupo `/dashboard`
 
-**2. Atualizar `AdminProductBuilder.tsx`**
-- Adicionar seção "Tema" no topo com cards visuais para cada tema
-- Ao selecionar um tema, preencher todas as configs (appearance, texts, conversion, sections) com os valores do preset
-- Mostrar confirmação antes de sobrescrever configs customizadas
-- Após aplicar o tema, o usuário ainda pode personalizar livremente (o tema é só o ponto de partida)
+**3. Link na sidebar (`AdminLayout.tsx`)**
+- Adicionar item "Meu Perfil" na seção "Configurações" com ícone `User`
+- Tornar o avatar no header clicável, redirecionando para `/dashboard/profile`
 
-**3. Atualizar `product_page_builder_config`**
-- Adicionar campo `theme_id` ao JSON `config` salvo no banco para lembrar qual tema base foi usado (sem migration, é só um campo dentro do JSONB)
-
-**4. Atualizar `ProductPage.tsx`**
-- Nenhuma mudança necessária — o ProductPage já consome o `config` JSONB dinamicamente, então qualquer preset de tema funciona automaticamente
-
-### Visual dos cards de tema
-Cards com preview miniatura, nome e descrição curta. O tema ativo fica com borda destacada em cyan. Botão "Aplicar tema" com confirmação.
-
-### Arquivos modificados
-- `src/data/productThemes.ts` (novo)
-- `src/pages/admin/AdminProductBuilder.tsx` (seletor de temas)
-
+### Detalhes técnicos
+- Usa a tabela `profiles` existente (campos: `full_name`, `avatar_url`, `user_id`)
+- RLS já configurada para que cada usuário veja/edite apenas seu próprio perfil
+- Nenhuma migração de banco necessária
