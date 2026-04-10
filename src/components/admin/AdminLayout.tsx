@@ -5,7 +5,7 @@ import {
   Package, Star, ShieldCheck, LogOut, Menu, CreditCard, Truck, Tag,
   BarChart3, LayoutDashboard, ClipboardList, Store, PenTool, Radio,
   ChevronLeft, ExternalLink, ShoppingCart, Webhook, Bell, Zap, Crown,
-  ChevronDown, Sun, Moon, Globe
+  ChevronDown, Sun, Moon, Globe, User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SaleNotification from "@/components/admin/SaleNotification";
@@ -62,6 +62,7 @@ const navSections = [
       { label: "Notificações", path: "/dashboard/notifications", icon: Bell },
       { label: "Plano & Limites", path: "/dashboard/plans", icon: Crown },
       { label: "Segurança", path: "/dashboard/security", icon: ShieldCheck },
+      { label: "Meu Perfil", path: "/dashboard/profile", icon: User },
     ],
   },
 ];
@@ -368,9 +369,12 @@ const AdminLayout = () => {
               {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
             <PushNotificationToggle />
-            <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <Link
+              to="/dashboard/profile"
+              className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center hover:ring-2 hover:ring-primary/40 transition-all"
+            >
               <span className="text-white text-[10px] font-bold">VT</span>
-            </div>
+            </Link>
           </div>
         </header>
 
