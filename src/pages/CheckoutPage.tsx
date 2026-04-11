@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import QRCode from "qrcode";
 import { useTikTokPixel, trackTikTokPurchase } from "@/hooks/useTikTokPixel";
-import { usePageTracking, trackEvent } from "@/hooks/usePageTracking";
+import { usePageTracking, trackEvent, setTrackingTenantUserId } from "@/hooks/usePageTracking";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -112,7 +112,6 @@ const CheckoutPage = () => {
   const [searchParams] = useSearchParams();
   const selectedVariant = searchParams.get("variant");
   useTikTokPixel();
-  usePageTracking("checkout_view");
   const [quantity, setQuantity] = useState(1);
   const [selectedShipping, setSelectedShipping] = useState<string | null>(null);
   const [selectedBumps, setSelectedBumps] = useState<string[]>([]);
@@ -235,6 +234,15 @@ const CheckoutPage = () => {
     queryFn: () => fetchProductBySlug(slug!),
     enabled: !!slug,
   });
+
+  // Set tenant user_id for tracking once product loads
+  useEffect(() => {
+    if (product?.user_id) {
+      setTrackingTenantUserId(product.user_id);
+    }
+  }, [product?.user_id]);
+
+  usePageTracking("checkout_view");
 
   const { data: shippingOptions } = useQuery({
     queryKey: ["shipping-options"],
