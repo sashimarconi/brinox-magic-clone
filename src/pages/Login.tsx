@@ -120,6 +120,28 @@ const Login = () => {
                 className="bg-muted/50 border-border focus:border-void-purple focus:ring-void-purple/20 placeholder:text-muted-foreground/50"
               />
             </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!email.trim()) {
+                    toast({ title: "Digite seu e-mail", description: "Informe o e-mail para recuperar a senha", variant: "destructive" });
+                    return;
+                  }
+                  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${window.location.origin}/reset-password`,
+                  });
+                  if (error) {
+                    toast({ title: "Erro", description: error.message, variant: "destructive" });
+                  } else {
+                    toast({ title: "E-mail enviado!", description: "Verifique sua caixa de entrada para redefinir a senha" });
+                  }
+                }}
+                className="text-xs text-void-cyan hover:underline"
+              >
+                Esqueceu a senha?
+              </button>
+            </div>
             <Button
               type="submit"
               className="w-full bg-void-cyan hover:bg-void-cyan/90 text-black font-display font-bold tracking-wide void-glow-cyan-sm hover:void-glow-cyan transition-all"

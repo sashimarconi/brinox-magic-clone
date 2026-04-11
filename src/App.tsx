@@ -39,6 +39,7 @@ import AdminPlatformSettings from "./pages/admin/AdminPlatformSettings";
 import AdminDomains from "./pages/admin/AdminDomains";
 import AdminSecurity from "./pages/admin/AdminSecurity";
 import AdminProfile from "./pages/admin/AdminProfile";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ const AppRoutes = () => {
       <Route path="/loja/:slug" element={<StorePage />} />
       <Route path="/checkout/:slug" element={<CheckoutPage />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/register" element={<Register />} />
       <Route path="/admin" element={<SaasAdminLayout />}>
         <Route index element={<SaasMetrics />} />
