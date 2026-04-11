@@ -244,6 +244,7 @@ const CheckoutPage = () => {
 
   usePageTracking("checkout_view");
 
+  const { data: shippingOptions } = useQuery({
     queryKey: ["shipping-options"],
     queryFn: async () => {
       const { data, error } = await supabase
