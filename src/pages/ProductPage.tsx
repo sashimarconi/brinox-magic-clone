@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { usePageTracking, useVisitorHeartbeat, setTrackingTenantUserId } from "@/hooks/usePageTracking";
+import { usePageTracking, useVisitorHeartbeat } from "@/hooks/usePageTracking";
 import { useTikTokPixel } from "@/hooks/useTikTokPixel";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
