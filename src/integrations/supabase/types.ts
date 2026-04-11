@@ -1003,24 +1003,30 @@ export type Database = {
       }
       tracking_pixels: {
         Row: {
+          access_token: string | null
           active: boolean | null
           created_at: string
+          fire_on_paid_only: boolean
           id: string
           pixel_id: string
           platform: string
           user_id: string | null
         }
         Insert: {
+          access_token?: string | null
           active?: boolean | null
           created_at?: string
+          fire_on_paid_only?: boolean
           id?: string
           pixel_id: string
           platform?: string
           user_id?: string | null
         }
         Update: {
+          access_token?: string | null
           active?: boolean | null
           created_at?: string
+          fire_on_paid_only?: boolean
           id?: string
           pixel_id?: string
           platform?: string

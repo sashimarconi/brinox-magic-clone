@@ -7,34 +7,14 @@ const corsHeaders = {
 };
 
 const PAID_STATUS_TOKENS = new Set([
-  "paid",
-  "approved",
-  "completed",
-  "complete",
-  "success",
-  "succeeded",
-  "confirmed",
-  "confirmado",
-  "payment_received",
-  "pix_paid",
-  "received",
-  "recebido",
+  "paid", "approved", "completed", "complete", "success", "succeeded",
+  "confirmed", "confirmado", "payment_received", "pix_paid", "received", "recebido",
 ]);
 
 const PAID_EVENT_TOKENS = new Set([
-  "payment.paid",
-  "payment_paid",
-  "payment_confirmed",
-  "payment.confirmed",
-  "payment_received",
-  "payment.received",
-  "payment_approved",
-  "payment.approved",
-  "transaction.paid",
-  "transaction_paid",
-  "pix_paid",
-  "pix.received",
-  "pix_received",
+  "payment.paid", "payment_paid", "payment_confirmed", "payment.confirmed",
+  "payment_received", "payment.received", "payment_approved", "payment.approved",
+  "transaction.paid", "transaction_paid", "pix_paid", "pix.received", "pix_received",
 ]);
 
 function normalizeToken(value: unknown) {
@@ -44,77 +24,102 @@ function normalizeToken(value: unknown) {
 
 function firstString(...values: unknown[]) {
   for (const value of values) {
-    if (typeof value === "string" && value.trim()) {
-      return value.trim();
-    }
+    if (typeof value === "string" && value.trim()) return value.trim();
   }
   return null;
 }
 
 function extractTransactionId(body: any) {
   return firstString(
-    body?.transactionId,
-    body?.transaction_id,
-    body?.Id, // HiSo uses capital Id
-    body?.id,
-    body?.paymentId,
-    body?.payment_id,
-    body?.ExternalId, // HiSo ExternalId
-    body?.external_id, // Paradise external_id
-    body?.data?.transactionId,
-    body?.data?.transaction_id,
-    body?.data?.id,
-    body?.data?.paymentId,
-    body?.data?.payment_id,
-    body?.transaction?.id,
-    body?.transaction?.transactionId,
-    body?.transaction?.transaction_id,
-    body?.payment?.id,
-    body?.payment?.transactionId,
-    body?.payment?.transaction_id,
-    body?.charge?.id,
-    body?.resource?.id,
-    body?.data?.transaction?.id,
-    body?.data?.payment?.id,
+    body?.transactionId, body?.transaction_id, body?.Id, body?.id,
+    body?.paymentId, body?.payment_id, body?.ExternalId, body?.external_id,
+    body?.data?.transactionId, body?.data?.transaction_id, body?.data?.id,
+    body?.data?.paymentId, body?.data?.payment_id,
+    body?.transaction?.id, body?.transaction?.transactionId, body?.transaction?.transaction_id,
+    body?.payment?.id, body?.payment?.transactionId, body?.payment?.transaction_id,
+    body?.charge?.id, body?.resource?.id, body?.data?.transaction?.id, body?.data?.payment?.id,
   );
 }
 
 function isPaidPayload(body: any) {
   const candidates = [
-    body?.event,
-    body?.type,
-    body?.status,
-    body?.Status, // HiSo uses capital Status
-    body?.payment_status,
-    body?.paymentStatus,
-    body?.transaction_status,
-    body?.transactionStatus,
-    body?.data?.event,
-    body?.data?.type,
-    body?.data?.status,
-    body?.data?.Status,
-    body?.data?.payment_status,
-    body?.data?.paymentStatus,
-    body?.data?.transaction_status,
-    body?.data?.transactionStatus,
-    body?.payment?.status,
-    body?.transaction?.status,
-    body?.transaction?.payment_status,
-    body?.charge?.status,
-    body?.pix?.status,
-    body?.data?.payment?.status,
-    body?.data?.transaction?.status,
-    body?.data?.charge?.status,
-    body?.data?.pix?.status,
-  ]
-    .map(normalizeToken)
-    .filter(Boolean);
+    body?.event, body?.type, body?.status, body?.Status,
+    body?.payment_status, body?.paymentStatus, body?.transaction_status, body?.transactionStatus,
+    body?.data?.event, body?.data?.type, body?.data?.status, body?.data?.Status,
+    body?.data?.payment_status, body?.data?.paymentStatus, body?.data?.transaction_status, body?.data?.transactionStatus,
+    body?.payment?.status, body?.transaction?.status, body?.transaction?.payment_status,
+    body?.charge?.status, body?.pix?.status,
+    body?.data?.payment?.status, body?.data?.transaction?.status, body?.data?.charge?.status, body?.data?.pix?.status,
+  ].map(normalizeToken).filter(Boolean);
 
-  return candidates.some((token) => PAID_EVENT_TOKENS.has(token) || PAID_STATUS_TOKENS.has(token));
+  return candidates.some((t) => PAID_EVENT_TOKENS.has(t) || PAID_STATUS_TOKENS.has(t));
 }
 
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input.trim().toLowerCase());
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function dispatchTikTokS2S(supabase: any, order: any) {
+  try {
+    const userId = order.user_id;
+    if (!userId) return;
+
+    const { data: pixels } = await supabase
+      .from("tracking_pixels")
+      .select("pixel_id, access_token, fire_on_paid_only")
+      .eq("user_id", userId)
+      .eq("platform", "tiktok")
+      .eq("active", true)
+      .eq("fire_on_paid_only", true);
+
+    if (!pixels || pixels.length === 0) return;
+
+    for (const pixel of pixels) {
+      if (!pixel.access_token) {
+        console.warn(`[TikTok S2S] Pixel ${pixel.pixel_id} sem access_token, pulando.`);
+        continue;
+      }
+
+      const userData: Record<string, string> = {};
+      if (order.customer_email) userData.email = await sha256Hex(order.customer_email);
+      if (order.customer_phone) userData.phone = await sha256Hex(order.customer_phone);
+
+      const body = {
+        event_source: "web",
+        event_source_id: pixel.pixel_id,
+        data: [{
+          event: "CompletePayment",
+          event_time: Math.floor(Date.now() / 1000),
+          event_id: order.id,
+          user: userData,
+          properties: {
+            currency: "BRL",
+            value: Number(order.total) || 0,
+          },
+        }],
+      };
+
+      const resp = await fetch("https://business-api.tiktok.com/open_api/v1.3/event/track/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Token": pixel.access_token,
+        },
+        body: JSON.stringify(body),
+      });
+
+      const result = await resp.json();
+      console.log(`[TikTok S2S] Pixel ${pixel.pixel_id} → ${resp.status}`, JSON.stringify(result));
+    }
+  } catch (err) {
+    console.error("[TikTok S2S] Error:", err);
+  }
 }
 
 Deno.serve(async (req) => {
@@ -134,7 +139,7 @@ Deno.serve(async (req) => {
     const isPaid = isPaidPayload(body);
 
     if (!transactionId) {
-      console.error("Could not extract transaction ID from webhook:", JSON.stringify(body));
+      console.error("Could not extract transaction ID:", JSON.stringify(body));
       return new Response(
         JSON.stringify({ error: "Transaction ID not found" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -158,7 +163,6 @@ Deno.serve(async (req) => {
           .eq("id", transactionId)
           .select("*")
           .maybeSingle();
-
         order = fallback.data;
         error = fallback.error;
       }
@@ -168,71 +172,56 @@ Deno.serve(async (req) => {
       } else if (order) {
         console.log(`Order ${order.id} marked as paid`);
 
-        // Dispatch order_paid webhook
-        try {
-          await fetch(`${supabaseUrl}/functions/v1/dispatch-webhooks`, {
+        // Dispatch webhooks, push, utmify, and TikTok S2S in parallel
+        const tasks: Promise<void>[] = [];
+
+        // Webhook dispatch
+        tasks.push(
+          fetch(`${supabaseUrl}/functions/v1/dispatch-webhooks`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${serviceRoleKey}`,
-            },
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
             body: JSON.stringify({
               event: "order_paid",
               payload: {
-                order_id: order.id,
-                transaction_id: transactionId,
-                customer_name: order.customer_name,
-                customer_email: order.customer_email,
-                customer_phone: order.customer_phone,
-                customer_document: order.customer_document,
-                total: order.total,
-                product_id: order.product_id,
-                product_variant: order.product_variant,
-                payment_method: order.payment_method,
+                order_id: order.id, transaction_id: transactionId,
+                customer_name: order.customer_name, customer_email: order.customer_email,
+                customer_phone: order.customer_phone, customer_document: order.customer_document,
+                total: order.total, product_id: order.product_id,
+                product_variant: order.product_variant, payment_method: order.payment_method,
                 selected_bumps: order.selected_bumps,
               },
             }),
-          });
-        } catch (whErr) {
-          console.error("Webhook dispatch error:", whErr);
-        }
+          }).then(() => {}).catch((e) => console.error("Webhook dispatch error:", e))
+        );
 
-        // Send push notification
-        try {
-          const totalFormatted = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(order.total));
-          await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
+        // Push notification
+        const totalFormatted = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(order.total));
+        tasks.push(
+          fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${serviceRoleKey}`,
-            },
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
             body: JSON.stringify({
               title: `💰 Venda confirmada!`,
               body: `${order.customer_name} - ${totalFormatted}`,
               url: "/admin/orders",
               event_type: "order_paid",
             }),
-          });
-        } catch (pushErr) {
-          console.error("Push notification error:", pushErr);
-        }
+          }).then(() => {}).catch((e) => console.error("Push notification error:", e))
+        );
 
-        // Send to Utmify
-        try {
-          await fetch(`${supabaseUrl}/functions/v1/send-utmify-order`, {
+        // Utmify
+        tasks.push(
+          fetch(`${supabaseUrl}/functions/v1/send-utmify-order`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${serviceRoleKey}`,
-            },
-            body: JSON.stringify({
-              order_id: order.id,
-              status: "paid",
-            }),
-          });
-        } catch (utmifyErr) {
-          console.error("Utmify dispatch error:", utmifyErr);
-        }
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
+            body: JSON.stringify({ order_id: order.id, status: "paid" }),
+          }).then(() => {}).catch((e) => console.error("Utmify dispatch error:", e))
+        );
+
+        // TikTok S2S
+        tasks.push(dispatchTikTokS2S(supabase, order));
+
+        await Promise.allSettled(tasks);
       } else {
         console.warn(`No order matched transaction ${transactionId}`);
       }

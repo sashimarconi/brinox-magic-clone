@@ -464,7 +464,7 @@ const CheckoutPage = () => {
       // Track PIX generation
       trackEvent("pix_generated", { total, product_slug: slug });
 
-      // Fire TikTok CompletePayment on PIX generation
+      // Fire TikTok CompletePayment only for pixels WITHOUT fire_on_paid_only
       trackTikTokPurchase(total, "BRL", {
         orderId: result.orderId,
         contentId: product.id,
@@ -472,6 +472,7 @@ const CheckoutPage = () => {
         quantity,
         email: customerEmail,
         phone: customerPhone,
+        filterPaidOnly: false,
       });
     } catch (err: any) {
       toast.error(err.message || "Erro ao processar pagamento");
