@@ -8,6 +8,7 @@ export interface VariantGroup {
 
 export interface ProductWithRelations {
   id: string;
+  user_id: string | null;
   slug: string;
   title: string;
   description: string | null;

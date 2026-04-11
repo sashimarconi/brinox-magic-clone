@@ -112,7 +112,6 @@ const CheckoutPage = () => {
   const [searchParams] = useSearchParams();
   const selectedVariant = searchParams.get("variant");
   useTikTokPixel();
-  usePageTracking("checkout_view");
   const [quantity, setQuantity] = useState(1);
   const [selectedShipping, setSelectedShipping] = useState<string | null>(null);
   const [selectedBumps, setSelectedBumps] = useState<string[]>([]);
