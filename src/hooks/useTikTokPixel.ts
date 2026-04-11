@@ -12,6 +12,7 @@ declare global {
 type QueuedTikTokEvent = {
   eventName: string;
   payload: Record<string, unknown>;
+  filterPaidOnly?: boolean;
 };
 
 type TrackTikTokPurchaseOptions = {
@@ -21,9 +22,15 @@ type TrackTikTokPurchaseOptions = {
   quantity?: number;
   email?: string;
   phone?: string;
+  filterPaidOnly?: boolean;
 };
 
-const activeTikTokPixelIds = new Set<string>();
+type PixelConfig = {
+  pixel_id: string;
+  fire_on_paid_only: boolean;
+};
+
+const activeTikTokPixels = new Map<string, PixelConfig>();
 const queuedTikTokEvents: QueuedTikTokEvent[] = [];
 let tikTokLibraryLoaded = false;
 let tikTokReadyHandlerRegistered = false;
@@ -31,7 +38,6 @@ let retryTimerActive = false;
 
 function markTikTokLibraryLoaded() {
   if (tikTokLibraryLoaded) return;
-
   tikTokLibraryLoaded = true;
   console.log("[TikTok Pixel] Biblioteca carregada com sucesso.");
   flushQueuedTikTokEvents();
@@ -39,11 +45,8 @@ function markTikTokLibraryLoaded() {
 
 function registerTikTokReadyHandler(ttq: any) {
   if (!ttq || tikTokReadyHandlerRegistered || typeof ttq.ready !== "function") return;
-
   tikTokReadyHandlerRegistered = true;
-  ttq.ready(() => {
-    markTikTokLibraryLoaded();
-  });
+  ttq.ready(() => markTikTokLibraryLoaded());
 }
 
 function getTikTokQueue() {
@@ -66,11 +69,9 @@ function getTikTokQueue() {
       t.push([e].concat(Array.prototype.slice.call(arguments, 0)));
     };
   };
-
   for (let i = 0; i < ttq.methods.length; i++) {
     ttq.setAndDefer(ttq, ttq.methods[i]);
   }
-
   ttq.instance = function (t: string) {
     const e = ttq._i[t] || [];
     for (let n = 0; n < ttq.methods.length; n++) {
@@ -78,7 +79,6 @@ function getTikTokQueue() {
     }
     return e;
   };
-
   ttq.load = function (e: string, n?: any) {
     const r = "https://analytics.tiktok.com/i18n/pixel/events.js";
     ttq._i = ttq._i || {};
@@ -91,9 +91,7 @@ function getTikTokQueue() {
 
     const existingScript = document.querySelector(`script[data-tiktok-pixel-id="${e}"]`) as HTMLScriptElement | null;
     if (existingScript) {
-      if (existingScript.dataset.loaded === "true") {
-        markTikTokLibraryLoaded();
-      }
+      if (existingScript.dataset.loaded === "true") markTikTokLibraryLoaded();
       return;
     }
 
@@ -103,14 +101,8 @@ function getTikTokQueue() {
     o.src = r + "?sdkid=" + e + "&lib=ttq";
     o.dataset.tiktokPixelId = e;
     o.dataset.loaded = "false";
-    o.addEventListener("load", () => {
-      o.dataset.loaded = "true";
-      markTikTokLibraryLoaded();
-    }, { once: true });
-    o.addEventListener("error", () => {
-      console.error("[TikTok Pixel] Falha ao carregar o script do pixel.", { pixelId: e });
-    }, { once: true });
-
+    o.addEventListener("load", () => { o.dataset.loaded = "true"; markTikTokLibraryLoaded(); }, { once: true });
+    o.addEventListener("error", () => { console.error("[TikTok Pixel] Falha ao carregar o script.", { pixelId: e }); }, { once: true });
     const a = document.getElementsByTagName("script")[0];
     a?.parentNode?.insertBefore(o, a);
   };
@@ -119,46 +111,47 @@ function getTikTokQueue() {
   return ttq;
 }
 
-function loadTikTokPixel(pixelId: string) {
+function loadTikTokPixel(pixelId: string, fireOnPaidOnly: boolean) {
   const ttq = getTikTokQueue();
-  if (!ttq || !pixelId || activeTikTokPixelIds.has(pixelId)) return;
-
-  activeTikTokPixelIds.add(pixelId);
+  if (!ttq || !pixelId || activeTikTokPixels.has(pixelId)) return;
+  activeTikTokPixels.set(pixelId, { pixel_id: pixelId, fire_on_paid_only: fireOnPaidOnly });
   registerTikTokReadyHandler(ttq);
   ttq.load(pixelId);
 }
 
-function dispatchTikTokEvent(eventName: string, payload: Record<string, unknown>) {
+/**
+ * Dispatch event to individual pixels respecting fire_on_paid_only filter.
+ * filterPaidOnly=true  → only fire pixels WITH fire_on_paid_only=true
+ * filterPaidOnly=false → only fire pixels WITH fire_on_paid_only=false
+ * filterPaidOnly=undefined → fire all pixels
+ */
+function dispatchTikTokEvent(eventName: string, payload: Record<string, unknown>, filterPaidOnly?: boolean) {
   const ttq = getTikTokQueue();
-  if (!ttq || !activeTikTokPixelIds.size || !tikTokLibraryLoaded || typeof ttq.track !== "function") {
-    return false;
+  if (!ttq || !activeTikTokPixels.size || !tikTokLibraryLoaded) return false;
+
+  let fired = false;
+  for (const [pixelId, config] of activeTikTokPixels) {
+    if (filterPaidOnly === true && !config.fire_on_paid_only) continue;
+    if (filterPaidOnly === false && config.fire_on_paid_only) continue;
+
+    const instance = typeof ttq.instance === "function" ? ttq.instance(pixelId) : ttq;
+    if (typeof instance?.track === "function") {
+      instance.track(eventName, payload);
+      fired = true;
+      console.log("[TikTok Pixel] Evento enviado.", { pixelId, eventName, filterPaidOnly });
+    }
   }
-
-  ttq.track(eventName, payload);
-
-  console.log("[TikTok Pixel] Evento enviado para os pixels ativos.", {
-    eventName,
-    payload,
-    pixelIds: Array.from(activeTikTokPixelIds),
-  });
-
-  return true;
+  return fired;
 }
 
-function trackTikTokEvent(eventName: string, payload: Record<string, unknown>, allowQueue = true) {
-  if (dispatchTikTokEvent(eventName, payload)) return;
+function trackTikTokEvent(eventName: string, payload: Record<string, unknown>, filterPaidOnly?: boolean, allowQueue = true) {
+  if (dispatchTikTokEvent(eventName, payload, filterPaidOnly)) return;
 
   if (!allowQueue) return;
 
-  queuedTikTokEvents.push({ eventName, payload });
-  console.warn("[TikTok Pixel] Evento enfileirado aguardando pixels/lib prontos.", {
-    eventName,
-    payload,
-    pixelIds: Array.from(activeTikTokPixelIds),
-    libraryLoaded: tikTokLibraryLoaded,
-  });
+  queuedTikTokEvents.push({ eventName, payload, filterPaidOnly });
+  console.warn("[TikTok Pixel] Evento enfileirado.", { eventName, filterPaidOnly });
 
-  // Auto-retry: poll until SDK is ready (max 30s)
   if (!retryTimerActive) {
     retryTimerActive = true;
     let attempts = 0;
@@ -177,13 +170,11 @@ function trackTikTokEvent(eventName: string, payload: Record<string, unknown>, a
 }
 
 function flushQueuedTikTokEvents() {
-  if (!queuedTikTokEvents.length || !activeTikTokPixelIds.size || !tikTokLibraryLoaded) return;
-
+  if (!queuedTikTokEvents.length || !activeTikTokPixels.size || !tikTokLibraryLoaded) return;
   const events = queuedTikTokEvents.splice(0, queuedTikTokEvents.length);
-  events.forEach(({ eventName, payload }) => {
-    const sent = dispatchTikTokEvent(eventName, payload);
-    if (!sent) {
-      queuedTikTokEvents.push({ eventName, payload });
+  events.forEach(({ eventName, payload, filterPaidOnly }) => {
+    if (!dispatchTikTokEvent(eventName, payload, filterPaidOnly)) {
+      queuedTikTokEvents.push({ eventName, payload, filterPaidOnly });
     }
   });
 }
@@ -203,13 +194,11 @@ export function useTikTokPixel() {
     staleTime: 5 * 60 * 1000,
   });
 
-  useEffect(() => {
-    getTikTokQueue();
-  }, []);
+  useEffect(() => { getTikTokQueue(); }, []);
 
   useEffect(() => {
     if (pixels && pixels.length > 0) {
-      pixels.forEach((p: any) => loadTikTokPixel(p.pixel_id));
+      pixels.forEach((p: any) => loadTikTokPixel(p.pixel_id, p.fire_on_paid_only ?? false));
       window.ttq?.page();
       flushQueuedTikTokEvents();
     }
@@ -245,13 +234,7 @@ export function trackTikTokPurchase(
     }];
   }
 
-  console.log("[TikTok Pixel] trackTikTokPurchase called:", {
-    payload,
-    pixelCount: activeTikTokPixelIds.size,
-    ttqExists: typeof window !== "undefined" && !!window.ttq,
-  });
-
-  // Identify user with email/phone before tracking
+  // Identify user
   try {
     const ttq = getTikTokQueue();
     if (ttq && typeof ttq.identify === "function") {
@@ -260,10 +243,9 @@ export function trackTikTokPurchase(
       if (options.phone) identifyData.phone_number = options.phone;
       if (Object.keys(identifyData).length > 0) {
         ttq.identify(identifyData);
-        console.log("[TikTok Pixel] identify called:", identifyData);
       }
     }
-    trackTikTokEvent("CompletePayment", payload);
+    trackTikTokEvent("CompletePayment", payload, options.filterPaidOnly);
   } catch (e) {
     console.error("[TikTok Pixel] Error firing event:", e);
   }
