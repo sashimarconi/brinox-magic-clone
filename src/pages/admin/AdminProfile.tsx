@@ -21,6 +21,10 @@ const AdminProfile = () => {
   const [createdAt, setCreatedAt] = useState("");
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -182,6 +186,65 @@ const AdminProfile = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Change Password */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <KeyRound className="w-4 h-4" />
+            Alterar Senha
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="newPassword">Nova Senha</Label>
+            <Input
+              id="newPassword"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirmNewPassword">Confirmar Nova Senha</Label>
+            <Input
+              id="confirmNewPassword"
+              type="password"
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </div>
+          <Button
+            disabled={changingPassword || !newPassword || !confirmNewPassword}
+            onClick={async () => {
+              if (newPassword.length < 6) {
+                toast({ title: "Senha muito curta", description: "Mínimo de 6 caracteres", variant: "destructive" });
+                return;
+              }
+              if (newPassword !== confirmNewPassword) {
+                toast({ title: "Senhas não coincidem", variant: "destructive" });
+                return;
+              }
+              setChangingPassword(true);
+              const { error } = await supabase.auth.updateUser({ password: newPassword });
+              if (error) {
+                toast({ title: "Erro ao alterar senha", description: error.message, variant: "destructive" });
+              } else {
+                toast({ title: "Senha alterada com sucesso!" });
+                setNewPassword("");
+                setConfirmNewPassword("");
+              }
+              setChangingPassword(false);
+            }}
+            className="w-full sm:w-auto"
+          >
+            {changingPassword ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <KeyRound className="w-4 h-4 mr-2" />}
+            Alterar Senha
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Plan Info */}
       {!planLoading && plan && (
