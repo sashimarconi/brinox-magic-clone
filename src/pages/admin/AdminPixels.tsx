@@ -172,6 +172,7 @@ const AdminPixels = () => {
         .from("tracking_pixels")
         .insert({
           pixel_id: newPixelId.trim(),
+          name: newPixelName.trim() || null,
           platform: activePlatform,
           active: newPixelActive,
           fire_on_paid_only: fireOnPaidOnly,
@@ -218,10 +219,10 @@ const AdminPixels = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: { id: string; pixel_id: string; active: boolean; fire_on_paid_only: boolean; access_token: string | null }) => {
+    mutationFn: async (data: { id: string; pixel_id: string; name: string | null; active: boolean; fire_on_paid_only: boolean; access_token: string | null }) => {
       const { error } = await supabase
         .from("tracking_pixels")
-        .update({ pixel_id: data.pixel_id, active: data.active, fire_on_paid_only: data.fire_on_paid_only, access_token: data.access_token } as any)
+        .update({ pixel_id: data.pixel_id, name: data.name, active: data.active, fire_on_paid_only: data.fire_on_paid_only, access_token: data.access_token } as any)
         .eq("id", data.id);
       if (error) throw error;
     },
@@ -459,6 +460,17 @@ const AdminPixels = () => {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-primary">Access Token (Events API)</Label>
+              <Input
+                value={accessToken}
+                onChange={(e) => setAccessToken(e.target.value)}
+                placeholder="Token da API de Eventos do TikTok"
+                type="password"
+              />
+              <p className="text-xs text-muted-foreground">Necessário para disparar conversões pelo servidor (S2S) quando o cliente fecha o navegador</p>
+            </div>
+
             <div className="flex items-center justify-between py-3">
               <div>
                 <p className="text-sm font-semibold text-foreground">Disparar apenas quando a venda estiver paga</p>
@@ -466,19 +478,6 @@ const AdminPixels = () => {
               </div>
               <Switch checked={fireOnPaidOnly} onCheckedChange={setFireOnPaidOnly} />
             </div>
-
-            {fireOnPaidOnly && (
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-primary">Access Token (API S2S)</Label>
-                <Input
-                  value={accessToken}
-                  onChange={(e) => setAccessToken(e.target.value)}
-                  placeholder="Token da TikTok Events API"
-                  type="password"
-                />
-                <p className="text-xs text-muted-foreground">Necessário para envio server-side quando o navegador estiver fechado</p>
-              </div>
-            )}
 
             <div className="flex items-center justify-between py-3">
               <p className="text-sm font-semibold text-foreground">Conversão Ativa</p>
@@ -517,12 +516,32 @@ const AdminPixels = () => {
         <Card className="border-border">
           <CardContent className="p-6 space-y-5">
             <div className="space-y-2">
+              <Label className="text-sm font-semibold text-primary">Nome</Label>
+              <Input
+                value={editingPixel.name ?? ""}
+                onChange={(e) => setEditingPixel({ ...editingPixel, name: e.target.value })}
+                placeholder="Ex: Campanha Principal"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label className="text-sm font-semibold text-primary">Pixel ID</Label>
               <Input
                 value={editingPixel.pixel_id}
                 onChange={(e) => setEditingPixel({ ...editingPixel, pixel_id: e.target.value })}
                 placeholder="Ex: CXXXXXXXXXXXXXXXXX"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-primary">Access Token (Events API)</Label>
+              <Input
+                value={editingPixel.access_token ?? ""}
+                onChange={(e) => setEditingPixel({ ...editingPixel, access_token: e.target.value })}
+                placeholder="Token da API de Eventos do TikTok"
+                type="password"
+              />
+              <p className="text-xs text-muted-foreground">Necessário para disparar conversões pelo servidor (S2S) quando o cliente fecha o navegador</p>
             </div>
 
             <div className="flex items-center justify-between py-3">
@@ -535,19 +554,6 @@ const AdminPixels = () => {
                 onCheckedChange={(checked) => setEditingPixel({ ...editingPixel, fire_on_paid_only: checked })}
               />
             </div>
-
-            {editingPixel.fire_on_paid_only && (
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-primary">Access Token (API S2S)</Label>
-                <Input
-                  value={editingPixel.access_token ?? ""}
-                  onChange={(e) => setEditingPixel({ ...editingPixel, access_token: e.target.value })}
-                  placeholder="Token da TikTok Events API"
-                  type="password"
-                />
-                <p className="text-xs text-muted-foreground">Necessário para envio server-side</p>
-              </div>
-            )}
 
             <div className="flex items-center justify-between py-3">
               <p className="text-sm font-semibold text-foreground">Conversão Ativa</p>
