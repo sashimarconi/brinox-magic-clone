@@ -235,7 +235,15 @@ const CheckoutPage = () => {
     enabled: !!slug,
   });
 
-  const { data: shippingOptions } = useQuery({
+  // Set tenant user_id for tracking once product loads
+  useEffect(() => {
+    if (product?.user_id) {
+      setTrackingTenantUserId(product.user_id);
+    }
+  }, [product?.user_id]);
+
+  usePageTracking("checkout_view");
+
     queryKey: ["shipping-options"],
     queryFn: async () => {
       const { data, error } = await supabase
