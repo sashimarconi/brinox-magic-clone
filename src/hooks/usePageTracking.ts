@@ -46,77 +46,57 @@ async function fetchGeoOnce(): Promise<GeoData | null> {
   return geoPromise;
 }
 
-// Store the current tenant user_id for tracking
-let currentTenantUserId: string | null = null;
-
-export function setTrackingTenantUserId(userId: string | null) {
-  currentTenantUserId = userId;
-}
-
-function getTenantUserId(): string | null {
-  return currentTenantUserId;
-}
-
-export function usePageTracking(eventType: string = "page_view", metadata?: Record<string, unknown>) {
+/**
+ * Track a page view. Pass the tenant's user_id directly.
+ * When userId is provided, tracking fires immediately.
+ */
+export function usePageTracking(eventType: string = "page_view", userId?: string | null, metadata?: Record<string, unknown>) {
   const tracked = useRef(false);
 
   useEffect(() => {
-    if (tracked.current) return;
-
-    const userId = getTenantUserId();
-    if (!userId) {
-      // Retry once after a short delay (product data may still be loading)
-      const timer = setTimeout(() => {
-        const retryUserId = getTenantUserId();
-        if (!retryUserId || tracked.current) return;
-        tracked.current = true;
-        doTrack(eventType, metadata, retryUserId);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-
+    if (tracked.current || !userId) return;
     tracked.current = true;
-    doTrack(eventType, metadata, userId);
-  }, [eventType, metadata]);
-}
 
-function doTrack(eventType: string, metadata: Record<string, unknown> | undefined, userId: string) {
-  const sessionId = getSessionId();
-  const pageUrl = window.location.pathname;
+    const sessionId = getSessionId();
+    const pageUrl = window.location.pathname;
 
-  supabase.from("page_events").insert({
-    event_type: eventType,
-    page_url: pageUrl,
-    session_id: sessionId,
-    metadata: metadata || {},
-    user_id: userId,
-  } as any).then(({ error }) => {
-    if (error) console.error("[Tracking] page_events insert error:", error.message);
-  });
+    console.log("[Tracking] Tracking page event:", { eventType, userId, pageUrl });
 
-  fetchGeoOnce().then(geo => {
-    const sessionData: any = {
-      session_id: sessionId,
-      last_seen_at: new Date().toISOString(),
+    supabase.from("page_events").insert({
+      event_type: eventType,
       page_url: pageUrl,
+      session_id: sessionId,
+      metadata: metadata || {},
       user_id: userId,
-    };
-    if (geo) {
-      sessionData.city = geo.city;
-      sessionData.region = geo.region;
-      sessionData.country = geo.country;
-      sessionData.latitude = geo.latitude;
-      sessionData.longitude = geo.longitude;
-    }
-    supabase.from("visitor_sessions").upsert(sessionData, { onConflict: "session_id" }).then(({ error }) => {
-      if (error) console.error("[Tracking] visitor_sessions upsert error:", error.message);
+    } as any).then(({ error }) => {
+      if (error) console.error("[Tracking] page_events insert error:", error.message);
+      else console.log("[Tracking] page_events inserted OK");
     });
-  });
+
+    fetchGeoOnce().then(geo => {
+      const sessionData: any = {
+        session_id: sessionId,
+        last_seen_at: new Date().toISOString(),
+        page_url: pageUrl,
+        user_id: userId,
+      };
+      if (geo) {
+        sessionData.city = geo.city;
+        sessionData.region = geo.region;
+        sessionData.country = geo.country;
+        sessionData.latitude = geo.latitude;
+        sessionData.longitude = geo.longitude;
+      }
+      supabase.from("visitor_sessions").upsert(sessionData, { onConflict: "session_id" }).then(({ error }) => {
+        if (error) console.error("[Tracking] visitor_sessions upsert error:", error.message);
+        else console.log("[Tracking] visitor_sessions upserted OK");
+      });
+    });
+  }, [eventType, userId, metadata]);
 }
 
-export function trackEvent(eventType: string, metadata?: Record<string, unknown>) {
+export function trackEvent(eventType: string, userId?: string | null, metadata?: Record<string, unknown>) {
   const sessionId = getSessionId();
-  const userId = getTenantUserId();
   return supabase.from("page_events").insert({
     event_type: eventType,
     page_url: window.location.pathname,
@@ -127,12 +107,11 @@ export function trackEvent(eventType: string, metadata?: Record<string, unknown>
 }
 
 // Heartbeat to keep session alive
-export function useVisitorHeartbeat() {
+export function useVisitorHeartbeat(userId?: string | null) {
   useEffect(() => {
+    if (!userId) return;
     const sessionId = getSessionId();
     const interval = setInterval(() => {
-      const userId = getTenantUserId();
-      if (!userId) return;
       supabase.from("visitor_sessions").upsert(
         { session_id: sessionId, last_seen_at: new Date().toISOString(), page_url: window.location.pathname, user_id: userId },
         { onConflict: "session_id" }
@@ -140,5 +119,5 @@ export function useVisitorHeartbeat() {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [userId]);
 }
