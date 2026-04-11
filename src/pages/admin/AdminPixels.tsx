@@ -574,6 +574,7 @@ const AdminPixels = () => {
                 onClick={() => updateMutation.mutate({
                   id: editingPixel.id,
                   pixel_id: editingPixel.pixel_id.trim(),
+                  name: editingPixel.name?.trim() || null,
                   active: editingPixel.active,
                   fire_on_paid_only: editingPixel.fire_on_paid_only ?? false,
                   access_token: editingPixel.access_token?.trim() || null,
