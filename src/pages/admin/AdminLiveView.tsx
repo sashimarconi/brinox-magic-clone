@@ -42,11 +42,11 @@ const AdminLiveView = () => {
 
   const fetchData = useCallback(async () => {
     const now = new Date();
-    const ninetySecAgo = new Date(now.getTime() - 90 * 1000).toISOString();
+    const fortyFiveSecAgo = new Date(now.getTime() - 45 * 1000).toISOString();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
 
     const [sessionsRes, ordersRes, eventsRes, todaySessionsRes] = await Promise.all([
-      supabase.from("visitor_sessions").select("session_id, page_url, last_seen_at, city, region, country, latitude, longitude").gte("last_seen_at", ninetySecAgo),
+      supabase.from("visitor_sessions").select("session_id, page_url, last_seen_at, city, region, country, latitude, longitude").gte("last_seen_at", fortyFiveSecAgo),
       supabase.from("orders").select("id, total, payment_status, created_at").gte("created_at", todayStart),
       supabase.from("page_events").select("event_type, page_url, created_at").gte("created_at", todayStart),
       supabase.from("visitor_sessions").select("session_id, city, region, country").gte("last_seen_at", todayStart),
@@ -114,7 +114,7 @@ const AdminLiveView = () => {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 15000);
+    const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
