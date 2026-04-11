@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Star } from "lucide-react";
+import { usePageTracking, useVisitorHeartbeat } from "@/hooks/usePageTracking";
 import { fetchStoreBySlug, fetchStoreProducts } from "@/lib/supabase-queries";
 import { formatCurrency } from "@/data/mockData";
 import ProductHeader from "@/components/product/ProductHeader";
@@ -14,6 +15,9 @@ const StorePage = () => {
     queryFn: () => fetchStoreBySlug(slug!),
     enabled: !!slug,
   });
+
+  usePageTracking("page_view", store?.user_id, { surface: "store" });
+  useVisitorHeartbeat(store?.user_id);
 
   const { data: products, isLoading: productsLoading } = useQuery({
     queryKey: ["store-products", store?.id],
