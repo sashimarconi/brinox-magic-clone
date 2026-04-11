@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { usePageTracking, useVisitorHeartbeat } from "@/hooks/usePageTracking";
+import { useRef, useState, useEffect } from "react";
+import { usePageTracking, useVisitorHeartbeat, setTrackingTenantUserId } from "@/hooks/usePageTracking";
 import { useTikTokPixel } from "@/hooks/useTikTokPixel";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -66,8 +66,6 @@ const DEFAULT_BUILDER: ProductPageBuilderConfig = {
 const ProductPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  usePageTracking("page_view");
-  useVisitorHeartbeat();
   useTikTokPixel();
 
   const { data: product, isLoading } = useQuery({
@@ -75,6 +73,16 @@ const ProductPage = () => {
     queryFn: () => fetchProductBySlug(slug!),
     enabled: !!slug,
   });
+
+  // Set tenant user_id for tracking once product loads
+  useEffect(() => {
+    if (product?.user_id) {
+      setTrackingTenantUserId(product.user_id);
+    }
+  }, [product?.user_id]);
+
+  usePageTracking("page_view");
+  useVisitorHeartbeat();
 
   const { data: productStore } = useQuery({
     queryKey: ["product-store", product?.id],
