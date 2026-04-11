@@ -74,15 +74,8 @@ const ProductPage = () => {
     enabled: !!slug,
   });
 
-  // Set tenant user_id for tracking once product loads
-  useEffect(() => {
-    if (product?.user_id) {
-      setTrackingTenantUserId(product.user_id);
-    }
-  }, [product?.user_id]);
-
-  usePageTracking("page_view");
-  useVisitorHeartbeat();
+  usePageTracking("page_view", product?.user_id);
+  useVisitorHeartbeat(product?.user_id);
 
   const { data: productStore } = useQuery({
     queryKey: ["product-store", product?.id],
