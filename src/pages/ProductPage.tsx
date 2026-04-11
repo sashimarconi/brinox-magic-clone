@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { usePageTracking, useVisitorHeartbeat } from "@/hooks/usePageTracking";
 import { useTikTokPixel } from "@/hooks/useTikTokPixel";
 import { useParams, useNavigate } from "react-router-dom";

@@ -235,14 +235,7 @@ const CheckoutPage = () => {
     enabled: !!slug,
   });
 
-  // Set tenant user_id for tracking once product loads
-  useEffect(() => {
-    if (product?.user_id) {
-      setTrackingTenantUserId(product.user_id);
-    }
-  }, [product?.user_id]);
-
-  usePageTracking("checkout_view");
+  usePageTracking("checkout_view", product?.user_id);
 
   const { data: shippingOptions } = useQuery({
     queryKey: ["shipping-options"],
@@ -470,7 +463,7 @@ const CheckoutPage = () => {
       setPaymentConfirmed(false);
 
       // Track PIX generation
-      trackEvent("pix_generated", { total, product_slug: slug });
+      trackEvent("pix_generated", product?.user_id, { total, product_slug: slug });
 
       // Fire TikTok CompletePayment only for pixels WITHOUT fire_on_paid_only
       trackTikTokPurchase(total, "BRL", {
