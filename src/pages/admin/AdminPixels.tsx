@@ -164,6 +164,8 @@ const AdminPixels = () => {
   });
 
   // Pixel mutations
+  const [accessToken, setAccessToken] = useState("");
+
   const addMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
@@ -172,7 +174,9 @@ const AdminPixels = () => {
           pixel_id: newPixelId.trim(),
           platform: activePlatform,
           active: newPixelActive,
-        });
+          fire_on_paid_only: fireOnPaidOnly,
+          access_token: accessToken.trim() || null,
+        } as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -181,6 +185,7 @@ const AdminPixels = () => {
       setNewPixelName("");
       setNewPixelActive(true);
       setFireOnPaidOnly(false);
+      setAccessToken("");
       setView("list");
       toast({ title: "Pixel adicionado com sucesso!" });
     },
@@ -213,11 +218,11 @@ const AdminPixels = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, pixel_id, active }: { id: string; pixel_id: string; active: boolean }) => {
+    mutationFn: async (data: { id: string; pixel_id: string; active: boolean; fire_on_paid_only: boolean; access_token: string | null }) => {
       const { error } = await supabase
         .from("tracking_pixels")
-        .update({ pixel_id, active })
-        .eq("id", id);
+        .update({ pixel_id: data.pixel_id, active: data.active, fire_on_paid_only: data.fire_on_paid_only, access_token: data.access_token } as any)
+        .eq("id", data.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -462,6 +467,19 @@ const AdminPixels = () => {
               <Switch checked={fireOnPaidOnly} onCheckedChange={setFireOnPaidOnly} />
             </div>
 
+            {fireOnPaidOnly && (
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-primary">Access Token (API S2S)</Label>
+                <Input
+                  value={accessToken}
+                  onChange={(e) => setAccessToken(e.target.value)}
+                  placeholder="Token da TikTok Events API"
+                  type="password"
+                />
+                <p className="text-xs text-muted-foreground">Necessário para envio server-side quando o navegador estiver fechado</p>
+              </div>
+            )}
+
             <div className="flex items-center justify-between py-3">
               <p className="text-sm font-semibold text-foreground">Conversão Ativa</p>
               <Switch checked={newPixelActive} onCheckedChange={setNewPixelActive} />
@@ -508,6 +526,30 @@ const AdminPixels = () => {
             </div>
 
             <div className="flex items-center justify-between py-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Disparar apenas quando a venda estiver paga</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Dispara o pixel SOMENTE quando o pagamento for confirmado</p>
+              </div>
+              <Switch
+                checked={editingPixel.fire_on_paid_only ?? false}
+                onCheckedChange={(checked) => setEditingPixel({ ...editingPixel, fire_on_paid_only: checked })}
+              />
+            </div>
+
+            {editingPixel.fire_on_paid_only && (
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-primary">Access Token (API S2S)</Label>
+                <Input
+                  value={editingPixel.access_token ?? ""}
+                  onChange={(e) => setEditingPixel({ ...editingPixel, access_token: e.target.value })}
+                  placeholder="Token da TikTok Events API"
+                  type="password"
+                />
+                <p className="text-xs text-muted-foreground">Necessário para envio server-side</p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between py-3">
               <p className="text-sm font-semibold text-foreground">Conversão Ativa</p>
               <Switch
                 checked={editingPixel.active}
@@ -523,7 +565,13 @@ const AdminPixels = () => {
                 Cancelar
               </Button>
               <Button
-                onClick={() => updateMutation.mutate({ id: editingPixel.id, pixel_id: editingPixel.pixel_id.trim(), active: editingPixel.active })}
+                onClick={() => updateMutation.mutate({
+                  id: editingPixel.id,
+                  pixel_id: editingPixel.pixel_id.trim(),
+                  active: editingPixel.active,
+                  fire_on_paid_only: editingPixel.fire_on_paid_only ?? false,
+                  access_token: editingPixel.access_token?.trim() || null,
+                })}
                 disabled={!editingPixel.pixel_id.trim() || updateMutation.isPending}
                 className="bg-primary hover:bg-primary/90"
               >
