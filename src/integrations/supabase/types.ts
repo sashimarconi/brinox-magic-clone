@@ -1008,6 +1008,7 @@ export type Database = {
           created_at: string
           fire_on_paid_only: boolean
           id: string
+          name: string | null
           pixel_id: string
           platform: string
           user_id: string | null
@@ -1018,6 +1019,7 @@ export type Database = {
           created_at?: string
           fire_on_paid_only?: boolean
           id?: string
+          name?: string | null
           pixel_id: string
           platform?: string
           user_id?: string | null
@@ -1028,6 +1030,7 @@ export type Database = {
           created_at?: string
           fire_on_paid_only?: boolean
           id?: string
+          name?: string | null
           pixel_id?: string
           platform?: string
           user_id?: string | null
