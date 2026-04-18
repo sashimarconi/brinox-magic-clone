@@ -27,6 +27,14 @@ const BodySchema = z.object({
   customerEmail: z.string().email().max(255),
   customerPhone: z.string().min(8).max(20),
   customerDocument: z.string().min(11).max(14),
+  customerCep: z.string().max(20).nullable().optional(),
+  customerAddress: z.string().max(500).nullable().optional(),
+  customerNumber: z.string().max(50).nullable().optional(),
+  customerComplement: z.string().max(255).nullable().optional(),
+  customerNeighborhood: z.string().max(255).nullable().optional(),
+  customerCity: z.string().max(255).nullable().optional(),
+  customerState: z.string().max(50).nullable().optional(),
+  customerUserAgent: z.string().max(1000).nullable().optional(),
   shippingOptionId: z.string().uuid().nullable().optional(),
   shippingCost: z.number().int().min(0).optional(),
   selectedBumps: z
@@ -407,6 +415,13 @@ Deno.serve(async (req) => {
 
     const body = parsed.data;
 
+    // Capture customer IP from request headers
+    const customerIp =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("cf-connecting-ip") ||
+      req.headers.get("x-real-ip") ||
+      null;
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
@@ -511,6 +526,15 @@ Deno.serve(async (req) => {
       customer_email: body.customerEmail,
       customer_phone: body.customerPhone,
       customer_document: body.customerDocument,
+      customer_cep: body.customerCep || null,
+      customer_address: body.customerAddress || null,
+      customer_number: body.customerNumber || null,
+      customer_complement: body.customerComplement || null,
+      customer_neighborhood: body.customerNeighborhood || null,
+      customer_city: body.customerCity || null,
+      customer_state: body.customerState || null,
+      customer_ip: customerIp,
+      customer_user_agent: body.customerUserAgent || null,
       payment_method: "pix",
       payment_status: "pending",
       transaction_id: paymentResult.transactionId,

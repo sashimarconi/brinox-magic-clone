@@ -1,9 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, CalendarDays, CheckCircle2, CircleAlert, CopyCheck, CreditCard, ExternalLink, FileDigit, Mail, Phone, QrCode, RefreshCw, ShoppingBag, TimerReset, Truck, UserRound } from "lucide-react";
+import { ArrowLeft, CalendarDays, CheckCircle2, CircleAlert, CopyCheck, CreditCard, FileDigit, Globe, Mail, MapPin, Monitor, Phone, RefreshCw, ShoppingBag, Tag, TimerReset, Truck, UserRound } from "lucide-react";
 import { OrderStatusBadge } from "./OrderStatusBadge";
-import { formatCurrency, formatDate, formatDateTime, getCustomerInitials, getDisplayVariantLabel, getPaymentMethodLabel, getShortOrderId, isQrImageSource } from "./order-utils";
+import { formatCurrency, formatDate, formatDateTime, getCustomerInitials, getDisplayVariantLabel, getPaymentMethodLabel, getShortOrderId } from "./order-utils";
 import type { AdminOrderRecord } from "./types";
 
 interface OrderDetailsViewProps {
@@ -19,10 +19,36 @@ const SummaryRow = ({ label, value, emphasized = false }: { label: string; value
   </div>
 );
 
+const InfoCell = ({ icon: Icon, label, value, mono = false, breakAll = false }: { icon: any; label: string; value: string; mono?: boolean; breakAll?: boolean }) => (
+  <div className="rounded-[20px] border border-border bg-background p-4">
+    <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+    </p>
+    <p className={`font-medium text-foreground ${mono ? "font-mono text-sm" : ""} ${breakAll ? "break-all" : ""}`}>{value}</p>
+  </div>
+);
+
+const buildFullAddress = (order: AdminOrderRecord) => {
+  const street = [order.customer_address, order.customer_number].filter(Boolean).join(", ");
+  const complement = order.customer_complement ? ` - ${order.customer_complement}` : "";
+  const cityState = [order.customer_city, order.customer_state].filter(Boolean).join("/");
+  const parts = [
+    [street, complement].join(""),
+    order.customer_neighborhood,
+    cityState,
+    order.customer_cep ? `CEP ${order.customer_cep}` : null,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : "";
+};
+
 export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewProps) => {
   const variantLabel = getDisplayVariantLabel(order);
   const unitPrice = order.quantity > 0 ? Number(order.subtotal || 0) / order.quantity : Number(order.subtotal || 0);
-  const qrPreviewSrc = isQrImageSource(order.pix_qr_code) ? order.pix_qr_code?.trim() || null : null;
+  const fullAddress = buildFullAddress(order);
+  const utmParams = order.utm_params && typeof order.utm_params === "object" ? order.utm_params as Record<string, string | null> : {};
+  const utmEntries = Object.entries(utmParams).filter(([, v]) => v !== null && v !== undefined && v !== "");
+  const selectedBumps = Array.isArray(order.selected_bumps) ? order.selected_bumps : [];
 
   return (
     <div className="space-y-6">
@@ -65,6 +91,7 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
       </section>
 
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 xl:grid-cols-[1.15fr_1fr_0.95fr]">
+        {/* Cliente */}
         <Card className="rounded-[28px] border-border/80 shadow-sm">
           <CardContent className="space-y-5 p-4 sm:p-6">
             <div className="flex items-center gap-3">
@@ -90,33 +117,60 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-[20px] border border-border bg-background p-4">
-                <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  <Phone className="h-3.5 w-3.5" />
-                  Telefone
-                </p>
-                <p className="font-medium text-foreground">{order.customer_phone || "Não informado"}</p>
-              </div>
-
-              <div className="rounded-[20px] border border-border bg-background p-4">
-                <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  <FileDigit className="h-3.5 w-3.5" />
-                  Documento
-                </p>
-                <p className="font-medium text-foreground">{order.customer_document || "Não informado"}</p>
-              </div>
-
-              <div className="rounded-[20px] border border-border bg-background p-4 md:col-span-2">
-                <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  <Mail className="h-3.5 w-3.5" />
-                  E-mail
-                </p>
-                <p className="break-all font-medium text-foreground">{order.customer_email || "Não informado"}</p>
+              <InfoCell icon={Phone} label="Telefone" value={order.customer_phone || "Não informado"} />
+              <InfoCell icon={FileDigit} label="Documento" value={order.customer_document || "Não informado"} />
+              <div className="md:col-span-2">
+                <InfoCell icon={Mail} label="E-mail" value={order.customer_email || "Não informado"} breakAll />
               </div>
             </div>
+
+            {/* Endereço */}
+            <div className="rounded-[22px] border border-border bg-background p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Endereço de entrega</p>
+              </div>
+              {fullAddress ? (
+                <div className="space-y-2 text-sm text-foreground">
+                  {order.customer_address || order.customer_number ? (
+                    <p className="font-medium">
+                      {order.customer_address || "—"}
+                      {order.customer_number ? `, ${order.customer_number}` : ""}
+                      {order.customer_complement ? ` — ${order.customer_complement}` : ""}
+                    </p>
+                  ) : null}
+                  {order.customer_neighborhood ? (
+                    <p className="text-muted-foreground">Bairro: <span className="text-foreground">{order.customer_neighborhood}</span></p>
+                  ) : null}
+                  {(order.customer_city || order.customer_state) ? (
+                    <p className="text-muted-foreground">Cidade: <span className="text-foreground">{[order.customer_city, order.customer_state].filter(Boolean).join(" / ")}</span></p>
+                  ) : null}
+                  {order.customer_cep ? (
+                    <p className="text-muted-foreground">CEP: <span className="text-foreground font-mono">{order.customer_cep}</span></p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Nenhum endereço informado no checkout.</p>
+              )}
+            </div>
+
+            {/* Sessão (IP / User Agent) */}
+            {(order.customer_ip || order.customer_user_agent) ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                {order.customer_ip ? (
+                  <InfoCell icon={Globe} label="Endereço IP" value={order.customer_ip} mono />
+                ) : null}
+                {order.customer_user_agent ? (
+                  <div className={order.customer_ip ? "" : "md:col-span-2"}>
+                    <InfoCell icon={Monitor} label="Dispositivo" value={order.customer_user_agent} breakAll />
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 
+        {/* Pagamento */}
         <Card className="rounded-[28px] border-border/80 shadow-sm">
           <CardContent className="space-y-5 p-4 sm:p-6">
             <div className="flex items-center gap-3">
@@ -125,7 +179,7 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
               </div>
               <div>
                 <h2 className="font-semibold text-foreground">Detalhes do pagamento</h2>
-                <p className="text-sm text-muted-foreground">Método, QR Code e resumo</p>
+                <p className="text-sm text-muted-foreground">Método, transação e resumo</p>
               </div>
             </div>
 
@@ -144,44 +198,12 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
               </div>
             </div>
 
-            {(qrPreviewSrc || order.pix_copy_paste) ? (
-              <div className="rounded-[22px] border border-border bg-background p-4 space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">QR Code do Pix</p>
-                    <p className="mt-1 text-sm text-muted-foreground">Visualização do pagamento gerado</p>
-                  </div>
-
-                  {qrPreviewSrc ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => window.open(qrPreviewSrc, "_blank", "noopener,noreferrer")}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      Abrir QR
-                    </Button>
-                  ) : null}
-                </div>
-
-                {qrPreviewSrc ? (
-                  <div className="flex justify-center rounded-[20px] border border-border bg-card p-4">
-                    <img src={qrPreviewSrc} alt="QR Code do pedido" className="h-36 w-36 rounded-xl object-contain" loading="lazy" />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-2 rounded-[20px] border border-dashed border-border bg-muted/40 px-4 py-6 text-sm text-muted-foreground">
-                    <QrCode className="h-4 w-4" />
-                    QR Code indisponível para visualização
-                  </div>
-                )}
-
-                {order.pix_copy_paste ? (
-                  <div className="rounded-[20px] border border-border bg-muted/40 p-3">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Pix copia e cola</p>
-                    <p className="break-all font-mono text-[11px] leading-5 text-foreground">{order.pix_copy_paste}</p>
-                  </div>
-                ) : null}
+            {order.pix_copy_paste ? (
+              <div className="rounded-[22px] border border-border bg-background p-4 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Pix copia e cola</p>
+                <p className="break-all font-mono text-[11px] leading-5 text-foreground rounded-[16px] bg-muted/40 p-3">
+                  {order.pix_copy_paste}
+                </p>
               </div>
             ) : null}
 
@@ -196,6 +218,7 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
           </CardContent>
         </Card>
 
+        {/* Sinais */}
         <Card className="rounded-[28px] border-border/80 shadow-sm">
           <CardContent className="space-y-5 p-4 sm:p-6">
             <div className="flex items-center gap-3">
@@ -204,7 +227,7 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
               </div>
               <div>
                 <h2 className="font-semibold text-foreground">Sinais do pedido</h2>
-                <p className="text-sm text-muted-foreground">Status do PIX e logística</p>
+                <p className="text-sm text-muted-foreground">Status, datas e logística</p>
               </div>
             </div>
 
@@ -220,6 +243,16 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
               </div>
 
               <div className="grid gap-3">
+                {order.paid_at ? (
+                  <div className="rounded-[18px] border border-marketplace-green/30 bg-marketplace-green/5 p-3">
+                    <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-marketplace-green">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Pago em
+                    </p>
+                    <p className="font-medium text-foreground">{formatDateTime(order.paid_at)}</p>
+                  </div>
+                ) : null}
+
                 <div className="rounded-[18px] border border-border p-3">
                   <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     <CalendarDays className="h-3.5 w-3.5" />
@@ -252,6 +285,33 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
         </Card>
       </div>
 
+      {/* UTM / Origem */}
+      {utmEntries.length > 0 ? (
+        <Card className="rounded-[28px] border-border/80 shadow-sm">
+          <CardContent className="space-y-5 p-4 sm:p-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-foreground">
+                <Tag className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-foreground">Origem da venda</h2>
+                <p className="text-sm text-muted-foreground">UTMs e parâmetros de tracking</p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {utmEntries.map(([key, value]) => (
+                <div key={key} className="rounded-[18px] border border-border bg-background p-3">
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{key}</p>
+                  <p className="break-all text-sm font-medium text-foreground">{String(value)}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {/* Produtos */}
       <Card className="rounded-[28px] border-border/80 shadow-sm">
         <CardContent className="space-y-5 p-4 sm:p-6">
           <div className="flex items-center gap-3">
@@ -260,7 +320,7 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
             </div>
             <div>
               <h2 className="font-semibold text-foreground">Produtos do pedido</h2>
-              <p className="text-sm text-muted-foreground">Resumo do item comprado</p>
+              <p className="text-sm text-muted-foreground">Resumo dos itens comprados</p>
             </div>
           </div>
 
@@ -272,7 +332,7 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
               <span>Total</span>
             </div>
 
-            <div className="grid gap-4 px-4 py-4 md:grid-cols-[1.8fr_0.6fr_0.8fr_0.8fr]">
+            <div className="grid gap-4 border-b border-border px-4 py-4 md:grid-cols-[1.8fr_0.6fr_0.8fr_0.8fr]">
               <div>
                 <p className="font-semibold text-foreground">{order.product?.title || "Produto removido"}</p>
                 {variantLabel ? <p className="mt-1 text-sm text-muted-foreground">Variante: {variantLabel}</p> : null}
@@ -282,6 +342,22 @@ export const OrderDetailsView = ({ order, onBack, onRefresh }: OrderDetailsViewP
               <p className="font-medium text-foreground">{formatCurrency(unitPrice)}</p>
               <p className="font-semibold text-foreground">{formatCurrency(order.subtotal)}</p>
             </div>
+
+            {selectedBumps.length > 0 ? (
+              <div className="divide-y divide-border">
+                {selectedBumps.map((bump: any, idx: number) => (
+                  <div key={bump?.id || idx} className="grid gap-4 px-4 py-3 md:grid-cols-[1.8fr_0.6fr_0.8fr_0.8fr]">
+                    <div>
+                      <p className="font-medium text-foreground">{bump?.title || "Order bump"}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">Order bump</p>
+                    </div>
+                    <p className="text-sm text-foreground">1</p>
+                    <p className="text-sm text-foreground">{formatCurrency((Number(bump?.price) || 0) / 100)}</p>
+                    <p className="text-sm font-medium text-foreground">{formatCurrency((Number(bump?.price) || 0) / 100)}</p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div className="rounded-[22px] border border-border bg-background p-4 space-y-3">
