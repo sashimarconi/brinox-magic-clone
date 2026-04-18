@@ -60,7 +60,6 @@ interface GatewayState {
 const AdminGateways = () => {
   const queryClient = useQueryClient();
   const [states, setStates] = useState<Record<string, GatewayState>>({});
-  const [loaded, setLoaded] = useState(false);
   const [search, setSearch] = useState("");
   const [configOpen, setConfigOpen] = useState<string | null>(null);
 
@@ -92,23 +91,24 @@ const AdminGateways = () => {
     return null;
   };
 
+  // Sync states from server data on every refresh, preserving showSecret toggle
   useEffect(() => {
-    if (gateways && !loaded) {
-      const newStates: Record<string, GatewayState> = {};
+    if (!gateways) return;
+    setStates((prev) => {
+      const next: Record<string, GatewayState> = {};
       GATEWAYS.forEach((gw) => {
         const existing = gateways.find((g) => g.gateway_name === gw.name);
-        newStates[gw.name] = {
+        next[gw.name] = {
           publicKey: existing?.public_key || "",
           secretKey: existing?.secret_key || "",
           active: existing?.active ?? false,
-          showSecret: false,
+          showSecret: prev[gw.name]?.showSecret ?? false,
           id: existing?.id,
         };
       });
-      setStates(newStates);
-      setLoaded(true);
-    }
-  }, [gateways, loaded]);
+      return next;
+    });
+  }, [gateways]);
 
   const updateState = (name: string, partial: Partial<GatewayState>) => {
     setStates((prev) => ({ ...prev, [name]: { ...prev[name], ...partial } }));
@@ -126,12 +126,17 @@ const AdminGateways = () => {
 
       const shouldActivate = activate ?? state.active;
 
+      // Get current user to scope updates
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Não autenticado");
+
       if (shouldActivate) {
-        for (const gw of gateways || []) {
-          if (gw.gateway_name !== gatewayName && gw.active) {
-            await supabase.from("gateway_settings").update({ active: false }).eq("id", gw.id);
-          }
-        }
+        // Only deactivate gateways belonging to THIS user
+        await supabase
+          .from("gateway_settings")
+          .update({ active: false })
+          .eq("user_id", user.id)
+          .neq("gateway_name", gatewayName);
       }
 
       if (state.id) {
@@ -150,37 +155,53 @@ const AdminGateways = () => {
           public_key: state.publicKey,
           secret_key: state.secretKey,
           active: shouldActivate,
+          user_id: user.id,
         });
         if (error) throw error;
       }
     },
+    onMutate: async ({ gatewayName, activate }) => {
+      // Optimistic UI: instantly mark this gateway as active and others as inactive
+      if (activate) {
+        setStates((prev) => {
+          const next = { ...prev };
+          Object.keys(next).forEach((k) => {
+            next[k] = { ...next[k], active: k === gatewayName };
+          });
+          return next;
+        });
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gateway-settings"] });
-      setLoaded(false);
       setConfigOpen(null);
       toast.success("Gateway salvo com sucesso!");
     },
-    onError: () => toast.error("Erro ao salvar gateway"),
+    onError: (err: Error) => {
+      queryClient.invalidateQueries({ queryKey: ["gateway-settings"] });
+      toast.error(err.message || "Erro ao salvar gateway");
+    },
   });
 
   const activateMutation = useMutation({
     mutationFn: async (gatewayName: string) => {
       const state = states[gatewayName];
       if (!state || !state.id) {
-        toast.error("Configure as chaves antes de ativar");
-        return;
+        throw new Error("Configure as chaves antes de ativar");
       }
       if (!state.publicKey && !state.secretKey) {
-        toast.error("Configure as chaves antes de ativar");
-        return;
+        throw new Error("Configure as chaves antes de ativar");
       }
 
-      // Deactivate all others
-      for (const gw of gateways || []) {
-        if (gw.active) {
-          await supabase.from("gateway_settings").update({ active: false }).eq("id", gw.id);
-        }
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Não autenticado");
+
+      // Deactivate only this user's other gateways
+      await supabase
+        .from("gateway_settings")
+        .update({ active: false })
+        .eq("user_id", user.id)
+        .neq("id", state.id);
 
       // Activate this one
       const { error } = await supabase
@@ -189,12 +210,24 @@ const AdminGateways = () => {
         .eq("id", state.id);
       if (error) throw error;
     },
+    onMutate: async (gatewayName: string) => {
+      // Optimistic: instantly switch active gateway
+      setStates((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((k) => {
+          next[k] = { ...next[k], active: k === gatewayName };
+        });
+        return next;
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gateway-settings"] });
-      setLoaded(false);
       toast.success("Gateway ativado!");
     },
-    onError: () => toast.error("Erro ao ativar gateway"),
+    onError: (err: Error) => {
+      queryClient.invalidateQueries({ queryKey: ["gateway-settings"] });
+      toast.error(err.message || "Erro ao ativar gateway");
+    },
   });
 
   const filteredGateways = GATEWAYS.filter(
@@ -205,7 +238,7 @@ const AdminGateways = () => {
 
   const activeGateway = GATEWAYS.find((gw) => states[gw.name]?.active);
 
-  if (!loaded) return null;
+  if (!gateways) return null;
 
   const currentConfig = configOpen ? GATEWAYS.find((g) => g.name === configOpen) : null;
   const currentState = configOpen ? states[configOpen] : null;
