@@ -315,6 +315,34 @@ const CheckoutPage = () => {
     },
   });
 
+  // Resolve variant IDs from URL (?variant=id1,id2) to actual variant data (name + thumbnail)
+  const variantIds = (selectedVariant || "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+
+  const { data: selectedVariantsData } = useQuery({
+    queryKey: ["checkout-selected-variants", variantIds.join(",")],
+    queryFn: async () => {
+      if (variantIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("product_variants")
+        .select("id, name, thumbnail_url")
+        .in("id", variantIds);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: variantIds.length > 0,
+  });
+
+  // Preserve URL order
+  const orderedSelectedVariants = variantIds
+    .map((id) => selectedVariantsData?.find((v) => v.id === id))
+    .filter((v): v is { id: string; name: string; thumbnail_url: string | null } => !!v);
+
+  const selectedVariantNames = orderedSelectedVariants.map((v) => v.name).join(" · ");
+  const selectedVariantImage = orderedSelectedVariants.find((v) => v.thumbnail_url)?.thumbnail_url || null;
+
   const builderAppearance = (builderConfig?.config as any)?.appearance || {};
   const checkoutLogoUrl = builderAppearance.logo_url || "";
   const checkoutLogoHeight = builderAppearance.logo_height || 28;
