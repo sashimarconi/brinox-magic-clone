@@ -168,6 +168,9 @@ const AdminPixels = () => {
 
   const addMutation = useMutation({
     mutationFn: async () => {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error("Sessão expirada. Faça login novamente.");
+
       const { error } = await supabase
         .from("tracking_pixels")
         .insert({
@@ -177,6 +180,7 @@ const AdminPixels = () => {
           active: newPixelActive,
           fire_on_paid_only: fireOnPaidOnly,
           access_token: accessToken.trim() || null,
+          user_id: user.id,
         } as any);
       if (error) throw error;
     },
