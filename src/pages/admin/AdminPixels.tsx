@@ -85,10 +85,11 @@ const AdminPixels = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Pixel queries — proxy via edge function para contornar bloqueadores (uBlock/Brave/AdGuard DNS)
-  // que bloqueiam requests cujo path contém "tracking" ou "pixel".
+  // Pixel queries — proxy via edge function com nome NEUTRO para contornar bloqueadores
+  // (uBlock/Brave/AdGuard/Pi-hole) que bloqueiam requests cujo path contém "tracking",
+  // "pixel", "ad", "ads" ou "integrations".
   const callPixelsApi = async (action: string, extra: Record<string, any> = {}) => {
-    const { data, error } = await supabase.functions.invoke("ad-integrations-manager", {
+    const { data, error } = await supabase.functions.invoke("conversion-config-manager", {
       body: { action, ...extra },
     });
     if (error) throw new Error(error.message || "Falha na requisição");
