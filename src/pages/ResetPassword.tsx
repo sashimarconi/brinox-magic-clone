@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Lock, CheckCircle } from "lucide-react";
+import Mfa2faPrompt from "@/components/auth/Mfa2faPrompt";
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
@@ -13,8 +14,28 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [isRecovery, setIsRecovery] = useState(false);
+  const [mfaOpen, setMfaOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const performUpdate = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) {
+      const msg = error.message || "";
+      if (msg.includes("AAL2") || (error as any).code === "insufficient_aal") {
+        setLoading(false);
+        setMfaOpen(true);
+        return;
+      }
+      toast({ title: "Erro ao redefinir senha", description: msg, variant: "destructive" });
+    } else {
+      setSuccess(true);
+      toast({ title: "Senha redefinida com sucesso!" });
+      setTimeout(() => navigate("/login"), 3000);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
     document.documentElement.classList.add("dark");
