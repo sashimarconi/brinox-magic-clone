@@ -124,6 +124,9 @@ const AdminProducts = () => {
   const [newVariantName, setNewVariantName] = useState("");
   const [newVariantColor, setNewVariantColor] = useState("");
   const [newVariantThumbnail, setNewVariantThumbnail] = useState("");
+  const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
+  const [editVariantName, setEditVariantName] = useState("");
+  const [editVariantColor, setEditVariantColor] = useState("");
   const [creationImages, setCreationImages] = useState<{ url: string; alt: string }[]>([]);
   const [newCreationImageUrl, setNewCreationImageUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -341,6 +344,32 @@ const AdminProducts = () => {
     onSuccess: () => {
       invalidateVariants();
       toast({ title: "Imagem atualizada!" });
+    },
+  });
+
+  const updateVariantMutation = useMutation({
+    mutationFn: async ({ id, name, color }: { id: string; name: string; color: string | null }) => {
+      const { error } = await supabase
+        .from("product_variants")
+        .update({ name, color })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateVariants();
+      setEditingVariantId(null);
+      toast({ title: "Variante atualizada!" });
+    },
+  });
+
+  const updateGroupMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const { error } = await supabase.from("variant_groups").update({ name }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateVariants();
+      toast({ title: "Categoria atualizada!" });
     },
   });
 
@@ -876,7 +905,9 @@ const AdminProducts = () => {
 
                   {isExpanded && (
                     <div className="p-3 space-y-3">
-                      {groupVariants.map((v) => (
+                      {groupVariants.map((v) => {
+                        const isEditing = editingVariantId === v.id;
+                        return (
                         <div key={v.id} className="bg-muted/20 p-2 rounded-lg space-y-2">
                           <div className="flex items-center gap-3">
                             {v.thumbnail_url ? (
@@ -888,13 +919,65 @@ const AdminProducts = () => {
                                 <span className="text-xs font-medium text-muted-foreground">{v.name.charAt(0).toUpperCase()}</span>
                               </div>
                             )}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground">{v.name}</p>
-                              {v.color && <p className="text-[10px] text-muted-foreground">{v.color}</p>}
-                            </div>
-                            <Button variant="ghost" size="sm" onClick={() => deleteVariantMutation.mutate(v.id)}>
-                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                            </Button>
+                            {isEditing ? (
+                              <div className="flex-1 flex items-center gap-2 min-w-0">
+                                <Input
+                                  value={editVariantName}
+                                  onChange={(e) => setEditVariantName(e.target.value)}
+                                  className="h-8 text-sm flex-1"
+                                  placeholder="Nome"
+                                />
+                                <Input
+                                  type="color"
+                                  value={editVariantColor || "#000000"}
+                                  onChange={(e) => setEditVariantColor(e.target.value)}
+                                  className="h-8 w-10 p-1 shrink-0"
+                                />
+                              </div>
+                            ) : (
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground">{v.name}</p>
+                                {v.color && <p className="text-[10px] text-muted-foreground">{v.color}</p>}
+                              </div>
+                            )}
+                            {isEditing ? (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    updateVariantMutation.mutate({
+                                      id: v.id,
+                                      name: editVariantName,
+                                      color: editVariantColor || null,
+                                    })
+                                  }
+                                  disabled={!editVariantName}
+                                >
+                                  <span className="text-xs text-primary font-medium">Salvar</span>
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => setEditingVariantId(null)}>
+                                  <X className="w-3.5 h-3.5" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingVariantId(v.id);
+                                    setEditVariantName(v.name);
+                                    setEditVariantColor(v.color || "");
+                                  }}
+                                >
+                                  <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => deleteVariantMutation.mutate(v.id)}>
+                                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                           {(productImages?.length || 0) > 0 && (
                             <div>
@@ -923,7 +1006,7 @@ const AdminProducts = () => {
                             </div>
                           )}
                         </div>
-                      ))}
+                      );})}
 
                       <div className="border-t border-border pt-3 space-y-2">
                         <p className="text-xs font-medium text-muted-foreground">Adicionar opção</p>
