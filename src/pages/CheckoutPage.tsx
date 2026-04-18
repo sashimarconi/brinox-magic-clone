@@ -315,6 +315,34 @@ const CheckoutPage = () => {
     },
   });
 
+  // Resolve variant IDs from URL (?variant=id1,id2) to actual variant data (name + thumbnail)
+  const variantIds = (selectedVariant || "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+
+  const { data: selectedVariantsData } = useQuery({
+    queryKey: ["checkout-selected-variants", variantIds.join(",")],
+    queryFn: async () => {
+      if (variantIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("product_variants")
+        .select("id, name, thumbnail_url")
+        .in("id", variantIds);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: variantIds.length > 0,
+  });
+
+  // Preserve URL order
+  const orderedSelectedVariants = variantIds
+    .map((id) => selectedVariantsData?.find((v) => v.id === id))
+    .filter((v): v is { id: string; name: string; thumbnail_url: string | null } => !!v);
+
+  const selectedVariantNames = orderedSelectedVariants.map((v) => v.name).join(" · ");
+  const selectedVariantImage = orderedSelectedVariants.find((v) => v.thumbnail_url)?.thumbnail_url || null;
+
   const builderAppearance = (builderConfig?.config as any)?.appearance || {};
   const checkoutLogoUrl = builderAppearance.logo_url || "";
   const checkoutLogoHeight = builderAppearance.logo_height || 28;
@@ -687,7 +715,7 @@ const CheckoutPage = () => {
     );
   }
 
-  const mainImage = product.product_images?.[0]?.url || "/placeholder.svg";
+  const mainImage = selectedVariantImage || product.product_images?.[0]?.url || "/placeholder.svg";
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -908,8 +936,8 @@ const CheckoutPage = () => {
           <img src={mainImage} alt={product.title} className="w-16 h-16 rounded-lg object-cover bg-muted" />
           <div className="flex-1 min-w-0">
             <p className="text-xs text-foreground line-clamp-2 leading-snug">{product.title}</p>
-            {selectedVariant && (
-              <p className="text-[11px] text-muted-foreground mt-0.5">{selectedVariant.split(",").join(" · ")}</p>
+            {selectedVariantNames && (
+              <p className="text-[11px] text-muted-foreground mt-0.5">{selectedVariantNames}</p>
             )}
             <div className="mt-1 flex items-center gap-2">
               <span className="text-sm font-bold text-marketplace-red">{formatCurrency(Number(product.sale_price))}</span>

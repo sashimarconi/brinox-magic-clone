@@ -330,6 +330,20 @@ const AdminProducts = () => {
     },
   });
 
+  const updateVariantThumbnailMutation = useMutation({
+    mutationFn: async ({ id, thumbnail_url }: { id: string; thumbnail_url: string | null }) => {
+      const { error } = await supabase
+        .from("product_variants")
+        .update({ thumbnail_url })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateVariants();
+      toast({ title: "Imagem atualizada!" });
+    },
+  });
+
   const openEdit = (product: any) => {
     setEditingId(product.id);
     setForm({
@@ -863,23 +877,51 @@ const AdminProducts = () => {
                   {isExpanded && (
                     <div className="p-3 space-y-3">
                       {groupVariants.map((v) => (
-                        <div key={v.id} className="flex items-center gap-3 bg-muted/20 p-2 rounded-lg">
-                          {v.thumbnail_url ? (
-                            <img src={v.thumbnail_url} alt={v.name} className="w-10 h-10 rounded object-cover border" />
-                          ) : v.color ? (
-                            <div className="w-10 h-10 rounded border" style={{ backgroundColor: v.color }} />
-                          ) : (
-                            <div className="w-10 h-10 rounded border border-border bg-muted flex items-center justify-center">
-                              <span className="text-xs font-medium text-muted-foreground">{v.name.charAt(0).toUpperCase()}</span>
+                        <div key={v.id} className="bg-muted/20 p-2 rounded-lg space-y-2">
+                          <div className="flex items-center gap-3">
+                            {v.thumbnail_url ? (
+                              <img src={v.thumbnail_url} alt={v.name} className="w-10 h-10 rounded object-cover border" />
+                            ) : v.color ? (
+                              <div className="w-10 h-10 rounded border" style={{ backgroundColor: v.color }} />
+                            ) : (
+                              <div className="w-10 h-10 rounded border border-border bg-muted flex items-center justify-center">
+                                <span className="text-xs font-medium text-muted-foreground">{v.name.charAt(0).toUpperCase()}</span>
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground">{v.name}</p>
+                              {v.color && <p className="text-[10px] text-muted-foreground">{v.color}</p>}
+                            </div>
+                            <Button variant="ghost" size="sm" onClick={() => deleteVariantMutation.mutate(v.id)}>
+                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                            </Button>
+                          </div>
+                          {(productImages?.length || 0) > 0 && (
+                            <div>
+                              <p className="text-[10px] text-muted-foreground mb-1">Imagem do produto vinculada:</p>
+                              <div className="flex gap-1.5 flex-wrap">
+                                {productImages!.map((img: any) => (
+                                  <button
+                                    key={img.id}
+                                    type="button"
+                                    onClick={() =>
+                                      updateVariantThumbnailMutation.mutate({
+                                        id: v.id,
+                                        thumbnail_url: v.thumbnail_url === img.url ? null : img.url,
+                                      })
+                                    }
+                                    className={`w-10 h-10 rounded border-2 overflow-hidden transition-all ${
+                                      v.thumbnail_url === img.url
+                                        ? "border-primary ring-2 ring-primary/30"
+                                        : "border-border opacity-70 hover:opacity-100"
+                                    }`}
+                                  >
+                                    <img src={img.url} alt="" className="w-full h-full object-cover" />
+                                  </button>
+                                ))}
+                              </div>
                             </div>
                           )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground">{v.name}</p>
-                            {v.color && <p className="text-[10px] text-muted-foreground">{v.color}</p>}
-                          </div>
-                          <Button variant="ghost" size="sm" onClick={() => deleteVariantMutation.mutate(v.id)}>
-                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                          </Button>
                         </div>
                       ))}
 
@@ -907,12 +949,42 @@ const AdminProducts = () => {
                             />
                           </div>
                         </div>
-                        <Input
-                          placeholder="URL da thumbnail (opcional)"
-                          value={expandedGroupId === group.id ? newVariantThumbnail : ""}
-                          onChange={(e) => setNewVariantThumbnail(e.target.value)}
-                          className="text-xs"
-                        />
+
+                        {/* Image picker — select from already uploaded product images */}
+                        {(productImages?.length || 0) > 0 ? (
+                          <div>
+                            <p className="text-[10px] text-muted-foreground mb-1">
+                              Imagem da variante (opcional — selecione uma imagem do produto):
+                            </p>
+                            <div className="flex gap-1.5 flex-wrap">
+                              {productImages!.map((img: any) => {
+                                const selected =
+                                  expandedGroupId === group.id && newVariantThumbnail === img.url;
+                                return (
+                                  <button
+                                    key={img.id}
+                                    type="button"
+                                    onClick={() =>
+                                      setNewVariantThumbnail(selected ? "" : img.url)
+                                    }
+                                    className={`w-12 h-12 rounded border-2 overflow-hidden transition-all ${
+                                      selected
+                                        ? "border-primary ring-2 ring-primary/30"
+                                        : "border-border opacity-70 hover:opacity-100"
+                                    }`}
+                                  >
+                                    <img src={img.url} alt="" className="w-full h-full object-cover" />
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-muted-foreground italic">
+                            Adicione imagens ao produto primeiro para vincular à variante.
+                          </p>
+                        )}
+
                         <Button
                           className="w-full"
                           size="sm"

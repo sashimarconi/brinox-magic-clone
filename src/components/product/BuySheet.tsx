@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Zap, Minus, Plus } from "lucide-react";
 import { formatCurrency } from "@/data/mockData";
 
@@ -61,6 +61,20 @@ const BuySheet = ({
     return init;
   });
   const [quantity, setQuantity] = useState(1);
+  const [previewImage, setPreviewImage] = useState(image);
+
+  // Update preview image when selections change → use first selected variant's thumbnail
+  useEffect(() => {
+    const selectedIds = Object.values(selections);
+    for (const id of selectedIds) {
+      const v = variants.find((x) => x.id === id);
+      if (v?.thumbnail) {
+        setPreviewImage(v.thumbnail);
+        return;
+      }
+    }
+    setPreviewImage(image);
+  }, [selections, variants, image]);
 
   if (!open) return null;
 
@@ -124,7 +138,7 @@ const BuySheet = ({
         <div className="p-4 space-y-4">
           {/* Header */}
           <div className="flex items-start gap-3">
-            <img src={image} alt={title} className="w-20 h-20 rounded-lg object-cover" />
+            <img src={previewImage} alt={title} className="w-20 h-20 rounded-lg object-cover transition-opacity" />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="bg-marketplace-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded">

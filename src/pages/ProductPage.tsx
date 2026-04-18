@@ -121,6 +121,13 @@ const ProductPage = () => {
   const reviewsRef = useRef<HTMLDivElement>(null);
   const descriptionRef = useRef<HTMLDivElement>(null);
   const [buySheetOpen, setBuySheetOpen] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+
+  const handleVariantSelect = (variant: { thumbnail: string }) => {
+    if (!variant.thumbnail || !product?.product_images) return;
+    const idx = product.product_images.findIndex((img) => img.url === variant.thumbnail);
+    if (idx >= 0) setGalleryIndex(idx);
+  };
 
   const handleBuyNow = (selectedVariants: Record<string, string> | string | null, quantity: number) => {
     setBuySheetOpen(false);
@@ -173,7 +180,10 @@ const ProductPage = () => {
 
   // Build section rendering map
   const sectionComponents: Record<string, React.ReactNode> = {
-    gallery: isSectionEnabled("gallery") && <ProductGallery images={images} />,
+    
+    gallery: isSectionEnabled("gallery") && (
+      <ProductGallery images={images} currentIndex={galleryIndex} onIndexChange={setGalleryIndex} />
+    ),
     pricing: isSectionEnabled("pricing") && (
       <PricingBlock
         originalPrice={Number(product.original_price)}
@@ -197,6 +207,7 @@ const ProductPage = () => {
         showSoldCount={builder.conversion.show_sold_count}
         showUnitsAvailable={builder.conversion.show_units_available}
         unitsAvailableText={builder.texts.units_available_text}
+        onVariantSelect={handleVariantSelect}
       />
     ),
     shipping: isSectionEnabled("shipping") && (
@@ -280,7 +291,7 @@ const ProductPage = () => {
         onClose={() => setBuySheetOpen(false)}
         onConfirm={handleBuyNow}
         title={product.title}
-        image={images[0]?.url || ""}
+        image={images[galleryIndex]?.url || images[0]?.url || ""}
         originalPrice={Number(product.original_price)}
         salePrice={Number(product.sale_price)}
         discountPercent={product.discount_percent}

@@ -1,5 +1,5 @@
 import { Star } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface Variant {
   id: string;
@@ -25,6 +25,7 @@ interface ProductInfoProps {
   showSoldCount?: boolean;
   showUnitsAvailable?: boolean;
   unitsAvailableText?: string;
+  onVariantSelect?: (variant: Variant) => void;
 }
 
 const formatCount = (n: number): string => {
@@ -32,7 +33,7 @@ const formatCount = (n: number): string => {
   return n.toLocaleString("pt-BR");
 };
 
-const ProductInfo = ({ title, promoTag, rating, reviewCount, soldCount, variants, variantGroups = [], showSoldCount = true, showUnitsAvailable = true, unitsAvailableText = "13 unidades disponíveis" }: ProductInfoProps) => {
+const ProductInfo = ({ title, promoTag, rating, reviewCount, soldCount, variants, variantGroups = [], showSoldCount = true, showUnitsAvailable = true, unitsAvailableText = "13 unidades disponíveis", onVariantSelect }: ProductInfoProps) => {
   const [selections, setSelections] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     variantGroups.forEach((g) => {
@@ -43,6 +44,24 @@ const ProductInfo = ({ title, promoTag, rating, reviewCount, soldCount, variants
     if (ungrouped.length > 0) init["_ungrouped"] = ungrouped[0].id;
     return init;
   });
+
+  // Notify parent of initial selection on mount
+  useEffect(() => {
+    const firstSelectedId = Object.values(selections).find((id) => {
+      const v = variants.find((x) => x.id === id);
+      return v?.thumbnail;
+    });
+    if (firstSelectedId) {
+      const v = variants.find((x) => x.id === firstSelectedId);
+      if (v) onVariantSelect?.(v);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSelect = (groupId: string, v: Variant) => {
+    setSelections((prev) => ({ ...prev, [groupId]: v.id }));
+    onVariantSelect?.(v);
+  };
 
   const ungroupedVariants = variants.filter((v) => !v.groupId);
 
@@ -57,7 +76,7 @@ const ProductInfo = ({ title, promoTag, rating, reviewCount, soldCount, variants
           {groupVariants.map((v, i) => (
             <button
               key={v.id}
-              onClick={() => setSelections((prev) => ({ ...prev, [groupId]: v.id }))}
+              onClick={() => handleSelect(groupId, v)}
               className={`transition-all ${hasVisuals ? "flex flex-col items-center min-w-[72px] rounded-lg border-2 p-1.5" : "px-3 py-1.5 rounded-lg border-2 text-xs font-medium"} ${
                 selections[groupId] === v.id
                   ? "border-marketplace-red shadow-md"
