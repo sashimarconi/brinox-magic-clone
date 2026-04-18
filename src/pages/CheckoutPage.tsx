@@ -715,7 +715,7 @@ const CheckoutPage = () => {
     );
   }
 
-  const mainImage = product.product_images?.[0]?.url || "/placeholder.svg";
+  const mainImage = selectedVariantImage || product.product_images?.[0]?.url || "/placeholder.svg";
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -936,8 +936,8 @@ const CheckoutPage = () => {
           <img src={mainImage} alt={product.title} className="w-16 h-16 rounded-lg object-cover bg-muted" />
           <div className="flex-1 min-w-0">
             <p className="text-xs text-foreground line-clamp-2 leading-snug">{product.title}</p>
-            {selectedVariant && (
-              <p className="text-[11px] text-muted-foreground mt-0.5">{selectedVariant.split(",").join(" · ")}</p>
+            {selectedVariantNames && (
+              <p className="text-[11px] text-muted-foreground mt-0.5">{selectedVariantNames}</p>
             )}
             <div className="mt-1 flex items-center gap-2">
               <span className="text-sm font-bold text-marketplace-red">{formatCurrency(Number(product.sale_price))}</span>
