@@ -330,6 +330,20 @@ const AdminProducts = () => {
     },
   });
 
+  const updateVariantThumbnailMutation = useMutation({
+    mutationFn: async ({ id, thumbnail_url }: { id: string; thumbnail_url: string | null }) => {
+      const { error } = await supabase
+        .from("product_variants")
+        .update({ thumbnail_url })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateVariants();
+      toast({ title: "Imagem atualizada!" });
+    },
+  });
+
   const openEdit = (product: any) => {
     setEditingId(product.id);
     setForm({
