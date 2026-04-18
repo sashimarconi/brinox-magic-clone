@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePageTracking, useVisitorHeartbeat } from "@/hooks/usePageTracking";
-import { useTikTokPixel } from "@/hooks/useTikTokPixel";
+import { useTikTokPixel, trackTikTokViewContent } from "@/hooks/useTikTokPixel";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,7 +66,6 @@ const DEFAULT_BUILDER: ProductPageBuilderConfig = {
 const ProductPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  useTikTokPixel();
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", slug],
@@ -74,8 +73,21 @@ const ProductPage = () => {
     enabled: !!slug,
   });
 
+  // Carrega APENAS os pixels do dono da loja (multi-tenant safe)
+  useTikTokPixel(product?.user_id);
   usePageTracking("page_view", product?.user_id);
   useVisitorHeartbeat(product?.user_id);
+
+  // Dispara ViewContent quando o produto é carregado
+  useEffect(() => {
+    if (product?.id) {
+      trackTikTokViewContent({
+        contentId: product.id,
+        contentName: product.title,
+        value: Number(product.sale_price || 0),
+      });
+    }
+  }, [product?.id]);
 
   const { data: productStore } = useQuery({
     queryKey: ["product-store", product?.id],
