@@ -166,8 +166,14 @@ const AdminReviews = () => {
       return;
     }
     setUploadingPhoto(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({ title: "Não autenticado", variant: "destructive" });
+      setUploadingPhoto(false);
+      return;
+    }
     const ext = file.name.split(".").pop();
-    const path = `reviews/${Date.now()}.${ext}`;
+    const path = `${user.id}/reviews/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("product-images").upload(path, file);
     if (error) {
       toast({ title: "Erro no upload", description: error.message, variant: "destructive" });

@@ -34,25 +34,13 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const { data, error } = await supabase
-      .from("orders")
-      .update({ pix_copied: true })
-      .eq("id", orderId)
-      .select("id")
-      .maybeSingle();
+    // Use the secure RPC that ONLY toggles pix_copied = true
+    const { error } = await supabase.rpc("mark_pix_copied", { _order_id: orderId });
 
     if (error) {
       console.error("Error marking PIX as copied:", error);
-
       return new Response(JSON.stringify({ error: "Could not mark order" }), {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (!data) {
-      return new Response(JSON.stringify({ error: "Order not found" }), {
-        status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

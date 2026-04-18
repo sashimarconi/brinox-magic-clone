@@ -1472,6 +1472,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_pix_copied: { Args: { _order_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

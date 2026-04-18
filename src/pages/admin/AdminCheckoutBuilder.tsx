@@ -223,8 +223,10 @@ const AdminCheckoutBuilder = () => {
   const handleLogoUpload = async (file: File) => {
     setUploadingLogo(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const ext = file.name.split(".").pop();
-      const fileName = `checkout-logo-${Date.now()}.${ext}`;
+      const fileName = `${user.id}/checkout-logo-${Date.now()}.${ext}`;
       const { error } = await supabase.storage
         .from("product-images")
         .upload(fileName, file, { upsert: true });
