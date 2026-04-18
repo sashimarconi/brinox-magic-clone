@@ -11,6 +11,7 @@ import { User, Mail, Calendar, Crown, Save, Loader2, KeyRound } from "lucide-rea
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import Mfa2faPrompt from "@/components/auth/Mfa2faPrompt";
 
 const AdminProfile = () => {
   const { toast } = useToast();
@@ -25,6 +26,26 @@ const AdminProfile = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+  const [mfaOpen, setMfaOpen] = useState(false);
+
+  const performPasswordUpdate = async () => {
+    setChangingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      const msg = error.message || "";
+      if (msg.includes("AAL2") || (error as any).code === "insufficient_aal") {
+        setChangingPassword(false);
+        setMfaOpen(true);
+        return;
+      }
+      toast({ title: "Erro ao alterar senha", description: msg, variant: "destructive" });
+    } else {
+      toast({ title: "Senha alterada com sucesso!" });
+      setNewPassword("");
+      setConfirmNewPassword("");
+    }
+    setChangingPassword(false);
+  };
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -227,16 +248,7 @@ const AdminProfile = () => {
                 toast({ title: "Senhas não coincidem", variant: "destructive" });
                 return;
               }
-              setChangingPassword(true);
-              const { error } = await supabase.auth.updateUser({ password: newPassword });
-              if (error) {
-                toast({ title: "Erro ao alterar senha", description: error.message, variant: "destructive" });
-              } else {
-                toast({ title: "Senha alterada com sucesso!" });
-                setNewPassword("");
-                setConfirmNewPassword("");
-              }
-              setChangingPassword(false);
+              await performPasswordUpdate();
             }}
             className="w-full sm:w-auto"
           >
@@ -245,6 +257,15 @@ const AdminProfile = () => {
           </Button>
         </CardContent>
       </Card>
+
+      <Mfa2faPrompt
+        open={mfaOpen}
+        onClose={() => setMfaOpen(false)}
+        onVerified={async () => {
+          setMfaOpen(false);
+          await performPasswordUpdate();
+        }}
+      />
 
       {/* Plan Info */}
       {!planLoading && plan && (
