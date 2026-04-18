@@ -70,15 +70,18 @@ async function dispatchTikTokS2S(supabase: any, order: any) {
     const userId = order.user_id;
     if (!userId) return;
 
+    // Busca pixels TikTok ATIVOS do dono da loja COM access_token (S2S exige token)
     const { data: pixels } = await supabase
       .from("tracking_pixels")
       .select("pixel_id, access_token, fire_on_paid_only")
       .eq("user_id", userId)
       .eq("platform", "tiktok")
-      .eq("active", true)
-      .eq("fire_on_paid_only", true);
+      .eq("active", true);
 
-    if (!pixels || pixels.length === 0) return;
+    if (!pixels || pixels.length === 0) {
+      console.log("[TikTok S2S] Nenhum pixel TikTok ativo para user", userId);
+      return;
+    }
 
     for (const pixel of pixels) {
       if (!pixel.access_token) {
@@ -89,7 +92,10 @@ async function dispatchTikTokS2S(supabase: any, order: any) {
       const userData: Record<string, string> = {};
       if (order.customer_email) userData.email = await sha256Hex(order.customer_email);
       if (order.customer_phone) userData.phone = await sha256Hex(order.customer_phone);
+      if (order.customer_ip) userData.ip = order.customer_ip;
+      if (order.customer_user_agent) userData.user_agent = order.customer_user_agent;
 
+      // event_id IGUAL ao do client-side pixel (order.id) → permite deduplicação no TikTok
       const body = {
         event_source: "web",
         event_source_id: pixel.pixel_id,
@@ -101,10 +107,15 @@ async function dispatchTikTokS2S(supabase: any, order: any) {
           properties: {
             currency: "BRL",
             value: Number(order.total) || 0,
+            content_type: "product",
+            order_id: order.id,
+            ...(order.product_id ? { content_id: order.product_id } : {}),
           },
+          page: order.page_url ? { url: order.page_url } : undefined,
         }],
       };
 
+      // Endpoint Events API v1.3 (atual e ativo)
       const resp = await fetch("https://business-api.tiktok.com/open_api/v1.3/event/track/", {
         method: "POST",
         headers: {
@@ -115,7 +126,11 @@ async function dispatchTikTokS2S(supabase: any, order: any) {
       });
 
       const result = await resp.json();
-      console.log(`[TikTok S2S] Pixel ${pixel.pixel_id} → ${resp.status}`, JSON.stringify(result));
+      if (resp.ok && result?.code === 0) {
+        console.log(`[TikTok S2S] ✅ Pixel ${pixel.pixel_id} → CompletePayment enviado (event_id: ${order.id})`);
+      } else {
+        console.error(`[TikTok S2S] ❌ Pixel ${pixel.pixel_id} → erro`, JSON.stringify(result));
+      }
     }
   } catch (err) {
     console.error("[TikTok S2S] Error:", err);
