@@ -82,8 +82,10 @@ const AdminStores = () => {
   const handleProductLogoUpload = async (file: File) => {
     setUploadingProductLogo(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const ext = file.name.split(".").pop();
-      const fileName = `product-logo-${Date.now()}.${ext}`;
+      const fileName = `${user.id}/product-logo-${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from("product-images").upload(fileName, file, { upsert: true });
       if (error) throw error;
       const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(fileName);

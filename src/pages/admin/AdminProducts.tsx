@@ -417,8 +417,10 @@ const AdminProducts = () => {
     }
     setUploadingImage(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const ext = file.name.split(".").pop();
-      const fileName = `images/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const fileName = `${user.id}/images/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await supabase.storage.from("product-images").upload(fileName, file);
       if (error) throw error;
       const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(fileName);
@@ -752,8 +754,13 @@ const AdminProducts = () => {
                         toast({ title: "Arquivo muito grande", description: "Máximo 50MB", variant: "destructive" });
                         return;
                       }
+                      const { data: { user } } = await supabase.auth.getUser();
+                      if (!user) {
+                        toast({ title: "Não autenticado", variant: "destructive" });
+                        return;
+                      }
                       const ext = file.name.split(".").pop();
-                      const fileName = `videos/${Date.now()}.${ext}`;
+                      const fileName = `${user.id}/videos/${Date.now()}.${ext}`;
                       const { error } = await supabase.storage.from("product-images").upload(fileName, file);
                       if (error) {
                         toast({ title: "Erro no upload", description: error.message, variant: "destructive" });

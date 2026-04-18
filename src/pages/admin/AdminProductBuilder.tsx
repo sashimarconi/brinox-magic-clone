@@ -226,8 +226,10 @@ const AdminProductBuilder = () => {
   const handleLogoUpload = async (file: File) => {
     setUploadingLogo(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const ext = file.name.split(".").pop();
-      const fileName = `product-page-logo-${Date.now()}.${ext}`;
+      const fileName = `${user.id}/product-page-logo-${Date.now()}.${ext}`;
       const { error } = await supabase.storage
         .from("product-images")
         .upload(fileName, file, { upsert: true });

@@ -121,8 +121,10 @@ const AdminPlatformSettings = () => {
   const handleUpload = async (file: File, key: string) => {
     setUploading(key);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const ext = file.name.split(".").pop();
-      const fileName = `platform-${key}-${Date.now()}.${ext}`;
+      const fileName = `${user.id}/platform-${key}-${Date.now()}.${ext}`;
       const { error } = await supabase.storage
         .from("product-images")
         .upload(fileName, file, { upsert: true });
@@ -139,8 +141,10 @@ const AdminPlatformSettings = () => {
   const handleGwLogoUpload = async (file: File) => {
     setUploading("gw-logo");
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const ext = file.name.split(".").pop();
-      const fileName = `gateway-logo-${Date.now()}.${ext}`;
+      const fileName = `${user.id}/gateway-logo-${Date.now()}.${ext}`;
       const { error } = await supabase.storage
         .from("product-images")
         .upload(fileName, file, { upsert: true });

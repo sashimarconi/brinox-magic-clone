@@ -34,8 +34,9 @@ export function useDomainResolver() {
         return { isCustomDomain: false, ownerUserId: null, domain: hostname, verified: false };
       }
 
+      // Use the safe view that excludes verification_token
       const { data: domainRow, error } = await (supabase as any)
-        .from("custom_domains")
+        .from("custom_domains_public")
         .select("user_id, domain, verified")
         .eq("domain", hostname)
         .maybeSingle();
