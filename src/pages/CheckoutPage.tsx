@@ -254,27 +254,36 @@ const CheckoutPage = () => {
   }, [product?.id, product?.title, product?.sale_price, selectedVariant]);
 
   const { data: shippingOptions } = useQuery({
-    queryKey: ["shipping-options"],
+    queryKey: ["shipping-options", product?.user_id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("shipping_options")
         .select("*")
         .eq("active", true)
         .order("sort_order");
+      if (product?.user_id) {
+        query = query.eq("user_id", product.user_id);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data as ShippingOption[];
     },
+    enabled: !!product,
   });
 
   const { data: orderBumps } = useQuery({
-    queryKey: ["order-bumps", product?.id],
+    queryKey: ["order-bumps", product?.id, product?.user_id],
     queryFn: async () => {
-      // Fetch all active bumps
-      const { data: allBumps, error } = await supabase
+      // Fetch active bumps belonging to the product owner only
+      let bumpsQuery = supabase
         .from("order_bumps")
         .select("*")
         .eq("active", true)
         .order("sort_order");
+      if (product?.user_id) {
+        bumpsQuery = bumpsQuery.eq("user_id", product.user_id);
+      }
+      const { data: allBumps, error } = await bumpsQuery;
       if (error) throw error;
 
       if (!product?.id || !allBumps?.length) return allBumps as OrderBump[];
@@ -305,29 +314,32 @@ const CheckoutPage = () => {
   });
 
   const { data: checkoutSettings } = useQuery({
-    queryKey: ["checkout-settings"],
+    queryKey: ["checkout-settings", product?.user_id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("checkout_settings" as any)
-        .select("*")
-        .limit(1)
-        .single();
+      let query = supabase.from("checkout_settings" as any).select("*").limit(1);
+      if (product?.user_id) {
+        query = query.eq("user_id", product.user_id);
+      }
+      const { data, error } = await query.maybeSingle();
       if (error) throw error;
       return data as any;
     },
+    enabled: !!product,
   });
 
   const { data: builderConfig } = useQuery({
-    queryKey: ["checkout-builder-config"],
+    queryKey: ["checkout-builder-config", product?.user_id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("checkout_builder_config")
-        .select("*")
-        .limit(1)
-        .single();
+      let query = supabase.from("checkout_builder_config").select("*").limit(1);
+      if (product?.user_id) {
+        query = query.eq("user_id", product.user_id);
+      }
+      const { data, error } = await query.maybeSingle();
       if (error) throw error;
       return data;
     },
+    enabled: !!product,
+  });
   });
 
   // Resolve variant IDs from URL (?variant=id1,id2) to actual variant data (name + thumbnail)
