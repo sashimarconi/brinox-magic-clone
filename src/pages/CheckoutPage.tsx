@@ -340,7 +340,6 @@ const CheckoutPage = () => {
     },
     enabled: !!product,
   });
-  });
 
   // Resolve variant IDs from URL (?variant=id1,id2) to actual variant data (name + thumbnail)
   const variantIds = (selectedVariant || "")
