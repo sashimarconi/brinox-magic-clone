@@ -124,6 +124,9 @@ const AdminProducts = () => {
   const [newVariantName, setNewVariantName] = useState("");
   const [newVariantColor, setNewVariantColor] = useState("");
   const [newVariantThumbnail, setNewVariantThumbnail] = useState("");
+  const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
+  const [editVariantName, setEditVariantName] = useState("");
+  const [editVariantColor, setEditVariantColor] = useState("");
   const [creationImages, setCreationImages] = useState<{ url: string; alt: string }[]>([]);
   const [newCreationImageUrl, setNewCreationImageUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
