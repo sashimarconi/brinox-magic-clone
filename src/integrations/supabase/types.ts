@@ -1347,6 +1347,36 @@ export type Database = {
         }
         Relationships: []
       }
+      tracking_pixels_public: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          fire_on_paid_only: boolean | null
+          id: string | null
+          pixel_id: string | null
+          platform: string | null
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          fire_on_paid_only?: boolean | null
+          id?: string | null
+          pixel_id?: string | null
+          platform?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          fire_on_paid_only?: boolean | null
+          id?: string | null
+          pixel_id?: string | null
+          platform?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_analytics_summary: {
