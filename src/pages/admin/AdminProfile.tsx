@@ -266,6 +266,7 @@ const AdminProfile = () => {
           setMfaOpen(false);
           await performPasswordUpdate();
         }}
+      />
 
       <MfaDevicesSection />
 
