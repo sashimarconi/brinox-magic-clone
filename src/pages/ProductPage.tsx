@@ -180,7 +180,7 @@ const ProductPage = () => {
 
   // Build section rendering map
   const sectionComponents: Record<string, React.ReactNode> = {
-    gallery: isSectionEnabled("gallery") && <ProductGallery images={images} />,
+    
     gallery: isSectionEnabled("gallery") && (
       <ProductGallery images={images} currentIndex={galleryIndex} onIndexChange={setGalleryIndex} />
     ),
