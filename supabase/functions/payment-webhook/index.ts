@@ -149,9 +149,10 @@ Deno.serve(async (req) => {
     console.log(`Transaction: ${transactionId}, isPaid: ${isPaid}`);
 
     if (isPaid) {
+      const paidAt = new Date().toISOString();
       let { data: order, error } = await supabase
         .from("orders")
-        .update({ payment_status: "paid" })
+        .update({ payment_status: "paid", paid_at: paidAt })
         .eq("transaction_id", transactionId)
         .select("*")
         .maybeSingle();
@@ -159,7 +160,7 @@ Deno.serve(async (req) => {
       if ((!order || error) && isUuid(transactionId)) {
         const fallback = await supabase
           .from("orders")
-          .update({ payment_status: "paid" })
+          .update({ payment_status: "paid", paid_at: paidAt })
           .eq("id", transactionId)
           .select("*")
           .maybeSingle();
