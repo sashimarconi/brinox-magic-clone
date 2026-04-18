@@ -1,16 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ProductImage } from "@/data/mockData";
 
 interface ProductGalleryProps {
   images: ProductImage[];
+  currentIndex?: number;
+  onIndexChange?: (index: number) => void;
 }
 
-const ProductGallery = ({ images }: ProductGalleryProps) => {
-  const [current, setCurrent] = useState(0);
+const ProductGallery = ({ images, currentIndex, onIndexChange }: ProductGalleryProps) => {
+  const [internalIdx, setInternalIdx] = useState(0);
+  const isControlled = currentIndex !== undefined;
+  const current = isControlled ? currentIndex! : internalIdx;
 
-  const prev = () => setCurrent((c) => (c === 0 ? images.length - 1 : c - 1));
-  const next = () => setCurrent((c) => (c === images.length - 1 ? 0 : c + 1));
+  // Reset internal when images change
+  useEffect(() => {
+    if (!isControlled) setInternalIdx(0);
+  }, [images.length, isControlled]);
+
+  const setCurrent = (idx: number) => {
+    if (isControlled) {
+      onIndexChange?.(idx);
+    } else {
+      setInternalIdx(idx);
+    }
+  };
+
+  const prev = () => setCurrent(current === 0 ? images.length - 1 : current - 1);
+  const next = () => setCurrent(current === images.length - 1 ? 0 : current + 1);
 
   const currentImage = images[current];
 
@@ -20,7 +37,7 @@ const ProductGallery = ({ images }: ProductGalleryProps) => {
         <img
           src={currentImage?.url}
           alt={currentImage?.alt || ""}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-opacity duration-200"
         />
 
         {images.length > 1 && (
