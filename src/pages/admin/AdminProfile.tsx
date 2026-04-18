@@ -26,6 +26,26 @@ const AdminProfile = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+  const [mfaOpen, setMfaOpen] = useState(false);
+
+  const performPasswordUpdate = async () => {
+    setChangingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      const msg = error.message || "";
+      if (msg.includes("AAL2") || (error as any).code === "insufficient_aal") {
+        setChangingPassword(false);
+        setMfaOpen(true);
+        return;
+      }
+      toast({ title: "Erro ao alterar senha", description: msg, variant: "destructive" });
+    } else {
+      toast({ title: "Senha alterada com sucesso!" });
+      setNewPassword("");
+      setConfirmNewPassword("");
+    }
+    setChangingPassword(false);
+  };
 
   useEffect(() => {
     const loadProfile = async () => {
