@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import QRCode from "qrcode";
-import { useTikTokPixel, trackTikTokPurchase } from "@/hooks/useTikTokPixel";
+import { useTikTokPixel, trackTikTokPurchase, trackTikTokInitiateCheckout } from "@/hooks/useTikTokPixel";
 import { usePageTracking, useVisitorHeartbeat, trackEvent } from "@/hooks/usePageTracking";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -111,7 +111,7 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const selectedVariant = searchParams.get("variant");
-  useTikTokPixel();
+  // useTikTokPixel chamado abaixo após product carregar (precisa do user_id do dono)
   const [quantity, setQuantity] = useState(1);
   const [selectedShipping, setSelectedShipping] = useState<string | null>(null);
   const [selectedBumps, setSelectedBumps] = useState<string[]>([]);
