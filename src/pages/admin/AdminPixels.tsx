@@ -174,21 +174,16 @@ const AdminPixels = () => {
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) throw new Error("Sessão expirada. Faça login novamente.");
-
-      const { error } = await supabase
-        .from("tracking_pixels")
-        .insert({
+      await callPixelsApi("create", {
+        payload: {
           pixel_id: newPixelId.trim(),
           name: newPixelName.trim() || null,
           platform: activePlatform,
           active: newPixelActive,
           fire_on_paid_only: fireOnPaidOnly,
           access_token: accessToken.trim() || null,
-          user_id: user.id,
-        } as any);
-      if (error) throw error;
+        },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-tracking-pixels"] });
@@ -205,22 +200,14 @@ const AdminPixels = () => {
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
-      const { error } = await supabase
-        .from("tracking_pixels")
-        .update({ active })
-        .eq("id", id);
-      if (error) throw error;
+      await callPixelsApi("update", { id, payload: { active } });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-tracking-pixels"] }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("tracking_pixels")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
+      await callPixelsApi("delete", { id });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-tracking-pixels"] });
@@ -230,11 +217,16 @@ const AdminPixels = () => {
 
   const updateMutation = useMutation({
     mutationFn: async (data: { id: string; pixel_id: string; name: string | null; active: boolean; fire_on_paid_only: boolean; access_token: string | null }) => {
-      const { error } = await supabase
-        .from("tracking_pixels")
-        .update({ pixel_id: data.pixel_id, name: data.name, active: data.active, fire_on_paid_only: data.fire_on_paid_only, access_token: data.access_token } as any)
-        .eq("id", data.id);
-      if (error) throw error;
+      await callPixelsApi("update", {
+        id: data.id,
+        payload: {
+          pixel_id: data.pixel_id,
+          name: data.name,
+          active: data.active,
+          fire_on_paid_only: data.fire_on_paid_only,
+          access_token: data.access_token,
+        },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-tracking-pixels"] });
