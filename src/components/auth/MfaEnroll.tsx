@@ -32,9 +32,25 @@ const MfaEnroll = ({ onSuccess, onSkip }: MfaEnrollProps) => {
   const enrollFactor = async () => {
     setEnrolling(true);
     try {
+      // Limpa fatores TOTP não verificados (de tentativas anteriores) para evitar
+      // conflito de "friendly name already exists".
+      const { data: existing } = await supabase.auth.mfa.listFactors();
+      const stale = existing?.totp?.filter((f) => f.status !== "verified") ?? [];
+      for (const f of stale) {
+        await supabase.auth.mfa.unenroll({ factorId: f.id });
+      }
+
+      // Se já existe um fator verificado, não precisa cadastrar de novo.
+      const verified = existing?.totp?.find((f) => f.status === "verified");
+      if (verified) {
+        toast.success("2FA já está configurado.");
+        onSuccess();
+        return;
+      }
+
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: "VoidTok Authenticator",
+        friendlyName: `VoidTok Authenticator ${Date.now()}`,
       });
       if (error) throw error;
       setQrCode(data.totp.qr_code);
