@@ -1006,7 +1006,7 @@ const AdminProducts = () => {
                             </div>
                           )}
                         </div>
-                      ))}
+                      );})}
 
                       <div className="border-t border-border pt-3 space-y-2">
                         <p className="text-xs font-medium text-muted-foreground">Adicionar opção</p>
