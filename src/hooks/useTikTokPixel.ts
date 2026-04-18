@@ -13,6 +13,7 @@ type QueuedTikTokEvent = {
   eventName: string;
   payload: Record<string, unknown>;
   filterPaidOnly?: boolean;
+  eventId?: string;
 };
 
 type TrackTikTokPurchaseOptions = {
@@ -125,7 +126,7 @@ function loadTikTokPixel(pixelId: string, fireOnPaidOnly: boolean) {
  * filterPaidOnly=false → only fire pixels WITH fire_on_paid_only=false
  * filterPaidOnly=undefined → fire all pixels
  */
-function dispatchTikTokEvent(eventName: string, payload: Record<string, unknown>, filterPaidOnly?: boolean) {
+function dispatchTikTokEvent(eventName: string, payload: Record<string, unknown>, filterPaidOnly?: boolean, eventId?: string) {
   const ttq = getTikTokQueue();
   if (!ttq || !activeTikTokPixels.size || !tikTokLibraryLoaded) return false;
 
@@ -136,20 +137,25 @@ function dispatchTikTokEvent(eventName: string, payload: Record<string, unknown>
 
     const instance = typeof ttq.instance === "function" ? ttq.instance(pixelId) : ttq;
     if (typeof instance?.track === "function") {
-      instance.track(eventName, payload);
+      // event_id permite deduplicação com o evento S2S (enviado pelo backend ao confirmar pagamento)
+      if (eventId) {
+        instance.track(eventName, payload, { event_id: eventId });
+      } else {
+        instance.track(eventName, payload);
+      }
       fired = true;
-      console.log("[TikTok Pixel] Evento enviado.", { pixelId, eventName, filterPaidOnly });
+      console.log("[TikTok Pixel] Evento enviado.", { pixelId, eventName, filterPaidOnly, eventId });
     }
   }
   return fired;
 }
 
-function trackTikTokEvent(eventName: string, payload: Record<string, unknown>, filterPaidOnly?: boolean, allowQueue = true) {
-  if (dispatchTikTokEvent(eventName, payload, filterPaidOnly)) return;
+function trackTikTokEvent(eventName: string, payload: Record<string, unknown>, filterPaidOnly?: boolean, eventId?: string, allowQueue = true) {
+  if (dispatchTikTokEvent(eventName, payload, filterPaidOnly, eventId)) return;
 
   if (!allowQueue) return;
 
-  queuedTikTokEvents.push({ eventName, payload, filterPaidOnly });
+  queuedTikTokEvents.push({ eventName, payload, filterPaidOnly, eventId });
   console.warn("[TikTok Pixel] Evento enfileirado.", { eventName, filterPaidOnly });
 
   if (!retryTimerActive) {
@@ -172,22 +178,28 @@ function trackTikTokEvent(eventName: string, payload: Record<string, unknown>, f
 function flushQueuedTikTokEvents() {
   if (!queuedTikTokEvents.length || !activeTikTokPixels.size || !tikTokLibraryLoaded) return;
   const events = queuedTikTokEvents.splice(0, queuedTikTokEvents.length);
-  events.forEach(({ eventName, payload, filterPaidOnly }) => {
-    if (!dispatchTikTokEvent(eventName, payload, filterPaidOnly)) {
-      queuedTikTokEvents.push({ eventName, payload, filterPaidOnly });
+  events.forEach(({ eventName, payload, filterPaidOnly, eventId }) => {
+    if (!dispatchTikTokEvent(eventName, payload, filterPaidOnly, eventId)) {
+      queuedTikTokEvents.push({ eventName, payload, filterPaidOnly, eventId });
     }
   });
 }
 
-export function useTikTokPixel() {
+/**
+ * Carrega APENAS os pixels do dono da loja (multi-tenant safe).
+ * Usa view pública `tracking_pixels_public` que NÃO expõe access_token.
+ */
+export function useTikTokPixel(tenantUserId?: string | null) {
   const { data: pixels } = useQuery({
-    queryKey: ["tracking-pixels-active"],
+    queryKey: ["tracking-pixels-active", tenantUserId],
+    enabled: !!tenantUserId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("tracking_pixels" as any)
-        .select("*")
-        .eq("active", true)
-        .eq("platform", "tiktok");
+        .from("tracking_pixels_public" as any)
+        .select("pixel_id, fire_on_paid_only, platform, active, user_id")
+        .eq("user_id", tenantUserId!)
+        .eq("platform", "tiktok")
+        .eq("active", true);
       if (error) throw error;
       return data as any[];
     },
@@ -234,7 +246,7 @@ export function trackTikTokPurchase(
     }];
   }
 
-  // Identify user
+  // Identify user (hashed email/phone for advanced matching)
   try {
     const ttq = getTikTokQueue();
     if (ttq && typeof ttq.identify === "function") {
@@ -245,8 +257,38 @@ export function trackTikTokPurchase(
         ttq.identify(identifyData);
       }
     }
-    trackTikTokEvent("CompletePayment", payload, options.filterPaidOnly);
+    // Passa orderId como event_id para deduplicação com S2S
+    trackTikTokEvent("CompletePayment", payload, options.filterPaidOnly, options.orderId);
   } catch (e) {
     console.error("[TikTok Pixel] Error firing event:", e);
   }
+}
+
+/**
+ * Track ViewContent — disparado ao visualizar página de produto.
+ * Filtra para NÃO disparar nos pixels marcados como fire_on_paid_only.
+ */
+export function trackTikTokViewContent(opts: { contentId: string; contentName: string; value?: number; currency?: string }) {
+  const payload: Record<string, unknown> = {
+    content_type: "product",
+    content_id: opts.contentId,
+    content_name: opts.contentName,
+    currency: opts.currency || "BRL",
+    value: Number(opts.value || 0),
+  };
+  trackTikTokEvent("ViewContent", payload, false);
+}
+
+/**
+ * Track InitiateCheckout — disparado ao entrar no checkout.
+ */
+export function trackTikTokInitiateCheckout(opts: { contentId: string; contentName: string; value: number; currency?: string }) {
+  const payload: Record<string, unknown> = {
+    content_type: "product",
+    content_id: opts.contentId,
+    content_name: opts.contentName,
+    currency: opts.currency || "BRL",
+    value: Number(opts.value || 0),
+  };
+  trackTikTokEvent("InitiateCheckout", payload, false);
 }
