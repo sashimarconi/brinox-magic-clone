@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Mfa2faPrompt from "@/components/auth/Mfa2faPrompt";
+import MfaDevicesSection from "@/components/auth/MfaDevicesSection";
 
 const AdminProfile = () => {
   const { toast } = useToast();
@@ -266,6 +267,8 @@ const AdminProfile = () => {
           await performPasswordUpdate();
         }}
       />
+
+      <MfaDevicesSection />
 
       {/* Plan Info */}
       {!planLoading && plan && (
