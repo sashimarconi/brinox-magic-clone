@@ -121,6 +121,13 @@ const ProductPage = () => {
   const reviewsRef = useRef<HTMLDivElement>(null);
   const descriptionRef = useRef<HTMLDivElement>(null);
   const [buySheetOpen, setBuySheetOpen] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+
+  const handleVariantSelect = (variant: { thumbnail: string }) => {
+    if (!variant.thumbnail || !product?.product_images) return;
+    const idx = product.product_images.findIndex((img) => img.url === variant.thumbnail);
+    if (idx >= 0) setGalleryIndex(idx);
+  };
 
   const handleBuyNow = (selectedVariants: Record<string, string> | string | null, quantity: number) => {
     setBuySheetOpen(false);
