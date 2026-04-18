@@ -181,6 +181,9 @@ const ProductPage = () => {
   // Build section rendering map
   const sectionComponents: Record<string, React.ReactNode> = {
     gallery: isSectionEnabled("gallery") && <ProductGallery images={images} />,
+    gallery: isSectionEnabled("gallery") && (
+      <ProductGallery images={images} currentIndex={galleryIndex} onIndexChange={setGalleryIndex} />
+    ),
     pricing: isSectionEnabled("pricing") && (
       <PricingBlock
         originalPrice={Number(product.original_price)}
@@ -204,6 +207,7 @@ const ProductPage = () => {
         showSoldCount={builder.conversion.show_sold_count}
         showUnitsAvailable={builder.conversion.show_units_available}
         unitsAvailableText={builder.texts.units_available_text}
+        onVariantSelect={handleVariantSelect}
       />
     ),
     shipping: isSectionEnabled("shipping") && (
@@ -287,7 +291,7 @@ const ProductPage = () => {
         onClose={() => setBuySheetOpen(false)}
         onConfirm={handleBuyNow}
         title={product.title}
-        image={images[0]?.url || ""}
+        image={images[galleryIndex]?.url || images[0]?.url || ""}
         originalPrice={Number(product.original_price)}
         salePrice={Number(product.sale_price)}
         discountPercent={product.discount_percent}
