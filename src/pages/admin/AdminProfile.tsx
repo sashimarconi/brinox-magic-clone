@@ -248,16 +248,7 @@ const AdminProfile = () => {
                 toast({ title: "Senhas não coincidem", variant: "destructive" });
                 return;
               }
-              setChangingPassword(true);
-              const { error } = await supabase.auth.updateUser({ password: newPassword });
-              if (error) {
-                toast({ title: "Erro ao alterar senha", description: error.message, variant: "destructive" });
-              } else {
-                toast({ title: "Senha alterada com sucesso!" });
-                setNewPassword("");
-                setConfirmNewPassword("");
-              }
-              setChangingPassword(false);
+              await performPasswordUpdate();
             }}
             className="w-full sm:w-auto"
           >
@@ -266,6 +257,15 @@ const AdminProfile = () => {
           </Button>
         </CardContent>
       </Card>
+
+      <Mfa2faPrompt
+        open={mfaOpen}
+        onClose={() => setMfaOpen(false)}
+        onVerified={async () => {
+          setMfaOpen(false);
+          await performPasswordUpdate();
+        }}
+      />
 
       {/* Plan Info */}
       {!planLoading && plan && (
