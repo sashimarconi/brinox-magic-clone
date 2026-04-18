@@ -347,6 +347,32 @@ const AdminProducts = () => {
     },
   });
 
+  const updateVariantMutation = useMutation({
+    mutationFn: async ({ id, name, color }: { id: string; name: string; color: string | null }) => {
+      const { error } = await supabase
+        .from("product_variants")
+        .update({ name, color })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateVariants();
+      setEditingVariantId(null);
+      toast({ title: "Variante atualizada!" });
+    },
+  });
+
+  const updateGroupMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const { error } = await supabase.from("variant_groups").update({ name }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateVariants();
+      toast({ title: "Categoria atualizada!" });
+    },
+  });
+
   const openEdit = (product: any) => {
     setEditingId(product.id);
     setForm({
