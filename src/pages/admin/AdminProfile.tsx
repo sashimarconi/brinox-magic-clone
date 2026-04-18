@@ -11,6 +11,7 @@ import { User, Mail, Calendar, Crown, Save, Loader2, KeyRound } from "lucide-rea
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import Mfa2faPrompt from "@/components/auth/Mfa2faPrompt";
 
 const AdminProfile = () => {
   const { toast } = useToast();
