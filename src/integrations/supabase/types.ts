@@ -17,10 +17,17 @@ export type Database = {
       abandoned_carts: {
         Row: {
           created_at: string
+          customer_address: string | null
+          customer_cep: string | null
+          customer_city: string | null
+          customer_complement: string | null
           customer_document: string | null
           customer_email: string | null
           customer_name: string | null
+          customer_neighborhood: string | null
+          customer_number: string | null
           customer_phone: string | null
+          customer_state: string | null
           id: string
           product_id: string | null
           product_variant: string | null
@@ -31,10 +38,17 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          customer_address?: string | null
+          customer_cep?: string | null
+          customer_city?: string | null
+          customer_complement?: string | null
           customer_document?: string | null
           customer_email?: string | null
           customer_name?: string | null
+          customer_neighborhood?: string | null
+          customer_number?: string | null
           customer_phone?: string | null
+          customer_state?: string | null
           id?: string
           product_id?: string | null
           product_variant?: string | null
@@ -45,10 +59,17 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          customer_address?: string | null
+          customer_cep?: string | null
+          customer_city?: string | null
+          customer_complement?: string | null
           customer_document?: string | null
           customer_email?: string | null
           customer_name?: string | null
+          customer_neighborhood?: string | null
+          customer_number?: string | null
           customer_phone?: string | null
+          customer_state?: string | null
           id?: string
           product_id?: string | null
           product_variant?: string | null
@@ -338,11 +359,21 @@ export type Database = {
         Row: {
           bumps_total: number | null
           created_at: string
+          customer_address: string | null
+          customer_cep: string | null
+          customer_city: string | null
+          customer_complement: string | null
           customer_document: string
           customer_email: string
+          customer_ip: string | null
           customer_name: string
+          customer_neighborhood: string | null
+          customer_number: string | null
           customer_phone: string
+          customer_state: string | null
+          customer_user_agent: string | null
           id: string
+          paid_at: string | null
           payment_method: string
           payment_status: string
           pix_copied: boolean | null
@@ -366,11 +397,21 @@ export type Database = {
         Insert: {
           bumps_total?: number | null
           created_at?: string
+          customer_address?: string | null
+          customer_cep?: string | null
+          customer_city?: string | null
+          customer_complement?: string | null
           customer_document: string
           customer_email: string
+          customer_ip?: string | null
           customer_name: string
+          customer_neighborhood?: string | null
+          customer_number?: string | null
           customer_phone: string
+          customer_state?: string | null
+          customer_user_agent?: string | null
           id?: string
+          paid_at?: string | null
           payment_method?: string
           payment_status?: string
           pix_copied?: boolean | null
@@ -394,11 +435,21 @@ export type Database = {
         Update: {
           bumps_total?: number | null
           created_at?: string
+          customer_address?: string | null
+          customer_cep?: string | null
+          customer_city?: string | null
+          customer_complement?: string | null
           customer_document?: string
           customer_email?: string
+          customer_ip?: string | null
           customer_name?: string
+          customer_neighborhood?: string | null
+          customer_number?: string | null
           customer_phone?: string
+          customer_state?: string | null
+          customer_user_agent?: string | null
           id?: string
+          paid_at?: string | null
           payment_method?: string
           payment_status?: string
           pix_copied?: boolean | null
