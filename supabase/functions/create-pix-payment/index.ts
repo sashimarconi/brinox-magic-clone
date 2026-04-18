@@ -250,7 +250,36 @@ async function callDuck(gateway: any, body: any, items: any[], webhookUrl: strin
 async function callHisoUnique(gateway: any, body: any, items: any[], webhookUrl: string) {
   // Hiso Unique uses Basic Auth: Base64(PUBLIC_KEY:SECRET_KEY)
   const authToken = btoa(`${gateway.public_key}:${gateway.secret_key}`);
-  
+
+  const requestBody = {
+    amount: body.amount, // in cents
+    payment_method: "pix",
+    postback_url: webhookUrl,
+    customer: {
+      name: body.customerName,
+      email: body.customerEmail,
+      phone: body.customerPhone.replace(/\D/g, ""),
+      document: {
+        number: body.customerDocument.replace(/\D/g, ""),
+        type: body.customerDocument.replace(/\D/g, "").length <= 11 ? "cpf" : "cnpj",
+      },
+    },
+    items: items.map((item) => ({
+      title: item.title,
+      quantity: item.quantity,
+      unit_price: item.unitPrice,
+      tangible: false,
+    })),
+    pix: {
+      expires_in_minutes: 30,
+    },
+    metadata: {
+      provider_name: "VoidTok Checkout",
+    },
+  };
+
+  console.log("[HiSo] Request:", JSON.stringify(requestBody));
+
   const res = await fetch("https://api.hiso.com.br/v1/payment-transaction/create", {
     method: "POST",
     headers: {
@@ -258,60 +287,68 @@ async function callHisoUnique(gateway: any, body: any, items: any[], webhookUrl:
       "accept": "application/json",
       "Authorization": `Basic ${authToken}`,
     },
-    body: JSON.stringify({
-      amount: body.amount, // in cents
-      payment_method: "pix",
-      postback_url: webhookUrl,
-      customer: {
-        name: body.customerName,
-        email: body.customerEmail,
-        phone: body.customerPhone.replace(/\D/g, ""),
-        document: {
-          number: body.customerDocument.replace(/\D/g, ""),
-          type: body.customerDocument.replace(/\D/g, "").length <= 11 ? "cpf" : "cnpj",
-        },
-      },
-      items: items.map((item) => ({
-        title: item.title,
-        quantity: item.quantity,
-        unit_price: item.unitPrice,
-        tangible: false,
-      })),
-      pix: {
-        expires_in_minutes: 30,
-      },
-      metadata: {
-        provider_name: "Lovable Checkout",
-      },
-    }),
+    body: JSON.stringify(requestBody),
   });
-  const data = await res.json();
-  console.log("HiSo response:", JSON.stringify(data));
+
+  const rawText = await res.text();
+  let data: any;
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    console.error("[HiSo] Non-JSON response:", rawText);
+    throw { status: res.status, data: { error: "Invalid response from Hiso", raw: rawText } };
+  }
+
+  console.log("[HiSo] Response status:", res.status);
+  console.log("[HiSo] Response body:", JSON.stringify(data));
+
   if (!res.ok) throw { status: res.status, data };
 
-  // HiSo webhook format has Id, Status fields
-  // Response likely has transaction id and pix data
-  const txn = data.data ?? data.transaction ?? data;
-  const pix = txn?.pix ?? txn?.paymentData ?? txn;
+  // Hiso may nest data under .data, .transaction, or root
+  // Try every plausible shape
+  const txn = data?.data ?? data?.transaction ?? data;
+  const pix = txn?.pix ?? txn?.paymentData ?? txn?.payment_data ?? txn?.qr_code_data ?? txn;
+
+  const transactionId = pickString(
+    txn?.Id, txn?.id, txn?.transactionId, txn?.transaction_id, txn?.uuid,
+    data?.Id, data?.id, data?.transactionId, data?.transaction_id,
+  );
+
+  // Hiso may return qr_code as base64 image OR as EMV string
+  // Try multiple candidates for each field
+  const qrCodeRaw = pickString(
+    pix?.qrCode, pix?.qr_code, pix?.qrCodeUrl, pix?.qr_code_url,
+    pix?.qrCodeImage, pix?.qr_code_image, pix?.image, pix?.qrcode,
+    txn?.qrCode, txn?.qr_code, txn?.qr_code_url,
+  );
+
+  const copyPaste = pickString(
+    pix?.copyPaste, pix?.copy_paste, pix?.copyAndPaste, pix?.copy_and_paste,
+    pix?.pixCopiaECola, pix?.pix_copia_e_cola,
+    pix?.code, pix?.pixCode, pix?.pix_code, pix?.emv,
+    txn?.copyPaste, txn?.copy_paste, txn?.code, txn?.pixCode, txn?.pix_code,
+    // Sometimes qrCode field IS the EMV string when no separate copyPaste is provided
+    typeof pix?.qrCode === "string" && pix.qrCode.startsWith("0002") ? pix.qrCode : null,
+    typeof pix?.qr_code === "string" && pix.qr_code.startsWith("0002") ? pix.qr_code : null,
+  );
+
+  const qrCodeBase64 = pickString(
+    pix?.qrCodeBase64, pix?.qr_code_base64, pix?.qrcodeBase64,
+    pix?.imageBase64, pix?.image_base64, pix?.base64,
+    txn?.qrCodeBase64, txn?.qr_code_base64,
+  );
+
+  // If qrCodeRaw is an EMV string (starts with 0002) it's not an image URL
+  const qrCodeIsImage = qrCodeRaw && (qrCodeRaw.startsWith("http") || qrCodeRaw.startsWith("data:"));
 
   return {
-    transactionId: pickString(
-      txn?.Id, txn?.id, txn?.transactionId, txn?.transaction_id,
-      data?.Id, data?.id, data?.transactionId, data?.transaction_id,
-    ),
-    qrCode: pickString(
-      pix?.qrCode, pix?.qr_code, pix?.qrCodeUrl, pix?.qr_code_url,
-    ),
-    copyPaste: pickString(
-      pix?.copyPaste, pix?.copy_paste, pix?.code,
-      pix?.qrCode, pix?.qr_code,
-      pix?.pixCode, pix?.pix_code,
-    ),
-    qrCodeBase64: pickString(
-      pix?.qrCodeBase64, pix?.qr_code_base64,
-    ),
+    transactionId,
+    qrCode: qrCodeIsImage ? qrCodeRaw : null,
+    copyPaste: copyPaste || (qrCodeRaw && !qrCodeIsImage ? qrCodeRaw : null),
+    qrCodeBase64,
     expiresAt: pickString(
-      pix?.expiresAt, pix?.expires_at, pix?.expiration_date,
+      pix?.expiresAt, pix?.expires_at, pix?.expiration_date, pix?.expirationDate,
+      txn?.expiresAt, txn?.expires_at,
     ),
   };
 }
