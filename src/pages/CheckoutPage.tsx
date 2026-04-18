@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import QRCode from "qrcode";
 import { useTikTokPixel, trackTikTokPurchase, trackTikTokInitiateCheckout } from "@/hooks/useTikTokPixel";
 import { usePageTracking, useVisitorHeartbeat, trackEvent } from "@/hooks/usePageTracking";
@@ -235,8 +235,23 @@ const CheckoutPage = () => {
     enabled: !!slug,
   });
 
+  // Carrega APENAS os pixels do dono da loja (multi-tenant safe)
+  useTikTokPixel(product?.user_id);
   usePageTracking("checkout_view", product?.user_id);
   useVisitorHeartbeat(product?.user_id);
+
+  // Dispara InitiateCheckout quando o produto e preço estão disponíveis
+  const initiateCheckoutFiredRef = useRef(false);
+  useEffect(() => {
+    if (product?.id && !initiateCheckoutFiredRef.current) {
+      initiateCheckoutFiredRef.current = true;
+      trackTikTokInitiateCheckout({
+        contentId: product.id,
+        contentName: selectedVariant ? `${product.title} - ${selectedVariant}` : product.title,
+        value: Number(product.sale_price || 0),
+      });
+    }
+  }, [product?.id, product?.title, product?.sale_price, selectedVariant]);
 
   const { data: shippingOptions } = useQuery({
     queryKey: ["shipping-options"],
