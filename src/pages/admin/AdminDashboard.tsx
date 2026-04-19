@@ -148,10 +148,10 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchAll();
     const interval = setInterval(async () => {
-      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      const { count } = await supabase.from("visitor_sessions").select("session_id", { count: "exact", head: true }).gte("last_seen_at", fiveMinAgo);
+      const liveCutoff = new Date(Date.now() - 20 * 1000).toISOString();
+      const { count } = await supabase.from("visitor_sessions").select("session_id", { count: "exact", head: true }).gte("last_seen_at", liveCutoff);
       setStats(prev => ({ ...prev, onlineNow: count || 0 }));
-    }, 15000);
+    }, 10000);
     return () => clearInterval(interval);
   }, [dateRange]);
 
