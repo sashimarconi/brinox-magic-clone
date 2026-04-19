@@ -325,12 +325,28 @@ const AdminStores = () => {
                 />
               </div>
               <div>
-                <Label>Logo URL</Label>
-                <Input
-                  value={form.logo_url}
-                  onChange={(e) => setForm((f) => ({ ...f, logo_url: e.target.value }))}
-                  placeholder="https://..."
-                />
+                <Label>Logo da Loja</Label>
+                <div className="flex gap-1">
+                  <Input
+                    value={form.logo_url}
+                    onChange={(e) => setForm((f) => ({ ...f, logo_url: e.target.value }))}
+                    placeholder="https://... ou faça upload"
+                    className="flex-1"
+                  />
+                  <input
+                    ref={storeLogoInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleStoreLogoUpload(f); }}
+                  />
+                  <Button type="button" variant="outline" size="icon" disabled={uploadingStoreLogo} onClick={() => storeLogoInputRef.current?.click()}>
+                    <Upload className="w-4 h-4" />
+                  </Button>
+                </div>
+                {form.logo_url && (
+                  <img src={form.logo_url} alt="Logo" className="w-16 h-16 rounded-lg object-cover mt-2 border border-border" />
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
