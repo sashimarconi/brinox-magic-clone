@@ -43,7 +43,28 @@ const AdminStores = () => {
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [productLogoUrl, setProductLogoUrl] = useState("");
   const [uploadingProductLogo, setUploadingProductLogo] = useState(false);
+  const [uploadingStoreLogo, setUploadingStoreLogo] = useState(false);
   const productLogoInputRef = useRef<HTMLInputElement>(null);
+  const storeLogoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleStoreLogoUpload = async (file: File) => {
+    setUploadingStoreLogo(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      const ext = file.name.split(".").pop();
+      const fileName = `${user.id}/store-logo-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("product-images").upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(fileName);
+      setForm((f) => ({ ...f, logo_url: urlData.publicUrl }));
+      toast({ title: "Logo enviada!" });
+    } catch (err: any) {
+      toast({ title: "Erro ao enviar", description: err.message, variant: "destructive" });
+    } finally {
+      setUploadingStoreLogo(false);
+    }
+  };
 
   const { data: storeSettings } = useQuery({
     queryKey: ["store-settings-admin"],
