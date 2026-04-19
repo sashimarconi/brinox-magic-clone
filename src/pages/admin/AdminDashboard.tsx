@@ -71,10 +71,10 @@ const AdminDashboard = () => {
     setLoading(true);
     const startISO = rangeStart.toISOString();
     const endISO = rangeEnd.toISOString();
-    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const liveCutoff = new Date(Date.now() - 20 * 1000).toISOString();
 
     const [onlineRes, eventsRes, ordersRes, productsRes] = await Promise.all([
-      supabase.from("visitor_sessions").select("session_id", { count: "exact", head: true }).gte("last_seen_at", fiveMinAgo),
+      supabase.from("visitor_sessions").select("session_id", { count: "exact", head: true }).gte("last_seen_at", liveCutoff),
       supabase.from("page_events").select("event_type, created_at").gte("created_at", startISO).lte("created_at", endISO),
       supabase.from("orders").select("id, total, payment_status, created_at, product_id").gte("created_at", startISO).lte("created_at", endISO),
       supabase.from("products").select("id, title"),
