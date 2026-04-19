@@ -64,6 +64,95 @@ function getWebhookFields(webhookUrl: string) {
   };
 }
 
+async function sha256Hex(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input.trim().toLowerCase());
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Dispara CompletePayment via TikTok Events API S2S.
+ * Roda no momento da geração do PIX (mesmo evento que o pixel client-side dispara),
+ * garantindo entrega mesmo se o navegador do visitante bloquear o script do TikTok.
+ * O event_id = order.id permite deduplicação automática com o evento client-side.
+ *
+ * Respeita fire_on_paid_only: pixels marcados como "só após pagamento" NÃO disparam aqui.
+ */
+async function dispatchTikTokPixGenerated(supabase: any, params: {
+  userId: string;
+  orderId: string;
+  productId: string;
+  total: number;
+  customerEmail: string;
+  customerPhone: string;
+  customerIp: string | null;
+  customerUserAgent: string | null;
+}) {
+  try {
+    const { data: pixels } = await supabase
+      .from("tracking_pixels")
+      .select("pixel_id, access_token, fire_on_paid_only")
+      .eq("user_id", params.userId)
+      .eq("platform", "tiktok")
+      .eq("active", true);
+
+    if (!pixels || pixels.length === 0) {
+      console.log("[TikTok S2S PIX] Nenhum pixel ativo para user", params.userId);
+      return;
+    }
+
+    const userData: Record<string, string> = {};
+    if (params.customerEmail) userData.email = await sha256Hex(params.customerEmail);
+    if (params.customerPhone) userData.phone = await sha256Hex(params.customerPhone);
+    if (params.customerIp) userData.ip = params.customerIp;
+    if (params.customerUserAgent) userData.user_agent = params.customerUserAgent;
+
+    for (const pixel of pixels) {
+      // Pixels "fire_on_paid_only" só disparam no webhook de pagamento confirmado
+      if (pixel.fire_on_paid_only) {
+        console.log(`[TikTok S2S PIX] Pixel ${pixel.pixel_id} é fire_on_paid_only, pulando geração de PIX.`);
+        continue;
+      }
+      if (!pixel.access_token) {
+        console.warn(`[TikTok S2S PIX] Pixel ${pixel.pixel_id} sem access_token (cadastre o token em /admin/pixels para enviar via S2S).`);
+        continue;
+      }
+
+      const body = {
+        event_source: "web",
+        event_source_id: pixel.pixel_id,
+        data: [{
+          event: "CompletePayment",
+          event_time: Math.floor(Date.now() / 1000),
+          event_id: params.orderId,
+          user: userData,
+          properties: {
+            currency: "BRL",
+            value: Number(params.total) || 0,
+            content_type: "product",
+            order_id: params.orderId,
+            ...(params.productId ? { content_id: params.productId } : {}),
+          },
+        }],
+      };
+
+      const resp = await fetch("https://business-api.tiktok.com/open_api/v1.3/event/track/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Access-Token": pixel.access_token },
+        body: JSON.stringify(body),
+      });
+      const result = await resp.json().catch(() => ({}));
+      if (resp.ok && result?.code === 0) {
+        console.log(`[TikTok S2S PIX] ✅ Pixel ${pixel.pixel_id} → CompletePayment (event_id: ${params.orderId})`);
+      } else {
+        console.error(`[TikTok S2S PIX] ❌ Pixel ${pixel.pixel_id} → erro`, JSON.stringify(result));
+      }
+    }
+  } catch (err) {
+    console.error("[TikTok S2S PIX] Error:", err);
+  }
+}
+
 function pickString(...values: unknown[]) {
   for (const value of values) {
     if (typeof value === "string" && value.trim()) {
@@ -549,6 +638,22 @@ Deno.serve(async (req) => {
 
     if (orderError) {
       console.error("Order save error:", orderError);
+    }
+
+    // Fire TikTok CompletePayment via Server-to-Server quando o PIX é gerado.
+    // Bypassa ad-blockers do navegador do visitante (que comumente bloqueiam
+    // analytics.tiktok.com). Roda em paralelo, sem await, pra não atrasar a resposta.
+    if (orderData?.id && product.user_id) {
+      dispatchTikTokPixGenerated(supabase, {
+        userId: product.user_id,
+        orderId: orderData.id,
+        productId: body.productId,
+        total: body.amount / 100,
+        customerEmail: body.customerEmail,
+        customerPhone: body.customerPhone,
+        customerIp,
+        customerUserAgent: body.customerUserAgent || null,
+      });
     }
 
     // Dispatch order_created webhook
