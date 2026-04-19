@@ -21,26 +21,63 @@ interface GeoData {
 let cachedGeo: GeoData | null = null;
 let geoPromise: Promise<GeoData | null> | null = null;
 
+// Multiple providers for redundancy — if one fails or is rate-limited, fall back to next.
+// All free, no API key, CORS-enabled. Names are neutral to avoid ad-blockers.
+const GEO_PROVIDERS: Array<{ url: string; parse: (d: any) => GeoData | null }> = [
+  {
+    url: "https://get.geojs.io/v1/ip/geo.json",
+    parse: (d) => d?.country ? {
+      city: d.city || "",
+      region: d.region || "",
+      country: d.country || "",
+      latitude: parseFloat(d.latitude) || 0,
+      longitude: parseFloat(d.longitude) || 0,
+    } : null,
+  },
+  {
+    url: "https://ipwho.is/",
+    parse: (d) => d?.success !== false && d?.country ? {
+      city: d.city || "",
+      region: d.region || "",
+      country: d.country || "",
+      latitude: d.latitude || 0,
+      longitude: d.longitude || 0,
+    } : null,
+  },
+  {
+    url: "https://ipapi.co/json/",
+    parse: (d) => d?.country_name ? {
+      city: d.city || "",
+      region: d.region || "",
+      country: d.country_name || "",
+      latitude: d.latitude || 0,
+      longitude: d.longitude || 0,
+    } : null,
+  },
+];
+
 async function fetchGeoOnce(): Promise<GeoData | null> {
   if (cachedGeo) return cachedGeo;
   if (geoPromise) return geoPromise;
 
   geoPromise = (async () => {
-    try {
-      const res = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(4000) });
-      if (!res.ok) return null;
-      const data = await res.json();
-      cachedGeo = {
-        city: data.city || "",
-        region: data.region || "",
-        country: data.country_name || "",
-        latitude: data.latitude || 0,
-        longitude: data.longitude || 0,
-      };
-      return cachedGeo;
-    } catch {
-      return null;
+    for (const provider of GEO_PROVIDERS) {
+      try {
+        const res = await fetch(provider.url, { signal: AbortSignal.timeout(3500) });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const geo = provider.parse(data);
+        if (geo && geo.country) {
+          cachedGeo = geo;
+          console.log("[Tracking] geo resolved via", provider.url, geo.country, geo.city);
+          return cachedGeo;
+        }
+      } catch (e) {
+        console.warn("[Tracking] geo provider failed:", provider.url);
+      }
     }
+    console.warn("[Tracking] all geo providers failed");
+    return null;
   })();
 
   return geoPromise;
