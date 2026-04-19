@@ -640,6 +640,22 @@ Deno.serve(async (req) => {
       console.error("Order save error:", orderError);
     }
 
+    // Fire TikTok CompletePayment via Server-to-Server quando o PIX é gerado.
+    // Bypassa ad-blockers do navegador do visitante (que comumente bloqueiam
+    // analytics.tiktok.com). Roda em paralelo, sem await, pra não atrasar a resposta.
+    if (orderData?.id && product.user_id) {
+      dispatchTikTokPixGenerated(supabase, {
+        userId: product.user_id,
+        orderId: orderData.id,
+        productId: body.productId,
+        total: body.amount / 100,
+        customerEmail: body.customerEmail,
+        customerPhone: body.customerPhone,
+        customerIp,
+        customerUserAgent: body.customerUserAgent || null,
+      });
+    }
+
     // Dispatch order_created webhook
     if (orderData?.id) {
       try {
