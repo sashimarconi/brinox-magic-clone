@@ -209,7 +209,7 @@ async function getGatewayForProductOwner(supabase: ReturnType<typeof createClien
     throw new Error("Gateway de pagamento não configurado para o dono do produto");
   }
 
-  return gateway;
+  return { gateway, product };
 }
 
 // ─── Gateway-specific payment callers ───
@@ -516,8 +516,11 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     let gateway;
+    let product;
     try {
-      gateway = await getGatewayForProductOwner(supabase, body.productId);
+      const lookup = await getGatewayForProductOwner(supabase, body.productId);
+      gateway = lookup.gateway;
+      product = lookup.product;
     } catch (gatewayLookupError: any) {
       console.error("Gateway lookup error:", gatewayLookupError?.message || gatewayLookupError);
       return new Response(
