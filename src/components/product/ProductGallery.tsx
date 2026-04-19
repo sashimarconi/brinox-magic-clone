@@ -33,11 +33,11 @@ const ProductGallery = ({ images, currentIndex, onIndexChange }: ProductGalleryP
 
   return (
     <div className="relative w-full bg-card">
-      <div className="relative aspect-square overflow-hidden">
+      <div className="relative aspect-square overflow-hidden bg-muted">
         <img
           src={currentImage?.url}
           alt={currentImage?.alt || ""}
-          className="w-full h-full object-cover transition-opacity duration-200"
+          className="w-full h-full object-contain transition-opacity duration-200"
         />
 
         {images.length > 1 && (
