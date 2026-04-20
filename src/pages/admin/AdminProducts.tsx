@@ -9,8 +9,102 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Image as ImageIcon, Palette, ChevronDown, ChevronUp, Link2, Upload, X, DollarSign, Tag, Zap, Truck, Star } from "lucide-react";
+import { Plus, Pencil, Trash2, Image as ImageIcon, Palette, ChevronDown, ChevronUp, Link2, Upload, X, DollarSign, Tag, Zap, Truck, Star, GripVertical, Sparkles, Package } from "lucide-react";
 import { toast as sonnerToast } from "sonner";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+// Sortable thumbnail for creation images (not yet persisted)
+const SortableCreationImage = ({ id, url, onRemove }: { id: string; url: string; onRemove: () => void }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="relative group rounded-xl overflow-hidden border border-border bg-card shadow-sm"
+    >
+      <img src={url} alt="" className="w-24 h-24 object-cover" />
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="absolute top-1 left-1 bg-background/80 backdrop-blur-sm rounded p-0.5 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+        aria-label="Arrastar para reordenar"
+      >
+        <GripVertical className="w-3.5 h-3.5 text-foreground" />
+      </button>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </div>
+  );
+};
+
+// Sortable row for persisted product images
+const SortableProductImage = ({
+  id,
+  url,
+  alt,
+  onDelete,
+}: {
+  id: string;
+  url: string;
+  alt: string | null;
+  onDelete: () => void;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 bg-muted/40 hover:bg-muted/60 transition-colors p-2 rounded-lg border border-border"
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-1"
+        aria-label="Arrastar para reordenar"
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+      <img src={url} alt={alt || ""} className="w-14 h-14 rounded object-cover border border-border" />
+      <span className="flex-1 text-xs text-muted-foreground truncate">{alt || url}</span>
+      <Button variant="ghost" size="sm" onClick={onDelete}>
+        <Trash2 className="w-4 h-4 text-destructive" />
+      </Button>
+    </div>
+  );
+};
 
 interface ProductForm {
   slug: string;
