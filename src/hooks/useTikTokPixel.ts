@@ -181,7 +181,7 @@ function trackTikTokEvent(eventName: string, payload: Record<string, unknown>, f
 }
 
 function flushQueuedTikTokEvents() {
-  if (!queuedTikTokEvents.length || !activeTikTokPixels.size || !tikTokLibraryLoaded) return;
+  if (!queuedTikTokEvents.length || !activeTikTokPixels.size) return;
   const events = queuedTikTokEvents.splice(0, queuedTikTokEvents.length);
   events.forEach(({ eventName, payload, filterPaidOnly, eventId }) => {
     if (!dispatchTikTokEvent(eventName, payload, filterPaidOnly, eventId)) {
