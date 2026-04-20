@@ -124,18 +124,18 @@ const SaasUsers = () => {
           <div className="space-y-3 p-3 md:hidden">
             {filtered.map((user) => (
               <div key={user.user_id} className="rounded-2xl border border-border bg-background p-4 space-y-3">
-                <div className="flex items-center gap-3">
+                <Link to={`/admin/users/${user.user_id}`} className="flex items-center gap-3 group">
                   <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-[11px] font-bold shrink-0">
                     {(user.full_name || user.email || "?").charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{user.full_name || "—"}</p>
+                    <p className="text-sm font-medium truncate group-hover:text-accent transition-colors">{user.full_name || "—"}</p>
                     <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
                   </div>
                   <Badge variant="outline" className={`text-[10px] font-medium shrink-0 ${planColors[user.plan] || ""}`}>
                     {user.plan.toUpperCase()}
                   </Badge>
-                </div>
+                </Link>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <div className="flex items-center gap-1.5">
                     <span>Taxa:</span>
