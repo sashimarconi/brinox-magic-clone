@@ -617,11 +617,23 @@ const AdminProducts = () => {
 
       {/* Product form dialog — improved visual */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
-          <DialogHeader className="px-6 pt-6 pb-2">
-            <DialogTitle className="text-xl font-bold">{editingId ? "Editar Produto" : "Novo Produto"}</DialogTitle>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+          <DialogHeader className="px-6 pt-6 pb-5 border-b border-border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20">
+                <Package className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold tracking-tight">
+                  {editingId ? "Editar Produto" : "Novo Produto"}
+                </DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {editingId ? "Atualize as informações do produto" : "Preencha os campos para cadastrar um novo produto"}
+                </p>
+              </div>
+            </div>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-6">
+          <form onSubmit={handleSubmit} className="px-6 py-6 space-y-6">
             
             {/* Section: Basic Info */}
             <div className="space-y-4">
