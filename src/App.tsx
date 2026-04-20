@@ -13,6 +13,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminProducts from "./pages/admin/AdminProducts";
+import AdminProductForm from "./pages/admin/AdminProductForm";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminReviews from "./pages/admin/AdminReviews";
@@ -87,6 +88,8 @@ const AppRoutes = () => {
         <Route path="orders" element={<AdminOrders />} />
         <Route path="abandoned-carts" element={<AdminAbandonedCarts />} />
         <Route path="products" element={<AdminProducts />} />
+        <Route path="products/new" element={<AdminProductForm />} />
+        <Route path="products/:id/edit" element={<AdminProductForm />} />
         <Route path="reviews" element={<AdminReviews />} />
         <Route path="gateways" element={<AdminGateways />} />
         <Route path="shipping" element={<AdminShipping />} />

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -230,6 +231,7 @@ const AdminProducts = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Auto-calculate discount
   useEffect(() => {
@@ -557,7 +559,7 @@ const AdminProducts = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-foreground">Produtos</h2>
-        <Button onClick={() => { setEditingId(null); setForm(emptyForm); setCreationImages([]); setDialogOpen(true); }} className="bg-marketplace-red hover:bg-marketplace-red/90 shrink-0">
+        <Button onClick={() => navigate("/dashboard/products/new")} className="bg-marketplace-red hover:bg-marketplace-red/90 shrink-0">
           <Plus className="w-4 h-4 mr-1" /> <span className="hidden sm:inline">Novo Produto</span><span className="sm:hidden">Novo</span>
         </Button>
       </div>
@@ -601,7 +603,7 @@ const AdminProducts = () => {
               <Button variant="ghost" size="sm" onClick={() => { setSelectedProductId(product.id); setImageDialogOpen(true); }}>
                 <ImageIcon className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => openEdit(product)}>
+              <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/products/${product.id}/edit`)}>
                 <Pencil className="w-4 h-4" />
               </Button>
               <Button variant="ghost" size="sm" onClick={() => { if (confirm("Remover este produto?")) deleteMutation.mutate(product.id); }}>
