@@ -128,23 +128,28 @@ function loadTikTokPixel(pixelId: string, fireOnPaidOnly: boolean) {
  */
 function dispatchTikTokEvent(eventName: string, payload: Record<string, unknown>, filterPaidOnly?: boolean, eventId?: string) {
   const ttq = getTikTokQueue();
-  if (!ttq || !activeTikTokPixels.size || !tikTokLibraryLoaded) return false;
+  if (!ttq || !activeTikTokPixels.size) return false;
 
+  // IMPORTANTE: o ttq tem fila própria (array antes da lib carregar). Disparamos sempre,
+  // mesmo se tikTokLibraryLoaded=false — o ttq.instance(id).track() vai bufferizar.
   let fired = false;
   for (const [pixelId, config] of activeTikTokPixels) {
     if (filterPaidOnly === true && !config.fire_on_paid_only) continue;
     if (filterPaidOnly === false && config.fire_on_paid_only) continue;
 
-    const instance = typeof ttq.instance === "function" ? ttq.instance(pixelId) : ttq;
-    if (typeof instance?.track === "function") {
-      // event_id permite deduplicação com o evento S2S (enviado pelo backend ao confirmar pagamento)
-      if (eventId) {
-        instance.track(eventName, payload, { event_id: eventId });
-      } else {
-        instance.track(eventName, payload);
+    try {
+      const instance = typeof ttq.instance === "function" ? ttq.instance(pixelId) : ttq;
+      if (typeof instance?.track === "function") {
+        if (eventId) {
+          instance.track(eventName, payload, { event_id: eventId });
+        } else {
+          instance.track(eventName, payload);
+        }
+        fired = true;
+        console.log("[TikTok Pixel] Evento enviado.", { pixelId, eventName, filterPaidOnly, eventId, libLoaded: tikTokLibraryLoaded });
       }
-      fired = true;
-      console.log("[TikTok Pixel] Evento enviado.", { pixelId, eventName, filterPaidOnly, eventId });
+    } catch (err) {
+      console.error("[TikTok Pixel] Falha ao disparar evento.", { pixelId, eventName, err });
     }
   }
   return fired;
