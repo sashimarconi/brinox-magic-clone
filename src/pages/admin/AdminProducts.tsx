@@ -9,8 +9,102 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Image as ImageIcon, Palette, ChevronDown, ChevronUp, Link2, Upload, X, DollarSign, Tag, Zap, Truck, Star } from "lucide-react";
+import { Plus, Pencil, Trash2, Image as ImageIcon, Palette, ChevronDown, ChevronUp, Link2, Upload, X, DollarSign, Tag, Zap, Truck, Star, GripVertical, Sparkles, Package } from "lucide-react";
 import { toast as sonnerToast } from "sonner";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+// Sortable thumbnail for creation images (not yet persisted)
+const SortableCreationImage = ({ id, url, onRemove }: { id: string; url: string; onRemove: () => void }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="relative group rounded-xl overflow-hidden border border-border bg-card shadow-sm"
+    >
+      <img src={url} alt="" className="w-24 h-24 object-cover" />
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="absolute top-1 left-1 bg-background/80 backdrop-blur-sm rounded p-0.5 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+        aria-label="Arrastar para reordenar"
+      >
+        <GripVertical className="w-3.5 h-3.5 text-foreground" />
+      </button>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </div>
+  );
+};
+
+// Sortable row for persisted product images
+const SortableProductImage = ({
+  id,
+  url,
+  alt,
+  onDelete,
+}: {
+  id: string;
+  url: string;
+  alt: string | null;
+  onDelete: () => void;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 bg-muted/40 hover:bg-muted/60 transition-colors p-2 rounded-lg border border-border"
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-1"
+        aria-label="Arrastar para reordenar"
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+      <img src={url} alt={alt || ""} className="w-14 h-14 rounded object-cover border border-border" />
+      <span className="flex-1 text-xs text-muted-foreground truncate">{alt || url}</span>
+      <Button variant="ghost" size="sm" onClick={onDelete}>
+        <Trash2 className="w-4 h-4 text-destructive" />
+      </Button>
+    </div>
+  );
+};
 
 interface ProductForm {
   slug: string;
@@ -127,8 +221,12 @@ const AdminProducts = () => {
   const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
   const [editVariantName, setEditVariantName] = useState("");
   const [editVariantColor, setEditVariantColor] = useState("");
-  const [creationImages, setCreationImages] = useState<{ url: string; alt: string }[]>([]);
+  const [creationImages, setCreationImages] = useState<{ id: string; url: string; alt: string }[]>([]);
   const [newCreationImageUrl, setNewCreationImageUrl] = useState("");
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
   const [uploadingImage, setUploadingImage] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -275,6 +373,22 @@ const AdminProducts = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["product-images", selectedProductId] });
+    },
+  });
+
+  const reorderImagesMutation = useMutation({
+    mutationFn: async (orderedIds: string[]) => {
+      // Update each image's sort_order in parallel
+      await Promise.all(
+        orderedIds.map((id, index) =>
+          supabase.from("product_images").update({ sort_order: index }).eq("id", id)
+        )
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["product-images", selectedProductId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      toast({ title: "Ordem salva!" });
     },
   });
 
@@ -425,7 +539,7 @@ const AdminProducts = () => {
       if (error) throw error;
       const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(fileName);
       if (forCreation) {
-        setCreationImages(prev => [...prev, { url: urlData.publicUrl, alt: "" }]);
+        setCreationImages(prev => [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, url: urlData.publicUrl, alt: "" }]);
       } else if (selectedProductId) {
         addImageMutation.mutate({ product_id: selectedProductId, url: urlData.publicUrl, alt: "" });
       }
@@ -503,11 +617,23 @@ const AdminProducts = () => {
 
       {/* Product form dialog — improved visual */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
-          <DialogHeader className="px-6 pt-6 pb-2">
-            <DialogTitle className="text-xl font-bold">{editingId ? "Editar Produto" : "Novo Produto"}</DialogTitle>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+          <DialogHeader className="px-6 pt-6 pb-5 border-b border-border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20">
+                <Package className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold tracking-tight">
+                  {editingId ? "Editar Produto" : "Novo Produto"}
+                </DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {editingId ? "Atualize as informações do produto" : "Preencha os campos para cadastrar um novo produto"}
+                </p>
+              </div>
+            </div>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-6">
+          <form onSubmit={handleSubmit} className="px-6 py-6 space-y-6">
             
             {/* Section: Basic Info */}
             <div className="space-y-4">
@@ -549,22 +675,42 @@ const AdminProducts = () => {
                   Imagens do Produto
                 </div>
                 
-                {/* Image thumbnails */}
+                {/* Image thumbnails — drag to reorder */}
                 {creationImages.length > 0 && (
-                  <div className="flex flex-wrap gap-3">
-                    {creationImages.map((img, i) => (
-                      <div key={i} className="relative group">
-                        <img src={img.url} alt="" className="w-20 h-20 rounded-lg object-cover border border-border" />
-                        <button
-                          type="button"
-                          onClick={() => setCreationImages(prev => prev.filter((_, idx) => idx !== i))}
-                          className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                  <>
+                    <p className="text-[10px] text-muted-foreground">
+                      💡 Arraste as imagens para reordenar. A primeira será a principal.
+                    </p>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={(event: DragEndEvent) => {
+                        const { active, over } = event;
+                        if (over && active.id !== over.id) {
+                          setCreationImages((items) => {
+                            const oldIndex = items.findIndex((i) => i.id === active.id);
+                            const newIndex = items.findIndex((i) => i.id === over.id);
+                            return arrayMove(items, oldIndex, newIndex);
+                          });
+                        }
+                      }}
+                    >
+                      <SortableContext items={creationImages.map((i) => i.id)} strategy={rectSortingStrategy}>
+                        <div className="flex flex-wrap gap-3">
+                          {creationImages.map((img) => (
+                            <SortableCreationImage
+                              key={img.id}
+                              id={img.id}
+                              url={img.url}
+                              onRemove={() =>
+                                setCreationImages((prev) => prev.filter((p) => p.id !== img.id))
+                              }
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  </>
                 )}
 
                 <div className="flex gap-2">
@@ -581,7 +727,7 @@ const AdminProducts = () => {
                     className="h-10"
                     disabled={!newCreationImageUrl}
                     onClick={() => {
-                      setCreationImages(prev => [...prev, { url: newCreationImageUrl, alt: "" }]);
+                      setCreationImages(prev => [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, url: newCreationImageUrl, alt: "" }]);
                       setNewCreationImageUrl("");
                     }}
                   >
@@ -792,18 +938,48 @@ const AdminProducts = () => {
       <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Imagens do Produto</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-primary" />
+              Imagens do Produto
+            </DialogTitle>
+            {(productImages?.length || 0) > 1 && (
+              <p className="text-[11px] text-muted-foreground">
+                💡 Arraste pela alça à esquerda para reordenar.
+              </p>
+            )}
           </DialogHeader>
           <div className="space-y-3">
-            {productImages?.map((img) => (
-              <div key={img.id} className="flex items-center gap-3 bg-muted/50 p-2 rounded-lg">
-                <img src={img.url} alt={img.alt || ""} className="w-14 h-14 rounded object-cover" />
-                <span className="flex-1 text-xs text-muted-foreground truncate">{img.alt || img.url}</span>
-                <Button variant="ghost" size="sm" onClick={() => deleteImageMutation.mutate(img.id)}>
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
-              </div>
-            ))}
+            {productImages && productImages.length > 0 && (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(event: DragEndEvent) => {
+                  const { active, over } = event;
+                  if (over && active.id !== over.id) {
+                    const oldIndex = productImages.findIndex((i) => i.id === active.id);
+                    const newIndex = productImages.findIndex((i) => i.id === over.id);
+                    const reordered = arrayMove(productImages, oldIndex, newIndex);
+                    // Optimistic update
+                    queryClient.setQueryData(["product-images", selectedProductId], reordered);
+                    reorderImagesMutation.mutate(reordered.map((i) => i.id));
+                  }
+                }}
+              >
+                <SortableContext items={productImages.map((i) => i.id)} strategy={rectSortingStrategy}>
+                  <div className="space-y-2">
+                    {productImages.map((img) => (
+                      <SortableProductImage
+                        key={img.id}
+                        id={img.id}
+                        url={img.url}
+                        alt={img.alt}
+                        onDelete={() => deleteImageMutation.mutate(img.id)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            )}
 
             <div className="border-t border-border pt-3 space-y-2">
               <div className="flex gap-2">
