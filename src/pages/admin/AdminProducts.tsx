@@ -376,6 +376,22 @@ const AdminProducts = () => {
     },
   });
 
+  const reorderImagesMutation = useMutation({
+    mutationFn: async (orderedIds: string[]) => {
+      // Update each image's sort_order in parallel
+      await Promise.all(
+        orderedIds.map((id, index) =>
+          supabase.from("product_images").update({ sort_order: index }).eq("id", id)
+        )
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["product-images", selectedProductId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      toast({ title: "Ordem salva!" });
+    },
+  });
+
   const addGroupMutation = useMutation({
     mutationFn: async ({ product_id, name }: { product_id: string; name: string }) => {
       const { error } = await supabase.from("variant_groups").insert({ product_id, name });
@@ -523,7 +539,7 @@ const AdminProducts = () => {
       if (error) throw error;
       const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(fileName);
       if (forCreation) {
-        setCreationImages(prev => [...prev, { url: urlData.publicUrl, alt: "" }]);
+        setCreationImages(prev => [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, url: urlData.publicUrl, alt: "" }]);
       } else if (selectedProductId) {
         addImageMutation.mutate({ product_id: selectedProductId, url: urlData.publicUrl, alt: "" });
       }
@@ -679,7 +695,7 @@ const AdminProducts = () => {
                     className="h-10"
                     disabled={!newCreationImageUrl}
                     onClick={() => {
-                      setCreationImages(prev => [...prev, { url: newCreationImageUrl, alt: "" }]);
+                      setCreationImages(prev => [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, url: newCreationImageUrl, alt: "" }]);
                       setNewCreationImageUrl("");
                     }}
                   >
