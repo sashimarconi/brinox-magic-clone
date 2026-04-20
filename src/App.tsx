@@ -33,6 +33,7 @@ import AdminPlans from "./pages/admin/AdminPlans";
 import SaasAdminLayout from "./components/admin/SaasAdminLayout";
 import SaasMetrics from "./pages/admin/SaasMetrics";
 import SaasUsers from "./pages/admin/SaasUsers";
+import SaasUserDetails from "./pages/admin/SaasUserDetails";
 import SaasAnalytics from "./pages/admin/SaasAnalytics";
 import SaasOrders from "./pages/admin/SaasOrders";
 import AdminPlatformSettings from "./pages/admin/AdminPlatformSettings";
