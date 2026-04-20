@@ -8,7 +8,7 @@ interface DomainContextType {
 }
 
 const DomainContext = createContext<DomainContextType>({
-  domainInfo: { isCustomDomain: false, ownerUserId: null, domain: "", verified: false },
+  domainInfo: { isCustomDomain: false, ownerUserId: null, domain: "", verified: false, isShared: false },
   isLoading: true,
   isPlatform: true,
 });
