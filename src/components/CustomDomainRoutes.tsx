@@ -14,6 +14,7 @@ const CustomDomainRoutes = () => (
   <Routes>
     <Route path="/" element={<DomainStorefront />} />
     <Route path="/product/:slug" element={<ProductPage />} />
+    <Route path="/products/:slug" element={<ProductPage />} />
     <Route path="/loja/:slug" element={<StorePage />} />
     <Route path="/checkout/:slug" element={<CheckoutPage />} />
     <Route path="*" element={<NotFound />} />
