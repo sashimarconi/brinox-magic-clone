@@ -369,31 +369,29 @@ const AdminProductForm = () => {
         }
       }
 
-      // Insert any new (non-persisted) images
+      // Insert any new (non-persisted) images one-by-one so we can map
+      // each tmpId to its real DB id without relying on insert() return order
+      // (Postgres does not guarantee returning rows in input order).
       const newImages = images.filter((i) => !i.persisted);
-      const insertedNew: { id: string; tmpId: string }[] = [];
-      if (newImages.length > 0) {
-        const payload = newImages.map((img) => ({
-          product_id: productId!,
-          url: img.url,
-          alt: img.alt || null,
-        }));
+      const tmpToReal = new Map<string, string>();
+      for (const img of newImages) {
         const { data: inserted, error } = await supabase
           .from("product_images")
-          .insert(payload)
-          .select("id, url");
+          .insert({
+            product_id: productId!,
+            url: img.url,
+            alt: img.alt || null,
+          })
+          .select("id")
+          .single();
         if (error) throw error;
-        // Match returned rows back to tmp ids by url order
-        inserted?.forEach((row: any, idx: number) => {
-          insertedNew.push({ id: row.id, tmpId: newImages[idx].id });
-        });
+        tmpToReal.set(img.id, inserted.id);
       }
 
-      // Build final ordered list of real DB IDs respecting current order
-      const tmpToReal = new Map(insertedNew.map((p) => [p.tmpId, p.id]));
+      // Build final ordered list of real DB IDs respecting current visual order
       const finalOrder = images.map((img) => (img.persisted ? img.id : tmpToReal.get(img.id)!));
 
-      // Reorder all images
+      // Persist sort_order matching current order
       if (finalOrder.length > 0) {
         await Promise.all(
           finalOrder.map((id, index) =>
