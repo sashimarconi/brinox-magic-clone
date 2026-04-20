@@ -1461,6 +1461,42 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_user_details: {
+        Args: { _target_user_id: string }
+        Returns: {
+          avatar_url: string
+          email: string
+          full_name: string
+          monthly_price: number
+          plan: Database["public"]["Enums"]["plan_type"]
+          total_orders: number
+          total_paid_orders: number
+          total_pending_revenue: number
+          total_products: number
+          total_revenue: number
+          total_stores: number
+          transaction_fee_percent: number
+          user_created_at: string
+          user_id: string
+        }[]
+      }
+      admin_user_products: {
+        Args: { _target_user_id: string }
+        Returns: {
+          active: boolean
+          created_at: string
+          original_price: number
+          product_id: string
+          sale_price: number
+          slug: string
+          thumbnail_url: string
+          title: string
+          total_orders: number
+          total_paid_orders: number
+          total_pending_revenue: number
+          total_revenue: number
+        }[]
+      }
       get_user_plan: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["plan_type"]
