@@ -77,6 +77,7 @@ const AppRoutes = () => {
         <Route path="analytics" element={<SaasAnalytics />} />
         <Route path="orders" element={<SaasOrders />} />
         <Route path="users" element={<SaasUsers />} />
+        <Route path="users/:userId" element={<SaasUserDetails />} />
         <Route path="platform" element={<AdminPlatformSettings />} />
       </Route>
       <Route path="/dashboard" element={<AdminLayout />}>
