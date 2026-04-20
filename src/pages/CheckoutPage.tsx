@@ -800,11 +800,8 @@ const CheckoutPage = () => {
       {/* Customer info sheet */}
       <Sheet open={showForm} onOpenChange={setShowForm}>
         <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto p-0">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div className="px-5 py-4 border-b border-border">
             <h2 className="text-base font-semibold text-foreground">Informações do pedido</h2>
-            <button onClick={() => setShowForm(false)}>
-              <X className="w-5 h-5 text-muted-foreground" />
-            </button>
           </div>
           <div className="px-5 py-5 space-y-4">
             <div>
