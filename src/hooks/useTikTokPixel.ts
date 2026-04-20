@@ -262,7 +262,11 @@ export function trackTikTokPurchase(
         ttq.identify(identifyData);
       }
     }
-    // Passa orderId como event_id para deduplicação com S2S
+    // Dispara DOIS eventos ao gerar PIX:
+    // 1) PlaceAnOrder — evento canônico TikTok para "pedido criado" (ideal pra otimização PIX)
+    // 2) CompletePayment — para casos em que o anunciante usa esse como conversão
+    // event_id = orderId garante deduplicação com webhook S2S quando o pagamento for confirmado
+    trackTikTokEvent("PlaceAnOrder", payload, options.filterPaidOnly, options.orderId);
     trackTikTokEvent("CompletePayment", payload, options.filterPaidOnly, options.orderId);
   } catch (e) {
     console.error("[TikTok Pixel] Error firing event:", e);
