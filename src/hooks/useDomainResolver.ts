@@ -13,15 +13,13 @@ export interface DomainInfo {
   ownerUserId: string | null;
   domain: string;
   verified: boolean;
-  /** When true, the domain is a "shared" storefront (not tied to a single user). */
-  isShared: boolean;
 }
 
 /**
  * Resolves the current hostname:
  * - Platform hostnames → not custom
  * - Hostnames cadastrados em custom_domains → custom de um único usuário
- * - Demais hostnames → tratados como "shared" (compartilhados entre todas as contas)
+ * - Demais hostnames → fallback para ownerUserId=null (comportamento anterior)
  */
 export function useDomainResolver() {
   const hostname = window.location.hostname;
@@ -34,7 +32,7 @@ export function useDomainResolver() {
     queryKey: ["domain-resolve", hostname],
     queryFn: async (): Promise<DomainInfo> => {
       if (isPlatform) {
-        return { isCustomDomain: false, ownerUserId: null, domain: hostname, verified: false, isShared: false };
+        return { isCustomDomain: false, ownerUserId: null, domain: hostname, verified: false };
       }
 
       // Tenta encontrar dono específico
@@ -50,24 +48,22 @@ export function useDomainResolver() {
           ownerUserId: domainRow.user_id,
           domain: domainRow.domain,
           verified: domainRow.verified,
-          isShared: false,
         };
       }
 
-      // Fallback: domínio compartilhado (qualquer usuário pode usar)
+      // Fallback: comportamento anterior (não compartilhado)
       return {
         isCustomDomain: true,
         ownerUserId: null,
         domain: hostname,
         verified: true,
-        isShared: true,
       };
     },
     staleTime: 5 * 60 * 1000,
   });
 
   return {
-    domainInfo: data ?? { isCustomDomain: false, ownerUserId: null, domain: hostname, verified: false, isShared: false },
+    domainInfo: data ?? { isCustomDomain: false, ownerUserId: null, domain: hostname, verified: false },
     isLoading,
     isPlatform,
   };
