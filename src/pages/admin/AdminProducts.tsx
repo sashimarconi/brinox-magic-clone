@@ -221,8 +221,12 @@ const AdminProducts = () => {
   const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
   const [editVariantName, setEditVariantName] = useState("");
   const [editVariantColor, setEditVariantColor] = useState("");
-  const [creationImages, setCreationImages] = useState<{ url: string; alt: string }[]>([]);
+  const [creationImages, setCreationImages] = useState<{ id: string; url: string; alt: string }[]>([]);
   const [newCreationImageUrl, setNewCreationImageUrl] = useState("");
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
   const [uploadingImage, setUploadingImage] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
