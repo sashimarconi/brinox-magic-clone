@@ -16,10 +16,9 @@ export interface DomainInfo {
 }
 
 /**
- * Resolves the current hostname:
- * - Platform hostnames → not custom
- * - Hostnames cadastrados em custom_domains → custom de um único usuário
- * - Demais hostnames → fallback para ownerUserId=null (comportamento anterior)
+ * Resolves the current hostname against custom_domains.
+ * If the hostname matches a custom domain, returns the owner's user_id.
+ * Otherwise, returns null (platform domain).
  */
 export function useDomainResolver() {
   const hostname = window.location.hostname;
@@ -35,31 +34,25 @@ export function useDomainResolver() {
         return { isCustomDomain: false, ownerUserId: null, domain: hostname, verified: false };
       }
 
-      // Tenta encontrar dono específico
-      const { data: domainRow } = await (supabase as any)
+      // Use the safe view that excludes verification_token
+      const { data: domainRow, error } = await (supabase as any)
         .from("custom_domains_public")
         .select("user_id, domain, verified")
         .eq("domain", hostname)
         .maybeSingle();
 
-      if (domainRow?.user_id) {
-        return {
-          isCustomDomain: true,
-          ownerUserId: domainRow.user_id,
-          domain: domainRow.domain,
-          verified: domainRow.verified,
-        };
+      if (error || !domainRow) {
+        return { isCustomDomain: false, ownerUserId: null, domain: hostname, verified: false };
       }
 
-      // Fallback: comportamento anterior (não compartilhado)
       return {
         isCustomDomain: true,
-        ownerUserId: null,
-        domain: hostname,
-        verified: true,
+        ownerUserId: domainRow.user_id,
+        domain: domainRow.domain,
+        verified: domainRow.verified,
       };
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // Cache 5 min
   });
 
   return {

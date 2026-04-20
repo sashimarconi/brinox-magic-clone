@@ -12,9 +12,7 @@ import NotFound from "@/pages/NotFound";
  */
 const CustomDomainRoutes = () => (
   <Routes>
-    {/* Root is intentionally empty (404) — landing lives at /inicio */}
-    <Route path="/" element={<NotFound />} />
-    <Route path="/inicio" element={<DomainStorefront />} />
+    <Route path="/" element={<DomainStorefront />} />
     <Route path="/product/:slug" element={<ProductPage />} />
     <Route path="/loja/:slug" element={<StorePage />} />
     <Route path="/checkout/:slug" element={<CheckoutPage />} />
