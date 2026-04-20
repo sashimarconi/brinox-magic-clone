@@ -199,12 +199,12 @@ const SaasUsers = () => {
                 {filtered.map((user) => (
                   <TableRow key={user.user_id} className="border-border/40 hover:bg-muted/30 transition-colors">
                     <TableCell>
-                      <div className="flex items-center gap-2.5">
+                      <Link to={`/admin/users/${user.user_id}`} className="flex items-center gap-2.5 group">
                         <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-[10px] font-bold shrink-0">
                           {(user.full_name || user.email || "?").charAt(0).toUpperCase()}
                         </div>
-                        <span className="text-sm font-medium">{user.full_name || "—"}</span>
-                      </div>
+                        <span className="text-sm font-medium group-hover:text-accent transition-colors">{user.full_name || "—"}</span>
+                      </Link>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{user.email}</TableCell>
                     <TableCell>
