@@ -10,50 +10,56 @@ const DomainStorefront = () => {
   const navigate = useNavigate();
   const { domainInfo } = useDomain();
   const ownerId = domainInfo.ownerUserId;
+  const isShared = domainInfo.isShared;
 
   usePageTracking("page_view", ownerId, { surface: "domain_storefront" });
   useVisitorHeartbeat(ownerId);
 
-  // Fetch owner's stores
-  const { data: stores } = useQuery({
-    queryKey: ["domain-stores", ownerId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("stores")
-        .select("*")
-        .eq("user_id", ownerId!)
-        .eq("active", true)
-        .order("sort_order");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!ownerId,
-  });
-
-  // Fetch owner's products
+  // Quando é shared, lista todos os produtos ativos. Caso contrário, só os do dono.
   const { data: products } = useQuery({
-    queryKey: ["domain-products", ownerId],
+    queryKey: ["domain-products", ownerId, isShared],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("products")
         .select(`*, product_images(id, url, alt, sort_order)`)
-        .eq("user_id", ownerId!)
         .eq("active", true)
         .order("sort_order");
+      if (!isShared && ownerId) {
+        query = query.eq("user_id", ownerId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
-    enabled: !!ownerId,
+    enabled: isShared || !!ownerId,
   });
 
-  // Fetch store settings for branding
+  const { data: stores } = useQuery({
+    queryKey: ["domain-stores", ownerId, isShared],
+    queryFn: async () => {
+      let query = supabase
+        .from("stores")
+        .select("*")
+        .eq("active", true)
+        .order("sort_order");
+      if (!isShared && ownerId) {
+        query = query.eq("user_id", ownerId);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+    enabled: isShared || !!ownerId,
+  });
+
   const { data: storeSettings } = useQuery({
     queryKey: ["domain-store-settings", ownerId],
     queryFn: async () => {
+      if (!ownerId) return null;
       const { data, error } = await supabase
         .from("store_settings")
         .select("*")
-        .eq("user_id", ownerId!)
+        .eq("user_id", ownerId)
         .maybeSingle();
       if (error) throw error;
       return data;
@@ -61,20 +67,8 @@ const DomainStorefront = () => {
     enabled: !!ownerId,
   });
 
-  if (!ownerId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Domínio não configurado</h1>
-          <p className="text-muted-foreground">Este domínio não está vinculado a nenhuma loja.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Header with store branding */}
       <header className="bg-card px-4 py-4 shadow-sm border-b border-border">
         <div className="max-w-screen-lg mx-auto flex items-center gap-3">
           {storeSettings?.avatar_url && (
@@ -94,7 +88,6 @@ const DomainStorefront = () => {
         </div>
       </header>
 
-      {/* Stores */}
       {stores && stores.length > 1 && (
         <div className="px-4 py-4 max-w-screen-lg mx-auto">
           <h2 className="text-sm font-semibold text-foreground mb-3">Nossas Lojas</h2>
@@ -115,7 +108,6 @@ const DomainStorefront = () => {
         </div>
       )}
 
-      {/* Products grid */}
       <div className="p-4 grid grid-cols-2 gap-3 max-w-screen-lg mx-auto">
         {products?.map((product) => (
           <button

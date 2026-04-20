@@ -13,12 +13,15 @@ export interface DomainInfo {
   ownerUserId: string | null;
   domain: string;
   verified: boolean;
+  /** When true, the domain is a "shared" storefront (not tied to a single user). */
+  isShared: boolean;
 }
 
 /**
- * Resolves the current hostname against custom_domains.
- * If the hostname matches a custom domain, returns the owner's user_id.
- * Otherwise, returns null (platform domain).
+ * Resolves the current hostname:
+ * - Platform hostnames → not custom
+ * - Hostnames cadastrados em custom_domains → custom de um único usuário
+ * - Demais hostnames → tratados como "shared" (compartilhados entre todas as contas)
  */
 export function useDomainResolver() {
   const hostname = window.location.hostname;
@@ -31,32 +34,40 @@ export function useDomainResolver() {
     queryKey: ["domain-resolve", hostname],
     queryFn: async (): Promise<DomainInfo> => {
       if (isPlatform) {
-        return { isCustomDomain: false, ownerUserId: null, domain: hostname, verified: false };
+        return { isCustomDomain: false, ownerUserId: null, domain: hostname, verified: false, isShared: false };
       }
 
-      // Use the safe view that excludes verification_token
-      const { data: domainRow, error } = await (supabase as any)
+      // Tenta encontrar dono específico
+      const { data: domainRow } = await (supabase as any)
         .from("custom_domains_public")
         .select("user_id, domain, verified")
         .eq("domain", hostname)
         .maybeSingle();
 
-      if (error || !domainRow) {
-        return { isCustomDomain: false, ownerUserId: null, domain: hostname, verified: false };
+      if (domainRow?.user_id) {
+        return {
+          isCustomDomain: true,
+          ownerUserId: domainRow.user_id,
+          domain: domainRow.domain,
+          verified: domainRow.verified,
+          isShared: false,
+        };
       }
 
+      // Fallback: domínio compartilhado (qualquer usuário pode usar)
       return {
         isCustomDomain: true,
-        ownerUserId: domainRow.user_id,
-        domain: domainRow.domain,
-        verified: domainRow.verified,
+        ownerUserId: null,
+        domain: hostname,
+        verified: true,
+        isShared: true,
       };
     },
-    staleTime: 5 * 60 * 1000, // Cache 5 min
+    staleTime: 5 * 60 * 1000,
   });
 
   return {
-    domainInfo: data ?? { isCustomDomain: false, ownerUserId: null, domain: hostname, verified: false },
+    domainInfo: data ?? { isCustomDomain: false, ownerUserId: null, domain: hostname, verified: false, isShared: false },
     isLoading,
     isPlatform,
   };
