@@ -1,0 +1,1 @@
+INSERT INTO public.custom_domains (domain, user_id, verified) VALUES ('seguro.lojatok.shop', 'd2118b62-ea7c-4fab-89f6-09afc05becec', true);
