@@ -938,18 +938,48 @@ const AdminProducts = () => {
       <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Imagens do Produto</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-primary" />
+              Imagens do Produto
+            </DialogTitle>
+            {(productImages?.length || 0) > 1 && (
+              <p className="text-[11px] text-muted-foreground">
+                💡 Arraste pela alça à esquerda para reordenar.
+              </p>
+            )}
           </DialogHeader>
           <div className="space-y-3">
-            {productImages?.map((img) => (
-              <div key={img.id} className="flex items-center gap-3 bg-muted/50 p-2 rounded-lg">
-                <img src={img.url} alt={img.alt || ""} className="w-14 h-14 rounded object-cover" />
-                <span className="flex-1 text-xs text-muted-foreground truncate">{img.alt || img.url}</span>
-                <Button variant="ghost" size="sm" onClick={() => deleteImageMutation.mutate(img.id)}>
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
-              </div>
-            ))}
+            {productImages && productImages.length > 0 && (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(event: DragEndEvent) => {
+                  const { active, over } = event;
+                  if (over && active.id !== over.id) {
+                    const oldIndex = productImages.findIndex((i) => i.id === active.id);
+                    const newIndex = productImages.findIndex((i) => i.id === over.id);
+                    const reordered = arrayMove(productImages, oldIndex, newIndex);
+                    // Optimistic update
+                    queryClient.setQueryData(["product-images", selectedProductId], reordered);
+                    reorderImagesMutation.mutate(reordered.map((i) => i.id));
+                  }
+                }}
+              >
+                <SortableContext items={productImages.map((i) => i.id)} strategy={rectSortingStrategy}>
+                  <div className="space-y-2">
+                    {productImages.map((img) => (
+                      <SortableProductImage
+                        key={img.id}
+                        id={img.id}
+                        url={img.url}
+                        alt={img.alt}
+                        onDelete={() => deleteImageMutation.mutate(img.id)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            )}
 
             <div className="border-t border-border pt-3 space-y-2">
               <div className="flex gap-2">
