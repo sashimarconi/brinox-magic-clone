@@ -675,22 +675,42 @@ const AdminProducts = () => {
                   Imagens do Produto
                 </div>
                 
-                {/* Image thumbnails */}
+                {/* Image thumbnails — drag to reorder */}
                 {creationImages.length > 0 && (
-                  <div className="flex flex-wrap gap-3">
-                    {creationImages.map((img, i) => (
-                      <div key={i} className="relative group">
-                        <img src={img.url} alt="" className="w-20 h-20 rounded-lg object-cover border border-border" />
-                        <button
-                          type="button"
-                          onClick={() => setCreationImages(prev => prev.filter((_, idx) => idx !== i))}
-                          className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                  <>
+                    <p className="text-[10px] text-muted-foreground">
+                      💡 Arraste as imagens para reordenar. A primeira será a principal.
+                    </p>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={(event: DragEndEvent) => {
+                        const { active, over } = event;
+                        if (over && active.id !== over.id) {
+                          setCreationImages((items) => {
+                            const oldIndex = items.findIndex((i) => i.id === active.id);
+                            const newIndex = items.findIndex((i) => i.id === over.id);
+                            return arrayMove(items, oldIndex, newIndex);
+                          });
+                        }
+                      }}
+                    >
+                      <SortableContext items={creationImages.map((i) => i.id)} strategy={rectSortingStrategy}>
+                        <div className="flex flex-wrap gap-3">
+                          {creationImages.map((img) => (
+                            <SortableCreationImage
+                              key={img.id}
+                              id={img.id}
+                              url={img.url}
+                              onRemove={() =>
+                                setCreationImages((prev) => prev.filter((p) => p.id !== img.id))
+                              }
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  </>
                 )}
 
                 <div className="flex gap-2">
