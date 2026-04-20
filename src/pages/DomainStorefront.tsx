@@ -10,46 +10,44 @@ const DomainStorefront = () => {
   const navigate = useNavigate();
   const { domainInfo } = useDomain();
   const ownerId = domainInfo.ownerUserId;
-  const isShared = domainInfo.isShared;
 
   usePageTracking("page_view", ownerId, { surface: "domain_storefront" });
   useVisitorHeartbeat(ownerId);
 
-  // Quando é shared, lista todos os produtos ativos. Caso contrário, só os do dono.
   const { data: products } = useQuery({
-    queryKey: ["domain-products", ownerId, isShared],
+    queryKey: ["domain-products", ownerId],
     queryFn: async () => {
       let query = supabase
         .from("products")
         .select(`*, product_images(id, url, alt, sort_order)`)
         .eq("active", true)
         .order("sort_order");
-      if (!isShared && ownerId) {
+      if (ownerId) {
         query = query.eq("user_id", ownerId);
       }
       const { data, error } = await query;
       if (error) throw error;
       return data;
     },
-    enabled: isShared || !!ownerId,
+    enabled: !!ownerId || domainInfo.ownerUserId === null,
   });
 
   const { data: stores } = useQuery({
-    queryKey: ["domain-stores", ownerId, isShared],
+    queryKey: ["domain-stores", ownerId],
     queryFn: async () => {
       let query = supabase
         .from("stores")
         .select("*")
         .eq("active", true)
         .order("sort_order");
-      if (!isShared && ownerId) {
+      if (ownerId) {
         query = query.eq("user_id", ownerId);
       }
       const { data, error } = await query;
       if (error) throw error;
       return data;
     },
-    enabled: isShared || !!ownerId,
+    enabled: !!ownerId || domainInfo.ownerUserId === null,
   });
 
   const { data: storeSettings } = useQuery({
