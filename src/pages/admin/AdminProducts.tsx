@@ -702,6 +702,15 @@ const AdminProducts = () => {
               <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/products/${product.id}/edit`)}>
                 <Pencil className="w-4 h-4" />
               </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                title="Duplicar produto"
+                disabled={duplicateMutation.isPending}
+                onClick={() => duplicateMutation.mutate(product.id)}
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
               <Button variant="ghost" size="sm" onClick={() => { if (confirm("Remover este produto?")) deleteMutation.mutate(product.id); }}>
                 <Trash2 className="w-4 h-4 text-destructive" />
               </Button>
