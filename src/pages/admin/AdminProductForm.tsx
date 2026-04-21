@@ -404,11 +404,16 @@ const AdminProductForm = () => {
 
       return productId;
     },
-    onSuccess: () => {
+    onSuccess: (productId: string | null | undefined) => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       queryClient.invalidateQueries({ queryKey: ["admin-product-edit", editingId] });
       toast({ title: editingId ? "Produto atualizado!" : "Produto criado!" });
-      navigate("/dashboard/products");
+      if (!editingId && productId) {
+        // Navegar para a tela de edição para permitir gerenciar variantes
+        navigate(`/dashboard/products/${productId}`, { replace: true });
+      } else {
+        navigate("/dashboard/products");
+      }
     },
     onError: (err: Error) => {
       toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
