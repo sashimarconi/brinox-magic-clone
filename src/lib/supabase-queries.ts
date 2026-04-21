@@ -35,6 +35,16 @@ export interface ProductWithRelations {
   reviews: { id: string; user_name: string; user_avatar_url: string | null; city: string | null; rating: number; comment: string | null; photos: string[] | null; review_date: string | null }[];
 }
 
+const bySortOrder = <T extends { sort_order: number | null }>(items: T[] | null | undefined) =>
+  [...(items || [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+
+const normalizeProductRelations = (product: any): ProductWithRelations => ({
+  ...product,
+  product_images: bySortOrder(product?.product_images),
+  product_variants: bySortOrder(product?.product_variants),
+  variant_groups: bySortOrder(product?.variant_groups),
+});
+
 export async function fetchProducts() {
   const { data, error } = await supabase
     .from("products")
@@ -49,7 +59,7 @@ export async function fetchProducts() {
     .order("sort_order");
 
   if (error) throw error;
-  return data as ProductWithRelations[];
+  return (data || []).map(normalizeProductRelations) as ProductWithRelations[];
 }
 
 export async function fetchProductBySlug(slug: string) {
@@ -75,7 +85,6 @@ export async function fetchProductBySlug(slug: string) {
 
   if (linkedReviewProducts && linkedReviewProducts.length > 0) {
     const linkedReviewIds = linkedReviewProducts.map((rp: any) => rp.review_id);
-    // Filter out reviews already present
     const existingIds = new Set((data.reviews || []).map((r: any) => r.id));
     const missingIds = linkedReviewIds.filter((id: string) => !existingIds.has(id));
 
@@ -91,7 +100,7 @@ export async function fetchProductBySlug(slug: string) {
     }
   }
 
-  return data as ProductWithRelations;
+  return normalizeProductRelations(data) as ProductWithRelations;
 }
 
 export async function fetchStoreSettings() {
@@ -132,10 +141,10 @@ export async function fetchStoreProducts(storeId: string) {
     .order("sort_order");
 
   if (error) throw error;
-  // Flatten the joined data
   return (data || [])
     .map((sp: any) => sp.products)
-    .filter(Boolean) as ProductWithRelations[];
+    .filter(Boolean)
+    .map(normalizeProductRelations) as ProductWithRelations[];
 }
 
 export async function fetchStoreForProduct(productId: string) {
