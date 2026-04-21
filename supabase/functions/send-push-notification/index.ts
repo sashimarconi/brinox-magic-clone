@@ -242,7 +242,8 @@ Deno.serve(async (req) => {
       const prefs = settingsMap.get(sub.user_id);
       const pushEnabled = prefs ? prefs.push_enabled : true;
       const notifyPaid = prefs ? prefs.notify_paid : true;
-      const notifyPending = prefs ? prefs.notify_pending : false;
+      // Default: notificar venda pendente também (usuário quer receber tudo no celular)
+      const notifyPending = prefs ? prefs.notify_pending : true;
 
       if (!pushEnabled) return false;
       if (event_type === "order_paid" && !notifyPaid) return false;
