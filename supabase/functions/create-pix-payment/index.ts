@@ -689,7 +689,7 @@ Deno.serve(async (req) => {
         console.error("Webhook dispatch error:", whErr);
       }
 
-      // Send push notification for pending order
+      // Send push notification for pending order - "Venda Pendente"
       try {
         const totalFormatted = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(body.amount / 100);
         await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
@@ -699,10 +699,12 @@ Deno.serve(async (req) => {
             "Authorization": `Bearer ${serviceRoleKey}`,
           },
           body: JSON.stringify({
-            title: "🔔 PIX gerado!",
-            body: `${body.customerName} - ${totalFormatted}`,
+            title: "🔔 Venda Pendente",
+            body: `${body.customerName} • ${totalFormatted}`,
             url: "/admin/orders",
             event_type: "order_pending",
+            owner_user_id: product.user_id,
+            tag: `order-pending-${orderData?.id || Date.now()}`,
           }),
         });
       } catch (pushErr) {
