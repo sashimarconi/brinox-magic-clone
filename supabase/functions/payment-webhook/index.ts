@@ -25,20 +25,35 @@ function normalizeToken(value: unknown) {
 function firstString(...values: unknown[]) {
   for (const value of values) {
     if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
   }
   return null;
 }
 
-function extractTransactionId(body: any) {
-  return firstString(
+// Coleta TODOS os identificadores possíveis para tentar match em qualquer um deles
+function extractAllTransactionIds(body: any): string[] {
+  const candidates = [
     body?.transactionId, body?.transaction_id, body?.Id, body?.id,
     body?.paymentId, body?.payment_id, body?.ExternalId, body?.external_id,
+    body?.externalId, body?.store_reference, body?.storeReference, body?.reference,
     body?.data?.transactionId, body?.data?.transaction_id, body?.data?.id,
-    body?.data?.paymentId, body?.data?.payment_id,
+    body?.data?.paymentId, body?.data?.payment_id, body?.data?.external_id, body?.data?.externalId,
     body?.transaction?.id, body?.transaction?.transactionId, body?.transaction?.transaction_id,
     body?.payment?.id, body?.payment?.transactionId, body?.payment?.transaction_id,
     body?.charge?.id, body?.resource?.id, body?.data?.transaction?.id, body?.data?.payment?.id,
-  );
+    body?.order?.id, body?.data?.order?.id,
+  ];
+  const out: string[] = [];
+  for (const v of candidates) {
+    if (typeof v === "string" && v.trim()) out.push(v.trim());
+    else if (typeof v === "number" && Number.isFinite(v)) out.push(String(v));
+  }
+  return Array.from(new Set(out));
+}
+
+function extractTransactionId(body: any) {
+  const ids = extractAllTransactionIds(body);
+  return ids[0] ?? null;
 }
 
 function isPaidPayload(body: any) {
