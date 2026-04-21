@@ -165,7 +165,8 @@ Deno.serve(async (req) => {
     const body = await req.json();
     console.log("Webhook received:", JSON.stringify(body));
 
-    const transactionId = extractTransactionId(body);
+    const allIds = extractAllTransactionIds(body);
+    const transactionId = allIds[0] ?? null;
     const isPaid = isPaidPayload(body);
 
     if (!transactionId) {
@@ -176,26 +177,48 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Transaction: ${transactionId}, isPaid: ${isPaid}`);
+    console.log(`Transaction candidates: ${JSON.stringify(allIds)}, isPaid: ${isPaid}`);
 
     if (isPaid) {
       const paidAt = new Date().toISOString();
-      let { data: order, error } = await supabase
-        .from("orders")
-        .update({ payment_status: "paid", paid_at: paidAt })
-        .eq("transaction_id", transactionId)
-        .select("*")
-        .maybeSingle();
+      let order: any = null;
+      let error: any = null;
 
-      if ((!order || error) && isUuid(transactionId)) {
-        const fallback = await supabase
+      // Tenta match por transaction_id em qualquer um dos IDs candidatos
+      for (const candidate of allIds) {
+        const res = await supabase
           .from("orders")
           .update({ payment_status: "paid", paid_at: paidAt })
-          .eq("id", transactionId)
+          .eq("transaction_id", candidate)
           .select("*")
           .maybeSingle();
-        order = fallback.data;
-        error = fallback.error;
+        if (res.data) {
+          order = res.data;
+          error = null;
+          console.log(`✅ Matched order by transaction_id=${candidate}`);
+          break;
+        }
+        error = res.error;
+      }
+
+      // Fallback: tenta como UUID na coluna id
+      if (!order) {
+        for (const candidate of allIds) {
+          if (!isUuid(candidate)) continue;
+          const res = await supabase
+            .from("orders")
+            .update({ payment_status: "paid", paid_at: paidAt })
+            .eq("id", candidate)
+            .select("*")
+            .maybeSingle();
+          if (res.data) {
+            order = res.data;
+            error = null;
+            console.log(`✅ Matched order by id (uuid)=${candidate}`);
+            break;
+          }
+          error = res.error;
+        }
       }
 
       if (error) {
