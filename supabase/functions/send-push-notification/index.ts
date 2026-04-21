@@ -195,28 +195,22 @@ Deno.serve(async (req) => {
     const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const { title, body: notifBody, url: notifUrl, tag, event_type, user_id } = await req.json();
+    const { title, body: notifBody, url: notifUrl, tag, event_type, user_id, owner_user_id } = await req.json();
 
-    // Fetch store name for the notification sender
-    let storeName = "";
-    if (user_id) {
-      const { data: storeData } = await supabase
-        .from("store_settings")
-        .select("name")
-        .eq("user_id", user_id)
-        .limit(1)
-        .maybeSingle();
-      if (storeData?.name) {
-        storeName = storeData.name;
-      }
-    }
+    // owner_user_id = dono do pedido (deve receber a notificação).
+    // Fallback para user_id por compatibilidade.
+    const targetUserId = owner_user_id || user_id || null;
 
-    const notifTitle = title || (storeName ? `VoidTok - ${storeName}` : "VoidTok");
+    const notifTitle = title || "VoidTok";
 
-    // Get all push subscriptions with user preferences
-    const { data: subscriptions, error } = await supabase
+    // Get push subscriptions APENAS do dono do pedido
+    let query = supabase
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth, user_id");
+    if (targetUserId) {
+      query = query.eq("user_id", targetUserId);
+    }
+    const { data: subscriptions, error } = await query;
 
     if (error) {
       console.error("Error fetching subscriptions:", error);
