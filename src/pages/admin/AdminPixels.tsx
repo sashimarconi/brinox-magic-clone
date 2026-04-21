@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, ArrowRight, Search, Settings, Pencil } from "lucide-react";
+import { Plus, Trash2, ArrowRight, Search, Settings, Pencil, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import utmifyLogo from "@/assets/utmify-logo.png";
 import tiktokLogo from "@/assets/tiktok-logo.jpg";
@@ -464,14 +464,34 @@ const AdminPixels = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-semibold text-primary">Access Token (Events API)</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold text-primary">
+                  Access Token (Events API) <span className="text-destructive">*</span>
+                </Label>
+                <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded bg-destructive/10 text-destructive">
+                  Obrigatório
+                </span>
+              </div>
               <Input
                 value={accessToken}
                 onChange={(e) => setAccessToken(e.target.value)}
-                placeholder="Token da API de Eventos do TikTok"
+                placeholder="Cole aqui o Access Token da Events API do TikTok"
                 type="password"
+                className={!accessToken.trim() ? "border-destructive/50 focus-visible:ring-destructive/30" : ""}
               />
-              <p className="text-xs text-muted-foreground">Necessário para disparar conversões pelo servidor (S2S) quando o cliente fecha o navegador</p>
+              <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 space-y-1.5">
+                <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5" /> Sem o Access Token o pixel NÃO vai marcar conversões
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  O TikTok Ads exige o Access Token da <strong>Events API</strong> para receber conversões pelo servidor (S2S).
+                  Sem ele, o pixel só funciona via navegador — e a maioria dos visitantes tem ad-blocker, navegação fechada antes do tempo, iOS com proteção de rastreamento, etc.
+                  Resultado: <strong>quase nenhuma venda aparece no TikTok</strong>.
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  <strong>Onde achar:</strong> TikTok Ads → Ferramentas → Events Manager → seu Pixel → aba "Configurar" → "Configurar Events API" → "Gerar Access Token".
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center justify-between py-3">
@@ -489,7 +509,17 @@ const AdminPixels = () => {
 
             <div className="flex justify-end pt-2">
               <Button
-                onClick={() => addMutation.mutate()}
+                onClick={() => {
+                  if (!accessToken.trim()) {
+                    toast({
+                      title: "Access Token é obrigatório",
+                      description: "Sem o Access Token o TikTok não vai receber as conversões. Cole o token gerado no Events Manager.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  addMutation.mutate();
+                }}
                 disabled={!newPixelId.trim() || addMutation.isPending}
                 className="bg-primary hover:bg-primary/90"
               >
@@ -537,14 +567,29 @@ const AdminPixels = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-semibold text-primary">Access Token (Events API)</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold text-primary">
+                  Access Token (Events API) <span className="text-destructive">*</span>
+                </Label>
+                <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded bg-destructive/10 text-destructive">
+                  Obrigatório
+                </span>
+              </div>
               <Input
                 value={editingPixel.access_token ?? ""}
                 onChange={(e) => setEditingPixel({ ...editingPixel, access_token: e.target.value })}
-                placeholder="Token da API de Eventos do TikTok"
+                placeholder="Cole aqui o Access Token da Events API do TikTok"
                 type="password"
+                className={!editingPixel.access_token?.trim() ? "border-destructive/50 focus-visible:ring-destructive/30" : ""}
               />
-              <p className="text-xs text-muted-foreground">Necessário para disparar conversões pelo servidor (S2S) quando o cliente fecha o navegador</p>
+              <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 space-y-1.5">
+                <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5" /> Sem o Access Token o pixel NÃO marca conversões no TikTok
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Gere em: TikTok Ads → Ferramentas → Events Manager → seu Pixel → aba "Configurar" → "Configurar Events API" → "Gerar Access Token".
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center justify-between py-3">
@@ -628,6 +673,20 @@ const AdminPixels = () => {
         </div>
       </div>
 
+      {!isLoading && filteredPixels.some((p: any) => !p.access_token) && activePlatform === "tiktok" && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 flex gap-3">
+          <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="text-sm font-bold text-destructive">Você tem pixels SEM Access Token</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Pixels marcados com <span className="font-semibold text-destructive">"Sem token"</span> abaixo NÃO conseguem mandar conversões pelo servidor para o TikTok.
+              Isso explica por que suas vendas não estão aparecendo no Events Manager mesmo gerando PIX.
+              <strong> Edite cada pixel e cole o Access Token gerado no TikTok Events Manager.</strong>
+            </p>
+          </div>
+        </div>
+      )}
+
       {isLoading ? (
         <p className="text-muted-foreground text-sm">Carregando...</p>
       ) : filteredPixels.length === 0 ? (
@@ -649,7 +708,14 @@ const AdminPixels = () => {
                   {platform && renderPlatformIcon(platform, "w-9 h-9")}
                   <div>
                     <p className="text-sm font-medium text-foreground">{pixel.pixel_id}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{pixel.platform}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs text-muted-foreground capitalize">{pixel.platform}</p>
+                      {activePlatform === "tiktok" && !pixel.access_token && (
+                        <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-destructive/15 text-destructive flex items-center gap-1">
+                          <AlertTriangle className="w-2.5 h-2.5" /> Sem token — não marca conversão
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
