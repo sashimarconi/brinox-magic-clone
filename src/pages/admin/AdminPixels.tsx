@@ -673,6 +673,20 @@ const AdminPixels = () => {
         </div>
       </div>
 
+      {!isLoading && filteredPixels.some((p: any) => !p.access_token) && activePlatform === "tiktok" && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 flex gap-3">
+          <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="text-sm font-bold text-destructive">Você tem pixels SEM Access Token</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Pixels marcados com <span className="font-semibold text-destructive">"Sem token"</span> abaixo NÃO conseguem mandar conversões pelo servidor para o TikTok.
+              Isso explica por que suas vendas não estão aparecendo no Events Manager mesmo gerando PIX.
+              <strong> Edite cada pixel e cole o Access Token gerado no TikTok Events Manager.</strong>
+            </p>
+          </div>
+        </div>
+      )}
+
       {isLoading ? (
         <p className="text-muted-foreground text-sm">Carregando...</p>
       ) : filteredPixels.length === 0 ? (
@@ -694,7 +708,14 @@ const AdminPixels = () => {
                   {platform && renderPlatformIcon(platform, "w-9 h-9")}
                   <div>
                     <p className="text-sm font-medium text-foreground">{pixel.pixel_id}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{pixel.platform}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs text-muted-foreground capitalize">{pixel.platform}</p>
+                      {activePlatform === "tiktok" && !pixel.access_token && (
+                        <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-destructive/15 text-destructive flex items-center gap-1">
+                          <AlertTriangle className="w-2.5 h-2.5" /> Sem token — não marca conversão
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
