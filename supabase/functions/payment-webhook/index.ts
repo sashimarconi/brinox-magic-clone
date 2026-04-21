@@ -210,17 +210,19 @@ Deno.serve(async (req) => {
           }).then(() => {}).catch((e) => console.error("Webhook dispatch error:", e))
         );
 
-        // Push notification
+        // Push notification - "Venda Aprovada"
         const totalFormatted = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(order.total));
         tasks.push(
           fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
             body: JSON.stringify({
-              title: `💰 Venda confirmada!`,
-              body: `${order.customer_name} - ${totalFormatted}`,
+              title: `✅ Venda Aprovada`,
+              body: `${order.customer_name} • ${totalFormatted}`,
               url: "/admin/orders",
               event_type: "order_paid",
+              owner_user_id: order.user_id,
+              tag: `order-paid-${order.id}`,
             }),
           }).then(() => {}).catch((e) => console.error("Push notification error:", e))
         );
