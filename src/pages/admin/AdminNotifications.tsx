@@ -11,7 +11,7 @@ export default function AdminNotifications() {
   const [saving, setSaving] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(true);
   const [notifyPaid, setNotifyPaid] = useState(true);
-  const [notifyPending, setNotifyPending] = useState(false);
+  const [notifyPending, setNotifyPending] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
