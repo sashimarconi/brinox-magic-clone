@@ -25,20 +25,35 @@ function normalizeToken(value: unknown) {
 function firstString(...values: unknown[]) {
   for (const value of values) {
     if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
   }
   return null;
 }
 
-function extractTransactionId(body: any) {
-  return firstString(
+// Coleta TODOS os identificadores possíveis para tentar match em qualquer um deles
+function extractAllTransactionIds(body: any): string[] {
+  const candidates = [
     body?.transactionId, body?.transaction_id, body?.Id, body?.id,
     body?.paymentId, body?.payment_id, body?.ExternalId, body?.external_id,
+    body?.externalId, body?.store_reference, body?.storeReference, body?.reference,
     body?.data?.transactionId, body?.data?.transaction_id, body?.data?.id,
-    body?.data?.paymentId, body?.data?.payment_id,
+    body?.data?.paymentId, body?.data?.payment_id, body?.data?.external_id, body?.data?.externalId,
     body?.transaction?.id, body?.transaction?.transactionId, body?.transaction?.transaction_id,
     body?.payment?.id, body?.payment?.transactionId, body?.payment?.transaction_id,
     body?.charge?.id, body?.resource?.id, body?.data?.transaction?.id, body?.data?.payment?.id,
-  );
+    body?.order?.id, body?.data?.order?.id,
+  ];
+  const out: string[] = [];
+  for (const v of candidates) {
+    if (typeof v === "string" && v.trim()) out.push(v.trim());
+    else if (typeof v === "number" && Number.isFinite(v)) out.push(String(v));
+  }
+  return Array.from(new Set(out));
+}
+
+function extractTransactionId(body: any) {
+  const ids = extractAllTransactionIds(body);
+  return ids[0] ?? null;
 }
 
 function isPaidPayload(body: any) {
@@ -150,7 +165,8 @@ Deno.serve(async (req) => {
     const body = await req.json();
     console.log("Webhook received:", JSON.stringify(body));
 
-    const transactionId = extractTransactionId(body);
+    const allIds = extractAllTransactionIds(body);
+    const transactionId = allIds[0] ?? null;
     const isPaid = isPaidPayload(body);
 
     if (!transactionId) {
@@ -161,26 +177,48 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Transaction: ${transactionId}, isPaid: ${isPaid}`);
+    console.log(`Transaction candidates: ${JSON.stringify(allIds)}, isPaid: ${isPaid}`);
 
     if (isPaid) {
       const paidAt = new Date().toISOString();
-      let { data: order, error } = await supabase
-        .from("orders")
-        .update({ payment_status: "paid", paid_at: paidAt })
-        .eq("transaction_id", transactionId)
-        .select("*")
-        .maybeSingle();
+      let order: any = null;
+      let error: any = null;
 
-      if ((!order || error) && isUuid(transactionId)) {
-        const fallback = await supabase
+      // Tenta match por transaction_id em qualquer um dos IDs candidatos
+      for (const candidate of allIds) {
+        const res = await supabase
           .from("orders")
           .update({ payment_status: "paid", paid_at: paidAt })
-          .eq("id", transactionId)
+          .eq("transaction_id", candidate)
           .select("*")
           .maybeSingle();
-        order = fallback.data;
-        error = fallback.error;
+        if (res.data) {
+          order = res.data;
+          error = null;
+          console.log(`✅ Matched order by transaction_id=${candidate}`);
+          break;
+        }
+        error = res.error;
+      }
+
+      // Fallback: tenta como UUID na coluna id
+      if (!order) {
+        for (const candidate of allIds) {
+          if (!isUuid(candidate)) continue;
+          const res = await supabase
+            .from("orders")
+            .update({ payment_status: "paid", paid_at: paidAt })
+            .eq("id", candidate)
+            .select("*")
+            .maybeSingle();
+          if (res.data) {
+            order = res.data;
+            error = null;
+            console.log(`✅ Matched order by id (uuid)=${candidate}`);
+            break;
+          }
+          error = res.error;
+        }
       }
 
       if (error) {
