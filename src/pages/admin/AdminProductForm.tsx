@@ -26,7 +26,9 @@ import {
   Save,
   ExternalLink,
   Video,
+  Layers,
 } from "lucide-react";
+import ProductVariantsManager from "@/components/admin/ProductVariantsManager";
 import {
   DndContext,
   closestCenter,
@@ -402,11 +404,16 @@ const AdminProductForm = () => {
 
       return productId;
     },
-    onSuccess: () => {
+    onSuccess: (productId: string | null | undefined) => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       queryClient.invalidateQueries({ queryKey: ["admin-product-edit", editingId] });
       toast({ title: editingId ? "Produto atualizado!" : "Produto criado!" });
-      navigate("/dashboard/products");
+      if (!editingId && productId) {
+        // Navegar para a tela de edição para permitir gerenciar variantes
+        navigate(`/dashboard/products/${productId}`, { replace: true });
+      } else {
+        navigate("/dashboard/products");
+      }
     },
     onError: (err: Error) => {
       toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
@@ -657,6 +664,17 @@ const AdminProductForm = () => {
               </label>
             </div>
             <p className="text-[10px] text-muted-foreground">Máximo 10MB por imagem.</p>
+          </Section>
+
+          <Section
+            icon={Layers}
+            title="Variantes"
+            description="Crie categorias (Tamanho, Cor...) com suas opções"
+          >
+            <ProductVariantsManager
+              productId={editingId}
+              productImages={images.filter((i) => i.persisted).map((i) => ({ id: i.id, url: i.url }))}
+            />
           </Section>
 
           <Section icon={DollarSign} title="Preços" description="Defina valor original, com desconto e frete">
