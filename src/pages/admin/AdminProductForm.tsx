@@ -666,6 +666,17 @@ const AdminProductForm = () => {
             <p className="text-[10px] text-muted-foreground">Máximo 10MB por imagem.</p>
           </Section>
 
+          <Section
+            icon={Layers}
+            title="Variantes"
+            description="Crie categorias (Tamanho, Cor...) com suas opções"
+          >
+            <ProductVariantsManager
+              productId={editingId}
+              productImages={images.filter((i) => i.persisted).map((i) => ({ id: i.id, url: i.url }))}
+            />
+          </Section>
+
           <Section icon={DollarSign} title="Preços" description="Defina valor original, com desconto e frete">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <CurrencyInput
