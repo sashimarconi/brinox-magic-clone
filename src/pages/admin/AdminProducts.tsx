@@ -355,6 +355,102 @@ const AdminProducts = () => {
     },
   });
 
+  const duplicateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // 1) Buscar produto original com todas relações
+      const { data: original, error: fetchErr } = await supabase
+        .from("products")
+        .select(`
+          *,
+          product_images(url, alt, sort_order),
+          variant_groups(id, name, sort_order),
+          product_variants(name, color, thumbnail_url, sort_order, variant_group_id)
+        `)
+        .eq("id", id)
+        .single();
+      if (fetchErr) throw fetchErr;
+
+      // 2) Gerar slug único
+      const baseSlug = `${original.slug}-copia`;
+      let newSlug = baseSlug;
+      let suffix = 1;
+      while (true) {
+        const { data: exists } = await supabase
+          .from("products")
+          .select("id")
+          .eq("slug", newSlug)
+          .maybeSingle();
+        if (!exists) break;
+        suffix += 1;
+        newSlug = `${baseSlug}-${suffix}`;
+      }
+
+      // 3) Inserir novo produto sem campos auto/relations
+      const { id: _id, created_at, updated_at, product_images, variant_groups: vgs, product_variants: pvs, ...rest } = original as any;
+      const { data: inserted, error: insertErr } = await supabase
+        .from("products")
+        .insert({
+          ...rest,
+          slug: newSlug,
+          title: `${original.title} (cópia)`,
+          sold_count: 0,
+        })
+        .select("id")
+        .single();
+      if (insertErr) throw insertErr;
+      const newProductId = inserted.id;
+
+      // 4) Imagens
+      if (product_images?.length) {
+        await supabase.from("product_images").insert(
+          product_images.map((img: any) => ({
+            product_id: newProductId,
+            url: img.url,
+            alt: img.alt,
+            sort_order: img.sort_order ?? 0,
+          }))
+        );
+      }
+
+      // 5) Grupos de variantes (mapeia old->new id)
+      const groupIdMap = new Map<string, string>();
+      if (vgs?.length) {
+        for (const g of vgs) {
+          const { data: ng, error: gErr } = await supabase
+            .from("variant_groups")
+            .insert({ product_id: newProductId, name: g.name, sort_order: g.sort_order ?? 0 })
+            .select("id")
+            .single();
+          if (gErr) throw gErr;
+          groupIdMap.set(g.id, ng.id);
+        }
+      }
+
+      // 6) Variantes
+      if (pvs?.length) {
+        await supabase.from("product_variants").insert(
+          pvs.map((v: any) => ({
+            product_id: newProductId,
+            name: v.name,
+            color: v.color,
+            thumbnail_url: v.thumbnail_url,
+            sort_order: v.sort_order ?? 0,
+            variant_group_id: v.variant_group_id ? groupIdMap.get(v.variant_group_id) ?? null : null,
+          }))
+        );
+      }
+
+      return newProductId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      toast({ title: "Produto duplicado!", description: "Cópia criada como rascunho." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Erro ao duplicar", description: err.message, variant: "destructive" });
+    },
+  });
+
   const addImageMutation = useMutation({
     mutationFn: async ({ product_id, url, alt }: { product_id: string; url: string; alt: string }) => {
       const { error } = await supabase.from("product_images").insert({ product_id, url, alt });
