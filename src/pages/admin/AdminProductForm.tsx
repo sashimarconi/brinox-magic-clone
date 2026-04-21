@@ -26,7 +26,9 @@ import {
   Save,
   ExternalLink,
   Video,
+  Layers,
 } from "lucide-react";
+import ProductVariantsManager from "@/components/admin/ProductVariantsManager";
 import {
   DndContext,
   closestCenter,
