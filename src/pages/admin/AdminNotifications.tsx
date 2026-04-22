@@ -362,7 +362,7 @@ export default function AdminNotifications() {
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">{kind === "paid" ? "Venda aprovada" : "Venda pendente"}</h3>
-                  <p className="text-xs text-muted-foreground">Placeholders: {{customer_name}}, {{total}}, {{gateway}}, {{product_title}}</p>
+                  <p className="text-xs text-muted-foreground">Placeholders: {"{{customer_name}}"}, {"{{total}}"}, {"{{gateway}}"}, {"{{product_title}}"}</p>
                 </div>
                 <Button variant="outline" onClick={() => previewDesktop(kind)}>
                   <TestTube2 className="mr-2 h-4 w-4" />
