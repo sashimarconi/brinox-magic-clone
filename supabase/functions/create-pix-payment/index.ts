@@ -701,7 +701,7 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             title: "🔔 Venda Pendente",
             body: `${body.customerName} • ${totalFormatted}`,
-            url: "/admin/orders",
+             url: "/dashboard/orders",
             event_type: "order_pending",
             owner_user_id: product.user_id,
             tag: `order-pending-${orderData?.id || Date.now()}`,

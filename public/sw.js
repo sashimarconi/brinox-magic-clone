@@ -15,7 +15,7 @@ self.addEventListener("push", (event) => {
   let data = {
     title: "Nova venda!",
     body: "Você recebeu um novo pagamento.",
-    url: "/admin/orders",
+    url: "/dashboard/orders",
   };
 
   try {
@@ -42,7 +42,7 @@ self.addEventListener("push", (event) => {
     requireInteraction: true,
     silent: false,
     data: {
-      url: data.url || "/admin/orders",
+      url: data.url || "/dashboard/orders",
       timestamp: Date.now(),
     },
   };
@@ -56,7 +56,7 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url || "/admin/orders";
+  const targetUrl = event.notification.data?.url || "/dashboard/orders";
 
   event.waitUntil(
     self.clients
