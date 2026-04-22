@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendNotification, WebPushError, type PushSubscription } from "npm:web-push-neo@0.1.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,181 +7,108 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function base64urlToUint8Array(base64url: string): Uint8Array {
-  const base64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
-  const pad = (4 - (base64.length % 4)) % 4;
-  const padded = base64 + "=".repeat(pad);
-  const binary = atob(padded);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
+type SubscriptionRow = {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_id: string;
+};
+
+type NotificationSettingsRow = {
+  user_id: string;
+  push_enabled: boolean | null;
+  notify_paid: boolean | null;
+  notify_pending: boolean | null;
+  mobile_enabled?: boolean | null;
+  mobile_paid_title?: string | null;
+  mobile_paid_body?: string | null;
+  mobile_paid_icon_url?: string | null;
+  mobile_paid_image_url?: string | null;
+  mobile_pending_title?: string | null;
+  mobile_pending_body?: string | null;
+  mobile_pending_icon_url?: string | null;
+  mobile_pending_image_url?: string | null;
+};
+
+function formatCurrency(value: unknown) {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value) || 0);
 }
 
-function uint8ArrayToBase64url(arr: Uint8Array): string {
-  let binary = "";
-  for (const b of arr) binary += String.fromCharCode(b);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+function renderTemplate(template: string | null | undefined, values: Record<string, string>) {
+  return String(template || "")
+    .replace(/\{\{\s*customer_name\s*\}\}/gi, values.customer_name || "Cliente")
+    .replace(/\{\{\s*total\s*\}\}/gi, values.total || "R$ 0,00")
+    .replace(/\{\{\s*gateway\s*\}\}/gi, values.gateway || "Gateway")
+    .replace(/\{\{\s*product_title\s*\}\}/gi, values.product_title || "Produto");
 }
 
-async function generateVapidJwt(
-  audience: string,
-  subject: string,
-  privateKeyBase64url: string,
-  publicKeyBase64url: string
-): Promise<string> {
-  const header = { typ: "JWT", alg: "ES256" };
-  const now = Math.floor(Date.now() / 1000);
-  const payload = { aud: audience, exp: now + 12 * 3600, sub: subject };
+function buildPayload(input: {
+  eventType?: string;
+  body: any;
+  settings?: NotificationSettingsRow;
+}) {
+  const { eventType, body, settings } = input;
+  const isPaid = eventType === "order_paid";
+  const titleTemplate = isPaid
+    ? settings?.mobile_paid_title || body.title || "✅ Venda aprovada"
+    : settings?.mobile_pending_title || body.title || "🔔 Venda pendente";
+  const bodyTemplate = isPaid
+    ? settings?.mobile_paid_body || body.body || "{{customer_name}} • {{total}}"
+    : settings?.mobile_pending_body || body.body || "PIX gerado • {{customer_name}} • {{total}}";
+  const icon = isPaid
+    ? settings?.mobile_paid_icon_url || body.icon || null
+    : settings?.mobile_pending_icon_url || body.icon || null;
+  const image = isPaid
+    ? settings?.mobile_paid_image_url || body.image || null
+    : settings?.mobile_pending_image_url || body.image || null;
 
-  const enc = new TextEncoder();
-  const headerB64 = uint8ArrayToBase64url(enc.encode(JSON.stringify(header)));
-  const payloadB64 = uint8ArrayToBase64url(enc.encode(JSON.stringify(payload)));
-  const unsignedToken = `${headerB64}.${payloadB64}`;
+  const gatewayName = body.gateway_name || body.gateway || "Gateway";
+  const total = body.total_amount ?? body.total ?? body.amount ?? 0;
+  const variables = {
+    customer_name: body.customer_name || body.customerName || "Cliente",
+    total: formatCurrency(total),
+    gateway: String(gatewayName),
+    product_title: body.product_title || body.productTitle || "Produto",
+  };
 
-  const privateKeyBytes = base64urlToUint8Array(privateKeyBase64url);
-  const cryptoKey = await crypto.subtle.importKey(
-    "jwk",
-    {
-      kty: "EC",
-      crv: "P-256",
-      x: uint8ArrayToBase64url(base64urlToUint8Array(publicKeyBase64url).slice(1, 33)),
-      y: uint8ArrayToBase64url(base64urlToUint8Array(publicKeyBase64url).slice(33, 65)),
-      d: uint8ArrayToBase64url(privateKeyBytes),
+  return {
+    title: renderTemplate(titleTemplate, variables),
+    body: renderTemplate(bodyTemplate, variables),
+    icon: icon || "/icon-192.png",
+    badge: body.badge || icon || "/icon-192.png",
+    image: image || undefined,
+    url: body.url || "/dashboard/orders",
+    tag: body.tag || `${isPaid ? "paid" : "pending"}-${Date.now()}`,
+    event_type: eventType || body.event_type || null,
+    customer_name: variables.customer_name,
+    total: variables.total,
+    gateway: variables.gateway,
+    product_title: variables.product_title,
+  };
+}
+
+async function sendPush(subscription: SubscriptionRow, payload: Record<string, unknown>, vapidPublicKey: string, vapidPrivateKey: string) {
+  const pushSubscription = {
+    endpoint: subscription.endpoint,
+    keys: {
+      p256dh: subscription.p256dh,
+      auth: subscription.auth,
     },
-    { name: "ECDSA", namedCurve: "P-256" },
-    false,
-    ["sign"]
-  );
+  } satisfies PushSubscription;
 
-  const signature = new Uint8Array(
-    await crypto.subtle.sign(
-      { name: "ECDSA", hash: { name: "SHA-256" } },
-      cryptoKey,
-      enc.encode(unsignedToken)
-    )
-  );
-
-  return `${unsignedToken}.${uint8ArrayToBase64url(signature)}`;
-}
-
-async function encryptPayload(
-  p256dhKey: string,
-  authSecret: string,
-  payload: Uint8Array
-): Promise<{ ciphertext: Uint8Array; salt: Uint8Array; localPublicKey: Uint8Array }> {
-  const subscriberPublicKey = base64urlToUint8Array(p256dhKey);
-  const subscriberAuth = base64urlToUint8Array(authSecret);
-
-  const localKeyPair = await crypto.subtle.generateKey(
-    { name: "ECDH", namedCurve: "P-256" },
-    true,
-    ["deriveBits"]
-  );
-
-  const localPublicKeyRaw = new Uint8Array(
-    await crypto.subtle.exportKey("raw", localKeyPair.publicKey)
-  );
-
-  const subscriberCryptoKey = await crypto.subtle.importKey(
-    "raw",
-    subscriberPublicKey,
-    { name: "ECDH", namedCurve: "P-256" },
-    false,
-    []
-  );
-
-  const sharedSecret = new Uint8Array(
-    await crypto.subtle.deriveBits(
-      { name: "ECDH", public: subscriberCryptoKey },
-      localKeyPair.privateKey,
-      256
-    )
-  );
-
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const enc = new TextEncoder();
-
-  const authInfo = new Uint8Array([
-    ...enc.encode("WebPush: info\0"),
-    ...subscriberPublicKey,
-    ...localPublicKeyRaw,
-  ]);
-  const authHkdfKey = await crypto.subtle.importKey("raw", subscriberAuth, "HKDF", false, ["deriveBits"]);
-  const ikm = new Uint8Array(
-    await crypto.subtle.deriveBits(
-      { name: "HKDF", hash: "SHA-256", salt: sharedSecret, info: authInfo },
-      authHkdfKey,
-      256
-    )
-  );
-
-  const prkKey = await crypto.subtle.importKey("raw", ikm, "HKDF", false, ["deriveBits"]);
-
-  const cekInfo = new Uint8Array([...enc.encode("Content-Encoding: aes128gcm\0")]);
-  const cek = new Uint8Array(
-    await crypto.subtle.deriveBits(
-      { name: "HKDF", hash: "SHA-256", salt, info: cekInfo },
-      prkKey,
-      128
-    )
-  );
-
-  const nonceInfo = new Uint8Array([...enc.encode("Content-Encoding: nonce\0")]);
-  const nonce = new Uint8Array(
-    await crypto.subtle.deriveBits(
-      { name: "HKDF", hash: "SHA-256", salt, info: nonceInfo },
-      prkKey,
-      96
-    )
-  );
-
-  const paddedPayload = new Uint8Array([...payload, 2]);
-  const aesKey = await crypto.subtle.importKey("raw", cek, "AES-GCM", false, ["encrypt"]);
-  const encrypted = new Uint8Array(
-    await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, aesKey, paddedPayload)
-  );
-
-  const recordSize = encrypted.length + 86;
-  const header = new Uint8Array(86);
-  header.set(salt, 0);
-  new DataView(header.buffer).setUint32(16, recordSize);
-  header[20] = localPublicKeyRaw.length;
-  header.set(localPublicKeyRaw, 21);
-
-  const ciphertext = new Uint8Array(header.length + encrypted.length);
-  ciphertext.set(header);
-  ciphertext.set(encrypted, header.length);
-
-  return { ciphertext, salt, localPublicKey: localPublicKeyRaw };
-}
-
-async function sendPush(
-  subscription: { endpoint: string; p256dh: string; auth: string },
-  payload: object,
-  vapidPublicKey: string,
-  vapidPrivateKey: string
-) {
-  const url = new URL(subscription.endpoint);
-  const audience = `${url.protocol}//${url.host}`;
-  const subject = "mailto:admin@ttkcompras.com";
-
-  const jwt = await generateVapidJwt(audience, subject, vapidPrivateKey, vapidPublicKey);
-
-  const payloadBytes = new TextEncoder().encode(JSON.stringify(payload));
-  const { ciphertext } = await encryptPayload(subscription.p256dh, subscription.auth, payloadBytes);
-
-  const response = await fetch(subscription.endpoint, {
-    method: "POST",
-    headers: {
-      Authorization: `vapid t=${jwt}, k=${vapidPublicKey}`,
-      "Content-Encoding": "aes128gcm",
-      "Content-Type": "application/octet-stream",
-      TTL: "86400",
+  const result = await sendNotification(pushSubscription, JSON.stringify(payload), {
+    TTL: 86400,
+    urgency: "high",
+    topic: String(payload.tag || "sale").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 32) || undefined,
+    signal: AbortSignal.timeout(8000),
+    vapidDetails: {
+      subject: "mailto:admin@ttkcompras.com",
+      publicKey: vapidPublicKey,
+      privateKey: vapidPrivateKey,
     },
-    body: ciphertext,
   });
 
-  return { status: response.status, ok: response.ok };
+  return { status: result.statusCode, ok: result.statusCode >= 200 && result.statusCode < 300, body: result.body };
 }
 
 Deno.serve(async (req) => {
@@ -195,7 +123,8 @@ Deno.serve(async (req) => {
     const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const { title, body: notifBody, url: notifUrl, tag, event_type, user_id, owner_user_id } = await req.json();
+    const requestBody = await req.json();
+    const { event_type, user_id, owner_user_id } = requestBody;
 
     // owner_user_id = dono do pedido (deve receber a notificação).
     // Fallback para user_id por compatibilidade.
@@ -231,7 +160,7 @@ Deno.serve(async (req) => {
     const userIds = [...new Set(subscriptions.map((s) => s.user_id))];
     const { data: settings } = await supabase
       .from("notification_settings")
-      .select("user_id, push_enabled, notify_paid, notify_pending")
+      .select("user_id, push_enabled, notify_paid, notify_pending, mobile_enabled, mobile_paid_title, mobile_paid_body, mobile_paid_icon_url, mobile_paid_image_url, mobile_pending_title, mobile_pending_body, mobile_pending_icon_url, mobile_pending_image_url")
       .in("user_id", userIds);
 
     const settingsMap = new Map(
@@ -240,9 +169,8 @@ Deno.serve(async (req) => {
 
     const filteredSubs = subscriptions.filter((sub) => {
       const prefs = settingsMap.get(sub.user_id);
-      const pushEnabled = prefs ? prefs.push_enabled : true;
+      const pushEnabled = prefs ? (prefs.push_enabled ?? prefs.mobile_enabled ?? true) : true;
       const notifyPaid = prefs ? prefs.notify_paid : true;
-      // Default: notificar venda pendente também (usuário quer receber tudo no celular)
       const notifyPending = prefs ? prefs.notify_pending : true;
 
       if (!pushEnabled) return false;
@@ -251,22 +179,36 @@ Deno.serve(async (req) => {
       return true;
     });
 
-    const payload = {
-      title: notifTitle,
-      body: notifBody || "Você recebeu um novo pagamento.",
-      url: notifUrl || "/admin/orders",
-      tag: tag || "sale-" + Date.now(),
-    };
-
     const results = await Promise.allSettled(
-      filteredSubs.map((sub) => sendPush(sub, payload, vapidPublicKey, vapidPrivateKey))
+      filteredSubs.map((sub) => {
+        const prefs = settingsMap.get(sub.user_id);
+        const payload = buildPayload({ eventType: event_type, body: requestBody, settings: prefs });
+        return sendPush(sub, payload, vapidPublicKey, vapidPrivateKey);
+      })
     );
 
-    // Clean up expired subscriptions (410 Gone)
     for (let i = 0; i < results.length; i++) {
       const result = results[i];
-      if (result.status === "fulfilled" && result.value.status === 410) {
+      if (result.status === "fulfilled" && (result.value.status === 404 || result.value.status === 410)) {
         await supabase.from("push_subscriptions").delete().eq("endpoint", filteredSubs[i].endpoint);
+        continue;
+      }
+
+      if (result.status === "rejected") {
+        const error = result.reason;
+        if (error instanceof WebPushError) {
+          console.error("Push delivery failed", {
+            endpoint: filteredSubs[i]?.endpoint,
+            statusCode: error.statusCode,
+            body: error.body,
+          });
+
+          if (error.statusCode === 404 || error.statusCode === 410) {
+            await supabase.from("push_subscriptions").delete().eq("endpoint", filteredSubs[i].endpoint);
+          }
+        } else {
+          console.error("Unexpected push error", error);
+        }
       }
     }
 
