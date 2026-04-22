@@ -224,12 +224,14 @@ export type Database = {
           desktop_paid_body: string
           desktop_paid_duration_ms: number
           desktop_paid_icon_url: string | null
+          desktop_paid_image_url: string | null
           desktop_paid_sound: string
           desktop_paid_sound_url: string | null
           desktop_paid_title: string
           desktop_pending_body: string
           desktop_pending_duration_ms: number
           desktop_pending_icon_url: string | null
+          desktop_pending_image_url: string | null
           desktop_pending_sound: string
           desktop_pending_sound_url: string | null
           desktop_pending_title: string
@@ -237,9 +239,11 @@ export type Database = {
           mobile_enabled: boolean
           mobile_paid_body: string
           mobile_paid_icon_url: string | null
+          mobile_paid_image_url: string | null
           mobile_paid_title: string
           mobile_pending_body: string
           mobile_pending_icon_url: string | null
+          mobile_pending_image_url: string | null
           mobile_pending_title: string
           notify_paid: boolean
           notify_pending: boolean
@@ -255,12 +259,14 @@ export type Database = {
           desktop_paid_body?: string
           desktop_paid_duration_ms?: number
           desktop_paid_icon_url?: string | null
+          desktop_paid_image_url?: string | null
           desktop_paid_sound?: string
           desktop_paid_sound_url?: string | null
           desktop_paid_title?: string
           desktop_pending_body?: string
           desktop_pending_duration_ms?: number
           desktop_pending_icon_url?: string | null
+          desktop_pending_image_url?: string | null
           desktop_pending_sound?: string
           desktop_pending_sound_url?: string | null
           desktop_pending_title?: string
@@ -268,9 +274,11 @@ export type Database = {
           mobile_enabled?: boolean
           mobile_paid_body?: string
           mobile_paid_icon_url?: string | null
+          mobile_paid_image_url?: string | null
           mobile_paid_title?: string
           mobile_pending_body?: string
           mobile_pending_icon_url?: string | null
+          mobile_pending_image_url?: string | null
           mobile_pending_title?: string
           notify_paid?: boolean
           notify_pending?: boolean
@@ -286,12 +294,14 @@ export type Database = {
           desktop_paid_body?: string
           desktop_paid_duration_ms?: number
           desktop_paid_icon_url?: string | null
+          desktop_paid_image_url?: string | null
           desktop_paid_sound?: string
           desktop_paid_sound_url?: string | null
           desktop_paid_title?: string
           desktop_pending_body?: string
           desktop_pending_duration_ms?: number
           desktop_pending_icon_url?: string | null
+          desktop_pending_image_url?: string | null
           desktop_pending_sound?: string
           desktop_pending_sound_url?: string | null
           desktop_pending_title?: string
@@ -299,9 +309,11 @@ export type Database = {
           mobile_enabled?: boolean
           mobile_paid_body?: string
           mobile_paid_icon_url?: string | null
+          mobile_paid_image_url?: string | null
           mobile_paid_title?: string
           mobile_pending_body?: string
           mobile_pending_icon_url?: string | null
+          mobile_pending_image_url?: string | null
           mobile_pending_title?: string
           notify_paid?: boolean
           notify_pending?: boolean
