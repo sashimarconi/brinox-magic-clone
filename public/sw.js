@@ -1,40 +1,78 @@
+// Service Worker - VoidTok Push Notifications
+// Version: 2026-04-22-v3
+
+self.addEventListener("install", (event) => {
+  // Force this SW to become active immediately, replacing any old version
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  // Take control of all open clients (tabs) right away
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener("push", (event) => {
-  let data = { title: "Nova venda!", body: "Você recebeu um novo pagamento." };
+  let data = {
+    title: "Nova venda!",
+    body: "Você recebeu um novo pagamento.",
+    url: "/admin/orders",
+  };
+
   try {
     if (event.data) {
-      data = event.data.json();
+      const text = event.data.text();
+      try {
+        data = { ...data, ...JSON.parse(text) };
+      } catch {
+        data.body = text;
+      }
     }
-  } catch {
-    // fallback to default
+  } catch (err) {
+    // keep defaults
   }
 
   const options = {
     body: data.body,
     icon: data.icon || "/icon-192.png",
-    badge: data.badge || data.icon || "/icon-192.png",
+    badge: data.badge || "/icon-192.png",
     image: data.image || undefined,
-    vibrate: [200, 100, 200],
-    tag: data.tag || "sale-notification",
+    vibrate: [300, 100, 300, 100, 300],
+    tag: data.tag || `sale-${Date.now()}`,
+    renotify: true,
+    requireInteraction: true,
+    silent: false,
     data: {
-      url: data.url || "/dashboard/orders",
+      url: data.url || "/admin/orders",
+      timestamp: Date.now(),
     },
   };
 
-  event.waitUntil(self.registration.showNotification(data.title, options));
+  event.waitUntil(
+    self.registration
+      .showNotification(data.title || "Nova venda!", options)
+      .catch((err) => console.error("[SW] showNotification error:", err))
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || "/dashboard/orders";
+  const targetUrl = event.notification.data?.url || "/admin/orders";
+
   event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes("/dashboard") && "focus" in client) {
-          client.navigate?.(url);
-          return client.focus();
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        for (const client of clientList) {
+          if ("focus" in client) {
+            try {
+              client.navigate?.(targetUrl);
+            } catch {
+              // ignore
+            }
+            return client.focus();
+          }
         }
-      }
-      return clients.openWindow(url);
-    })
+        return self.clients.openWindow(targetUrl);
+      })
   );
 });
