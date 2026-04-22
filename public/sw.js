@@ -1,23 +1,22 @@
-// Service Worker - Push Notifications only (no caching)
-
 self.addEventListener("push", (event) => {
   let data = { title: "Nova venda!", body: "Você recebeu um novo pagamento." };
   try {
     if (event.data) {
       data = event.data.json();
     }
-  } catch (e) {
+  } catch {
     // fallback to default
   }
 
   const options = {
     body: data.body,
-    icon: "/icon-192.png",
-    badge: "/icon-192.png",
+    icon: data.icon || "/icon-192.png",
+    badge: data.badge || data.icon || "/icon-192.png",
+    image: data.image || undefined,
     vibrate: [200, 100, 200],
     tag: data.tag || "sale-notification",
     data: {
-      url: data.url || "/admin/orders",
+      url: data.url || "/dashboard/orders",
     },
   };
 
@@ -26,11 +25,12 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || "/admin";
+  const url = event.notification.data?.url || "/dashboard/orders";
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
-        if (client.url.includes("/admin") && "focus" in client) {
+        if (client.url.includes("/dashboard") && "focus" in client) {
+          client.navigate?.(url);
           return client.focus();
         }
       }
