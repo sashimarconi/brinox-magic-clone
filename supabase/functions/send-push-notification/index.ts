@@ -130,8 +130,6 @@ Deno.serve(async (req) => {
     // Fallback para user_id por compatibilidade.
     const targetUserId = owner_user_id || user_id || null;
 
-    const notifTitle = title || "VoidTok";
-
     // Get push subscriptions APENAS do dono do pedido
     let query = supabase
       .from("push_subscriptions")
