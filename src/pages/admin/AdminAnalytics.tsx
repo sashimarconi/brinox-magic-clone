@@ -80,19 +80,40 @@ const AdminAnalytics = () => {
     const from = dateRange.from.toISOString();
     const to = dateRange.to.toISOString();
 
-    const [sessionsRes, eventsRes, ordersRes] = await Promise.all([
-      supabase.from("visitor_sessions").select("session_id, created_at").gte("last_seen_at", from).lte("created_at", to),
-      supabase.from("page_events").select("event_type, page_url, created_at").gte("created_at", from).lte("created_at", to),
-      supabase.from("orders").select("total, payment_status, created_at").gte("created_at", from).lte("created_at", to),
+    // Paginated fetch helper — Supabase limits to 1000 rows per request by default
+    async function fetchAll<T>(builder: () => any): Promise<T[]> {
+      const PAGE = 1000;
+      const all: T[] = [];
+      let offset = 0;
+      while (true) {
+        const { data, error } = await builder().range(offset, offset + PAGE - 1);
+        if (error || !data || data.length === 0) break;
+        all.push(...(data as T[]));
+        if (data.length < PAGE) break;
+        offset += PAGE;
+      }
+      return all;
+    }
+
+    const [sessionsData, eventsData, ordersData] = await Promise.all([
+      fetchAll<{ session_id: string; created_at: string }>(() =>
+        supabase.from("visitor_sessions").select("session_id, created_at").gte("last_seen_at", from).lte("created_at", to)
+      ),
+      fetchAll<{ event_type: string; page_url: string | null; created_at: string }>(() =>
+        supabase.from("page_events").select("event_type, page_url, created_at").gte("created_at", from).lte("created_at", to)
+      ),
+      fetchAll<{ total: number; payment_status: string; created_at: string }>(() =>
+        supabase.from("orders").select("total, payment_status, created_at").gte("created_at", from).lte("created_at", to)
+      ),
     ]);
 
     const uniqueSessions = new Map<string, { session_id: string; created_at: string }>();
-    (sessionsRes.data || []).forEach(s => {
+    sessionsData.forEach(s => {
       if (!uniqueSessions.has(s.session_id)) uniqueSessions.set(s.session_id, s);
     });
     setSessions(Array.from(uniqueSessions.values()));
-    setEvents((eventsRes.data || []) as any);
-    setOrders((ordersRes.data || []) as any);
+    setEvents(eventsData as any);
+    setOrders(ordersData as any);
     setLoading(false);
   }, [dateRange]);
 
