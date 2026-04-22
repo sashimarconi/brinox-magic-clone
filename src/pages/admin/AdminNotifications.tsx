@@ -230,12 +230,13 @@ export default function AdminNotifications() {
     playPreviewSound(kind, settings);
 
     if ("Notification" in window && Notification.permission === "granted") {
+      const imageUrl = settings[`desktop_${kind}_image_url`];
       const notification = new Notification(title, {
         body,
         icon: settings[`desktop_${kind}_icon_url`] || "/icon-192.png",
-        image: settings[`desktop_${kind}_image_url`] || undefined,
         tag: `desktop-preview-${kind}`,
-      });
+        ...(imageUrl ? { image: imageUrl } : {}),
+      } as NotificationOptions);
       notification.onclick = () => {
         window.focus();
         window.location.href = "/dashboard/orders";
@@ -362,7 +363,7 @@ export default function AdminNotifications() {
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">{kind === "paid" ? "Venda aprovada" : "Venda pendente"}</h3>
-                  <p className="text-xs text-muted-foreground">Placeholders: {{customer_name}}, {{total}}, {{gateway}}, {{product_title}}</p>
+                  <p className="text-xs text-muted-foreground">Placeholders: {"{{customer_name}}"}, {"{{total}}"}, {"{{gateway}}"}, {"{{product_title}}"}</p>
                 </div>
                 <Button variant="outline" onClick={() => previewDesktop(kind)}>
                   <TestTube2 className="mr-2 h-4 w-4" />
