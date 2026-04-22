@@ -230,12 +230,13 @@ export default function AdminNotifications() {
     playPreviewSound(kind, settings);
 
     if ("Notification" in window && Notification.permission === "granted") {
+      const imageUrl = settings[`desktop_${kind}_image_url`];
       const notification = new Notification(title, {
         body,
         icon: settings[`desktop_${kind}_icon_url`] || "/icon-192.png",
-        image: settings[`desktop_${kind}_image_url`] || undefined,
         tag: `desktop-preview-${kind}`,
-      });
+        ...(imageUrl ? { image: imageUrl } : {}),
+      } as NotificationOptions);
       notification.onclick = () => {
         window.focus();
         window.location.href = "/dashboard/orders";

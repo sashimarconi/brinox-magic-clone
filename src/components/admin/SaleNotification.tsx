@@ -106,10 +106,10 @@ function showNativeNotification(options: {
     const notification = new Notification(options.title, {
       body: options.body,
       icon: options.icon || "/icon-192.png",
-      image: options.image || undefined,
       tag: options.tag,
       data: { url: options.url },
-    });
+      ...(options.image ? { image: options.image } : {}),
+    } as NotificationOptions);
 
     notification.onclick = () => {
       window.focus();
