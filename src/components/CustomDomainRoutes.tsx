@@ -4,6 +4,7 @@ import DomainStorefront from "@/pages/DomainStorefront";
 import ProductPage from "@/pages/ProductPage";
 import StorePage from "@/pages/StorePage";
 import CheckoutPage from "@/pages/CheckoutPage";
+import ThankYouRedirect from "@/pages/ThankYouRedirect";
 import NotFound from "@/pages/NotFound";
 
 /**
@@ -17,6 +18,7 @@ const CustomDomainRoutes = () => (
     <Route path="/products/:slug" element={<ProductPage />} />
     <Route path="/loja/:slug" element={<StorePage />} />
     <Route path="/checkout/:slug" element={<CheckoutPage />} />
+    <Route path="/obrigado/:slug" element={<ThankYouRedirect />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

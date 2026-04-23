@@ -471,8 +471,11 @@ const CheckoutPage = () => {
       const thankYouUrl = resolvedThankYouUrl || resolveThankYouUrl();
       if (thankYouUrl) {
         clearPendingPixOrder(slug, orderId);
+        const redirectUrl = new URL(`/obrigado/${slug}`, window.location.origin);
+        redirectUrl.searchParams.set("to", thankYouUrl);
+        redirectUrl.searchParams.set("order", orderId);
         // Use replace so back-button doesn't return to checkout
-        window.location.replace(thankYouUrl);
+        window.location.replace(redirectUrl.toString());
       }
     };
 

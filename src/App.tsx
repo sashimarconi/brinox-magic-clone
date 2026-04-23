@@ -42,6 +42,7 @@ import AdminDomains from "./pages/admin/AdminDomains";
 import AdminSecurity from "./pages/admin/AdminSecurity";
 import AdminProfile from "./pages/admin/AdminProfile";
 import ResetPassword from "./pages/ResetPassword";
+import ThankYouRedirect from "./pages/ThankYouRedirect";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -71,6 +72,7 @@ const AppRoutes = () => {
       <Route path="/products/:slug" element={<ProductPage />} />
       <Route path="/loja/:slug" element={<StorePage />} />
       <Route path="/checkout/:slug" element={<CheckoutPage />} />
+      <Route path="/obrigado/:slug" element={<ThankYouRedirect />} />
       <Route path="/login" element={<Login />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/register" element={<Register />} />
