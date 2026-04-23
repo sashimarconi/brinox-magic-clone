@@ -142,6 +142,7 @@ const AdminAnalytics = () => {
   const totalRevenue = paidOrders.reduce((s, o) => s + Number(o.total), 0);
   const pageViews = events.filter(e => e.event_type === "page_view").length;
   const checkoutViews = events.filter(e => e.event_type === "checkout_view").length;
+  const thankYouViews = events.filter(e => e.event_type === "thank_you_view").length;
   const pixGenerated = orders.length; // All orders = PIX generated
   const conversionRate = checkoutViews > 0 ? (paidOrders.length / checkoutViews) * 100 : 0;
 
@@ -155,8 +156,9 @@ const AdminAnalytics = () => {
       { label: "Checkout", value: checkoutViews, pct: Math.round((checkoutViews / total) * 100) },
       { label: "PIX Gerado", value: pixGenerated, pct: Math.round((pixGenerated / total) * 100) },
       { label: "Pagos", value: paidOrders.length, pct: Math.round((paidOrders.length / total) * 100) },
+      { label: "Obrigado", value: thankYouViews, pct: Math.round((thankYouViews / total) * 100) },
     ];
-  }, [pageViews, checkoutViews, pixGenerated, paidOrders.length]);
+  }, [pageViews, checkoutViews, pixGenerated, paidOrders.length, thankYouViews]);
 
   // Revenue by day/hour
   const revenueChart = useMemo(() => {
@@ -195,7 +197,7 @@ const AdminAnalytics = () => {
   // Pages accessed
   const pageData = useMemo(() => {
     const pageMap = new Map<string, number>();
-    events.filter(e => e.event_type === "page_view").forEach(e => {
+    events.filter(e => e.event_type === "page_view" || e.event_type === "thank_you_view").forEach(e => {
       const name = extractPageName(e.page_url);
       pageMap.set(name, (pageMap.get(name) || 0) + 1);
     });
