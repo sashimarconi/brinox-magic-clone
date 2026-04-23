@@ -6,6 +6,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchProductBySlug } from "@/lib/supabase-queries";
+import { clearPendingPixOrder, readPendingPixOrder, readStoredThankYouUrl, savePendingPixOrder, saveStoredThankYouUrl } from "@/lib/pending-order";
 import { formatCurrency } from "@/data/mockData";
 import { ArrowLeft, Minus, Plus, Check, ShieldCheck, Clock, X } from "lucide-react";
 import { toast } from "sonner";
@@ -27,6 +28,14 @@ interface OrderBump {
   image_url: string | null;
   price: number;
 }
+
+type PixDataState = {
+  qrCode?: string | null;
+  qrCodeBase64?: string | null;
+  copyPaste: string;
+  expiresAt: string;
+  orderId?: string;
+};
 
 const isQrImageSource = (value?: string | null) => {
   if (!value) return false;
@@ -129,13 +138,40 @@ const CheckoutPage = () => {
   const [cepLoading, setCepLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [pixData, setPixData] = useState<{ qrCode?: string | null; qrCodeBase64?: string | null; copyPaste: string; expiresAt: string; orderId?: string } | null>(null);
+  const [pixData, setPixData] = useState<PixDataState | null>(() => {
+    if (!slug) return null;
+    const pendingOrder = readPendingPixOrder(slug);
+    if (!pendingOrder) return null;
+
+    return {
+      qrCode: pendingOrder.qrCode,
+      qrCodeBase64: pendingOrder.qrCodeBase64,
+      copyPaste: pendingOrder.copyPaste,
+      expiresAt: pendingOrder.expiresAt,
+      orderId: pendingOrder.orderId,
+    };
+  });
   const [pixQrImageSrc, setPixQrImageSrc] = useState<string | null>(null);
   const [pixTimeLeft, setPixTimeLeft] = useState("");
   const [showCopyPaste, setShowCopyPaste] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [showEmailSuggestions, setShowEmailSuggestions] = useState(false);
   const [pixCopiedRegistered, setPixCopiedRegistered] = useState(false);
+
+  useEffect(() => {
+    if (!slug || pixData) return;
+
+    const pendingOrder = readPendingPixOrder(slug);
+    if (!pendingOrder) return;
+
+    setPixData({
+      qrCode: pendingOrder.qrCode,
+      qrCodeBase64: pendingOrder.qrCodeBase64,
+      copyPaste: pendingOrder.copyPaste,
+      expiresAt: pendingOrder.expiresAt,
+      orderId: pendingOrder.orderId,
+    });
+  }, [slug, pixData]);
 
   // Track abandoned cart when user leaves with filled form but no PIX generated
   useEffect(() => {
@@ -393,24 +429,29 @@ const CheckoutPage = () => {
   const discount = originalSubtotal - productSubtotal;
   const total = productSubtotal + shippingCost + bumpsTotal;
 
-  // Persist thank-you URL per order so we can redirect even if user closes/reopens the tab
+  // Persist pending PIX order + thank-you URL so redirect survives reload / tab reopen
   useEffect(() => {
-    if (!pixData?.orderId) return;
+    if (!slug || !pixData?.orderId) return;
     const thankYouUrl = (product as any)?.thank_you_url;
-    if (thankYouUrl) {
-      try {
-        localStorage.setItem(`thankYouUrl:${pixData.orderId}`, thankYouUrl);
-      } catch {}
-    }
-  }, [pixData?.orderId, product]);
 
-  // Robust payment-confirmation + redirect:
-  //  - Resolves thank_you URL from product OR from localStorage (covers tab-reopen scenarios)
-  //  - Polls every 4s, also re-checks immediately on tab focus / visibility change
-  //  - Subscribes to Supabase Realtime for instant redirect when webhook marks order paid
-  //  - On mount, checks if any pending order is already paid and redirects right away
+    if (thankYouUrl) {
+      saveStoredThankYouUrl(pixData.orderId, thankYouUrl);
+    }
+
+    savePendingPixOrder({
+      slug,
+      orderId: pixData.orderId,
+      copyPaste: pixData.copyPaste,
+      expiresAt: pixData.expiresAt,
+      qrCode: pixData.qrCode ?? null,
+      qrCodeBase64: pixData.qrCodeBase64 ?? null,
+      thankYouUrl: thankYouUrl || readStoredThankYouUrl(pixData.orderId),
+    });
+  }, [slug, pixData, product]);
+
+  // Poll the backend directly so redirect works even without public table access / realtime RLS
   useEffect(() => {
-    if (!pixData?.orderId || paymentConfirmed) return;
+    if (!slug || !pixData?.orderId || paymentConfirmed) return;
 
     const orderId = pixData.orderId;
     let cancelled = false;
@@ -419,46 +460,53 @@ const CheckoutPage = () => {
     const resolveThankYouUrl = (): string | null => {
       const fromProduct = (product as any)?.thank_you_url;
       if (fromProduct) return fromProduct as string;
-      try {
-        return localStorage.getItem(`thankYouUrl:${orderId}`);
-      } catch {
-        return null;
-      }
+      return readStoredThankYouUrl(orderId);
     };
 
-    const handlePaid = () => {
+    const handlePaid = (resolvedThankYouUrl?: string | null) => {
       if (redirected || cancelled) return;
       redirected = true;
       setPaymentConfirmed(true);
-      const thankYouUrl = resolveThankYouUrl();
+
+      const thankYouUrl = resolvedThankYouUrl || resolveThankYouUrl();
       if (thankYouUrl) {
-        try {
-          localStorage.removeItem(`thankYouUrl:${orderId}`);
-        } catch {}
+        clearPendingPixOrder(slug, orderId);
         // Use replace so back-button doesn't return to checkout
         window.location.replace(thankYouUrl);
       }
     };
 
     const checkPaymentStatus = async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("payment_status")
-        .eq("id", orderId)
-        .maybeSingle();
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const response = await fetch(`${supabaseUrl}/functions/v1/check-order-status`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": anonKey,
+            "Authorization": `Bearer ${anonKey}`,
+          },
+          body: JSON.stringify({ orderId, slug }),
+        });
 
-      if (cancelled || error || !data) return;
+        const result = await response.json().catch(() => null);
 
-      if (data.payment_status === "paid") {
-        handlePaid();
+        if (cancelled || !response.ok || !result) return;
+
+        if (result.paymentStatus === "paid") {
+          handlePaid(result.thankYouUrl);
+        }
+      } catch {
+        // keep polling quietly
       }
     };
 
     // Immediate check
     checkPaymentStatus();
 
-    // Polling every 4s
-    const interval = window.setInterval(checkPaymentStatus, 4000);
+    // Fast polling for near-immediate redirect when webhook marks the order as paid
+    const interval = window.setInterval(checkPaymentStatus, 1500);
 
     // Re-check whenever the tab becomes visible again
     const onVisibility = () => {
@@ -469,33 +517,13 @@ const CheckoutPage = () => {
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("focus", checkPaymentStatus);
 
-    // Realtime subscription — fires the instant payment-webhook updates the order
-    const channel = supabase
-      .channel(`order-status-${orderId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "orders",
-          filter: `id=eq.${orderId}`,
-        },
-        (payload: any) => {
-          if (payload?.new?.payment_status === "paid") {
-            handlePaid();
-          }
-        }
-      )
-      .subscribe();
-
     return () => {
       cancelled = true;
       window.clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("focus", checkPaymentStatus);
-      supabase.removeChannel(channel);
     };
-  }, [paymentConfirmed, pixData?.orderId, product]);
+  }, [paymentConfirmed, pixData, product, slug]);
 
   const toggleBump = (id: string) => {
     setSelectedBumps((prev) =>
@@ -587,14 +615,28 @@ const CheckoutPage = () => {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Erro ao gerar pagamento");
 
-      setPixData({
+      const nextPixData = {
         qrCode: typeof result.paymentData?.qrCode === "string" ? result.paymentData.qrCode.trim() : null,
         qrCodeBase64: typeof result.paymentData?.qrCodeBase64 === "string" ? result.paymentData.qrCodeBase64.trim() : null,
         copyPaste: typeof result.paymentData?.copyPaste === "string" ? result.paymentData.copyPaste.trim() : "",
         expiresAt: result.paymentData.expiresAt,
         orderId: result.orderId,
-      });
+      };
+
+      setPixData(nextPixData);
       setPaymentConfirmed(false);
+
+      if (slug && result.orderId) {
+        savePendingPixOrder({
+          slug,
+          orderId: result.orderId,
+          copyPaste: nextPixData.copyPaste,
+          expiresAt: nextPixData.expiresAt,
+          qrCode: nextPixData.qrCode ?? null,
+          qrCodeBase64: nextPixData.qrCodeBase64 ?? null,
+          thankYouUrl: result.thankYouUrl || (product as any)?.thank_you_url || null,
+        });
+      }
 
       // Track PIX generation
       trackEvent("pix_generated", product?.user_id, { total, product_slug: slug });
@@ -668,7 +710,12 @@ const CheckoutPage = () => {
         {/* Header */}
         <header className="sticky top-0 z-40 bg-card border-b border-border">
           <div className="flex items-center h-12 px-4">
-            <button onClick={() => setPixData(null)}>
+            <button
+              onClick={() => {
+                clearPendingPixOrder(slug || "", pixData.orderId);
+                setPixData(null);
+              }}
+            >
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
             {checkoutLogoUrl ? (

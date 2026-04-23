@@ -177,7 +177,7 @@ function toAbsoluteUrl(baseUrl: string, value?: string | null) {
 async function getGatewayForProductOwner(supabase: ReturnType<typeof createClient>, productId: string) {
   const { data: product, error: productError } = await supabase
     .from("products")
-    .select("id, user_id")
+    .select("id, user_id, thank_you_url")
     .eq("id", productId)
     .maybeSingle();
 
@@ -746,6 +746,7 @@ Deno.serve(async (req) => {
           expiresAt: safeExpiresAt,
         },
         orderId: orderData?.id || null,
+        thankYouUrl: product?.thank_you_url || null,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
