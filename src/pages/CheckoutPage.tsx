@@ -393,38 +393,109 @@ const CheckoutPage = () => {
   const discount = originalSubtotal - productSubtotal;
   const total = productSubtotal + shippingCost + bumpsTotal;
 
+  // Persist thank-you URL per order so we can redirect even if user closes/reopens the tab
+  useEffect(() => {
+    if (!pixData?.orderId) return;
+    const thankYouUrl = (product as any)?.thank_you_url;
+    if (thankYouUrl) {
+      try {
+        localStorage.setItem(`thankYouUrl:${pixData.orderId}`, thankYouUrl);
+      } catch {}
+    }
+  }, [pixData?.orderId, product]);
+
+  // Robust payment-confirmation + redirect:
+  //  - Resolves thank_you URL from product OR from localStorage (covers tab-reopen scenarios)
+  //  - Polls every 4s, also re-checks immediately on tab focus / visibility change
+  //  - Subscribes to Supabase Realtime for instant redirect when webhook marks order paid
+  //  - On mount, checks if any pending order is already paid and redirects right away
   useEffect(() => {
     if (!pixData?.orderId || paymentConfirmed) return;
 
+    const orderId = pixData.orderId;
     let cancelled = false;
+    let redirected = false;
+
+    const resolveThankYouUrl = (): string | null => {
+      const fromProduct = (product as any)?.thank_you_url;
+      if (fromProduct) return fromProduct as string;
+      try {
+        return localStorage.getItem(`thankYouUrl:${orderId}`);
+      } catch {
+        return null;
+      }
+    };
+
+    const handlePaid = () => {
+      if (redirected || cancelled) return;
+      redirected = true;
+      setPaymentConfirmed(true);
+      const thankYouUrl = resolveThankYouUrl();
+      if (thankYouUrl) {
+        try {
+          localStorage.removeItem(`thankYouUrl:${orderId}`);
+        } catch {}
+        // Use replace so back-button doesn't return to checkout
+        window.location.replace(thankYouUrl);
+      }
+    };
 
     const checkPaymentStatus = async () => {
       const { data, error } = await supabase
         .from("orders")
         .select("payment_status")
-        .eq("id", pixData.orderId)
+        .eq("id", orderId)
         .maybeSingle();
 
       if (cancelled || error || !data) return;
 
       if (data.payment_status === "paid") {
-        setPaymentConfirmed(true);
-        // Redirect to thank you page if configured
-        const thankYouUrl = (product as any)?.thank_you_url;
-        if (thankYouUrl) {
-          window.location.href = thankYouUrl;
-        }
+        handlePaid();
       }
     };
 
+    // Immediate check
     checkPaymentStatus();
-    const interval = window.setInterval(checkPaymentStatus, 5000);
+
+    // Polling every 4s
+    const interval = window.setInterval(checkPaymentStatus, 4000);
+
+    // Re-check whenever the tab becomes visible again
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        checkPaymentStatus();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", checkPaymentStatus);
+
+    // Realtime subscription — fires the instant payment-webhook updates the order
+    const channel = supabase
+      .channel(`order-status-${orderId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: `id=eq.${orderId}`,
+        },
+        (payload: any) => {
+          if (payload?.new?.payment_status === "paid") {
+            handlePaid();
+          }
+        }
+      )
+      .subscribe();
 
     return () => {
       cancelled = true;
       window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", checkPaymentStatus);
+      supabase.removeChannel(channel);
     };
-  }, [paymentConfirmed, pixData?.orderId]);
+  }, [paymentConfirmed, pixData?.orderId, product]);
 
   const toggleBump = (id: string) => {
     setSelectedBumps((prev) =>
