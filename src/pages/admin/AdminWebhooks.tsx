@@ -104,6 +104,54 @@ const AdminWebhooks = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["webhooks"] }),
   });
 
+  const [testingId, setTestingId] = useState<string | null>(null);
+
+  async function testWebhook(wh: WebhookRow) {
+    setTestingId(wh.id);
+    const events = Array.isArray(wh.events) ? wh.events : [];
+    const eventName = events[0] || "webhook_test";
+    const testPayload = {
+      event: eventName,
+      timestamp: new Date().toISOString(),
+      test: true,
+      data: {
+        message: "Este é um disparo de teste do webhook",
+        webhook_id: wh.id,
+        webhook_name: wh.name,
+        sample_order: {
+          id: "test-order-id",
+          customer_name: "Cliente Teste",
+          customer_email: "teste@exemplo.com",
+          total: 99.9,
+          payment_status: eventName === "order_paid" ? "paid" : "pending",
+        },
+      },
+    };
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (wh.secret_key) headers["X-Webhook-Secret"] = wh.secret_key;
+      const res = await fetch(wh.url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(testPayload),
+        mode: "cors",
+      });
+      if (res.ok || res.type === "opaque") {
+        toast.success(`Webhook testado! Status: ${res.status || "enviado"}`);
+      } else {
+        toast.error(`Webhook respondeu com erro ${res.status}`);
+      }
+    } catch (err: any) {
+      // CORS pode bloquear leitura da resposta, mas o disparo costuma ocorrer
+      toast.message("Disparo enviado", {
+        description: "Não foi possível ler a resposta (CORS). Verifique o destino para confirmar o recebimento.",
+      });
+    } finally {
+      setTestingId(null);
+    }
+  }
+
+
   function openCreate() {
     setEditing(null);
     setName("");
