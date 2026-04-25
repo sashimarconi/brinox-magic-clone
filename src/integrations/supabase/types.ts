@@ -819,6 +819,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          blocked: boolean
           created_at: string
           full_name: string | null
           id: string
@@ -826,6 +827,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          blocked?: boolean
           created_at?: string
           full_name?: string | null
           id?: string
@@ -833,6 +835,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          blocked?: boolean
           created_at?: string
           full_name?: string | null
           id?: string
@@ -1484,6 +1487,10 @@ export type Database = {
           signup_count: number
         }[]
       }
+      admin_delete_user: {
+        Args: { _target_user_id: string }
+        Returns: undefined
+      }
       admin_list_orders: {
         Args: { _limit?: number; _offset?: number; _status?: string }
         Returns: {
@@ -1506,6 +1513,7 @@ export type Database = {
         Args: never
         Returns: {
           avatar_url: string
+          blocked: boolean
           created_at: string
           email: string
           full_name: string
@@ -1528,6 +1536,10 @@ export type Database = {
           total_users: number
         }[]
       }
+      admin_toggle_user_block: {
+        Args: { _blocked: boolean; _target_user_id: string }
+        Returns: undefined
+      }
       admin_update_user_fee: {
         Args: { _new_fee: number; _target_user_id: string }
         Returns: undefined
@@ -1537,6 +1549,10 @@ export type Database = {
           _new_plan: Database["public"]["Enums"]["plan_type"]
           _target_user_id: string
         }
+        Returns: undefined
+      }
+      admin_update_user_profile: {
+        Args: { _full_name: string; _target_user_id: string }
         Returns: undefined
       }
       admin_user_details: {
