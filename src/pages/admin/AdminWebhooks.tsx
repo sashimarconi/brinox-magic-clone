@@ -259,11 +259,25 @@ const AdminWebhooks = () => {
                       })}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-start">
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-start flex-wrap justify-end">
                     <Switch
                       checked={wh.active}
                       onCheckedChange={(val) => toggleMutation.mutate({ id: wh.id, active: val })}
                     />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => testWebhook(wh)}
+                      disabled={testingId === wh.id}
+                      className="gap-1.5"
+                    >
+                      {testingId === wh.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Send className="h-3.5 w-3.5" />
+                      )}
+                      Testar
+                    </Button>
                     <Button size="icon" variant="ghost" onClick={() => openEdit(wh)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
