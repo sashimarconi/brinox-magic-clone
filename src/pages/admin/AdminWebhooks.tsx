@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  Plus, Trash2, Pencil, ArrowLeft, Webhook, Globe, Shield, Copy,
+  Plus, Trash2, Pencil, ArrowLeft, Webhook, Globe, Shield, Copy, Send, Loader2,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -103,6 +103,54 @@ const AdminWebhooks = () => {
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["webhooks"] }),
   });
+
+  const [testingId, setTestingId] = useState<string | null>(null);
+
+  async function testWebhook(wh: WebhookRow) {
+    setTestingId(wh.id);
+    const events = Array.isArray(wh.events) ? wh.events : [];
+    const eventName = events[0] || "webhook_test";
+    const testPayload = {
+      event: eventName,
+      timestamp: new Date().toISOString(),
+      test: true,
+      data: {
+        message: "Este é um disparo de teste do webhook",
+        webhook_id: wh.id,
+        webhook_name: wh.name,
+        sample_order: {
+          id: "test-order-id",
+          customer_name: "Cliente Teste",
+          customer_email: "teste@exemplo.com",
+          total: 99.9,
+          payment_status: eventName === "order_paid" ? "paid" : "pending",
+        },
+      },
+    };
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (wh.secret_key) headers["X-Webhook-Secret"] = wh.secret_key;
+      const res = await fetch(wh.url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(testPayload),
+        mode: "cors",
+      });
+      if (res.ok || res.type === "opaque") {
+        toast.success(`Webhook testado! Status: ${res.status || "enviado"}`);
+      } else {
+        toast.error(`Webhook respondeu com erro ${res.status}`);
+      }
+    } catch (err: any) {
+      // CORS pode bloquear leitura da resposta, mas o disparo costuma ocorrer
+      toast.message("Disparo enviado", {
+        description: "Não foi possível ler a resposta (CORS). Verifique o destino para confirmar o recebimento.",
+      });
+    } finally {
+      setTestingId(null);
+    }
+  }
+
 
   function openCreate() {
     setEditing(null);
@@ -211,11 +259,25 @@ const AdminWebhooks = () => {
                       })}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-start">
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-start flex-wrap justify-end">
                     <Switch
                       checked={wh.active}
                       onCheckedChange={(val) => toggleMutation.mutate({ id: wh.id, active: val })}
                     />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => testWebhook(wh)}
+                      disabled={testingId === wh.id}
+                      className="gap-1.5"
+                    >
+                      {testingId === wh.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Send className="h-3.5 w-3.5" />
+                      )}
+                      Testar
+                    </Button>
                     <Button size="icon" variant="ghost" onClick={() => openEdit(wh)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
