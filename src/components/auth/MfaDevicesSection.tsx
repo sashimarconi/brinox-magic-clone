@@ -135,12 +135,20 @@ const MfaDevicesSection = () => {
   };
 
   const performRemove = async (id: string) => {
+    // Try the standard SDK first; if it requires AAL2, fall back to the
+    // server-side RPC that lets the user remove their own factor without 2FA code.
     const { error } = await supabase.auth.mfa.unenroll({ factorId: id });
     if (error) {
       const msg = error.message || "";
-      if (msg.includes("AAL2") || (error as any).code === "insufficient_aal") {
-        setPendingRemoveId(id);
-        setAal2Open(true);
+      const needsAal2 = msg.includes("AAL2") || (error as any).code === "insufficient_aal";
+      if (needsAal2) {
+        const { error: rpcError } = await supabase.rpc("remove_my_mfa_factor", { _factor_id: id });
+        if (rpcError) {
+          toast.error(rpcError.message || "Erro ao remover dispositivo");
+          return;
+        }
+        toast.success("Dispositivo removido");
+        await loadFactors();
         return;
       }
       toast.error(msg || "Erro ao remover dispositivo");
