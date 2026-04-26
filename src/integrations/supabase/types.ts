@@ -1603,6 +1603,8 @@ export type Database = {
         Returns: boolean
       }
       mark_pix_copied: { Args: { _order_id: string }; Returns: undefined }
+      remove_my_mfa_factor: { Args: { _factor_id: string }; Returns: undefined }
+      remove_my_mfa_factors: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
