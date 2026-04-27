@@ -78,7 +78,7 @@ type UtmifyAccount = {
   name: string;
   api_token: string;
   platform_name: string;
-  tiktok_pixel_id: string;
+  tiktok_pixel_ids: string[];
   active: boolean;
 };
 
@@ -86,9 +86,20 @@ const emptyUtmifyAccount = (): UtmifyAccount => ({
   name: "",
   api_token: "",
   platform_name: "VoidTok",
-  tiktok_pixel_id: "",
+  tiktok_pixel_ids: [""],
   active: true,
 });
+
+const parsePixelIds = (raw: string | null | undefined): string[] => {
+  if (!raw) return [""];
+  const arr = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  return arr.length ? arr : [""];
+};
+
+const serializePixelIds = (ids: string[]): string | null => {
+  const cleaned = ids.map((s) => s.trim()).filter(Boolean);
+  return cleaned.length ? cleaned.join(",") : null;
+};
 
 const AdminPixels = () => {
   const [view, setView] = useState<View>("grid");
@@ -152,7 +163,7 @@ const AdminPixels = () => {
         api_token: account.api_token.trim(),
         platform_name: account.platform_name.trim() || "VoidTok",
         active: account.active,
-        tiktok_pixel_id: account.tiktok_pixel_id.trim() || null,
+        tiktok_pixel_id: serializePixelIds(account.tiktok_pixel_ids),
       };
 
       if (account.id) {
@@ -386,7 +397,13 @@ const AdminPixels = () => {
                       <p className="text-sm font-medium text-foreground truncate">{acc.name || "Conta principal"}</p>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">
                         Plataforma: {acc.platform_name || "VoidTok"}
-                        {acc.tiktok_pixel_id ? ` • Pixel TikTok: ${acc.tiktok_pixel_id}` : ""}
+                        {(() => {
+                          const ids = parsePixelIds(acc.tiktok_pixel_id).filter(Boolean);
+                          if (!ids.length) return "";
+                          return ids.length === 1
+                            ? ` • Pixel TikTok: ${ids[0]}`
+                            : ` • ${ids.length} pixels TikTok`;
+                        })()}
                       </p>
                     </div>
                   </div>
@@ -409,7 +426,7 @@ const AdminPixels = () => {
                           name: acc.name || "",
                           api_token: acc.api_token || "",
                           platform_name: acc.platform_name || "VoidTok",
-                          tiktok_pixel_id: acc.tiktok_pixel_id || "",
+                          tiktok_pixel_ids: parsePixelIds(acc.tiktok_pixel_id),
                           active: acc.active,
                         });
                         setView("utmify-form");
@@ -506,14 +523,58 @@ const AdminPixels = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-semibold text-primary">ID do Pixel TikTok (Utmify)</Label>
-              <Input
-                value={utmifyForm.tiktok_pixel_id}
-                onChange={(e) => setUtmifyForm({ ...utmifyForm, tiktok_pixel_id: e.target.value })}
-                placeholder="Ex: 69eedb95c404fbdd094caeda"
-              />
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold text-primary">IDs de Pixel TikTok (Utmify)</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setUtmifyForm({
+                      ...utmifyForm,
+                      tiktok_pixel_ids: [...utmifyForm.tiktok_pixel_ids, ""],
+                    })
+                  }
+                  className="h-7 gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Adicionar pixel
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {utmifyForm.tiktok_pixel_ids.map((pid, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <Input
+                      value={pid}
+                      onChange={(e) => {
+                        const next = [...utmifyForm.tiktok_pixel_ids];
+                        next[idx] = e.target.value;
+                        setUtmifyForm({ ...utmifyForm, tiktok_pixel_ids: next });
+                      }}
+                      placeholder={`Pixel ${idx + 1} • Ex: 69eedb95c404fbdd094caeda`}
+                    />
+                    {utmifyForm.tiktok_pixel_ids.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const next = utmifyForm.tiktok_pixel_ids.filter((_, i) => i !== idx);
+                          setUtmifyForm({
+                            ...utmifyForm,
+                            tiktok_pixel_ids: next.length ? next : [""],
+                          });
+                        }}
+                        className="text-muted-foreground hover:text-destructive shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
               <p className="text-xs text-muted-foreground">
-                ID do pixel TikTok criado dentro da Utmify. Será carregado em todas as páginas públicas.
+                Adicione quantos pixels TikTok quiser para esta integração. Todos serão carregados nas páginas públicas.
               </p>
             </div>
 
