@@ -163,7 +163,7 @@ const AdminPixels = () => {
         api_token: account.api_token.trim(),
         platform_name: account.platform_name.trim() || "VoidTok",
         active: account.active,
-        tiktok_pixel_id: account.tiktok_pixel_id.trim() || null,
+        tiktok_pixel_id: serializePixelIds(account.tiktok_pixel_ids),
       };
 
       if (account.id) {
