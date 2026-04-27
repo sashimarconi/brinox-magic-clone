@@ -109,9 +109,12 @@ const AdminPixels = () => {
   const { data: utmifySettings, isLoading: utmifyLoading } = useQuery({
     queryKey: ["utmify-settings"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
       const { data, error } = await supabase
         .from("utmify_settings" as any)
         .select("*")
+        .eq("user_id", user.id)
         .maybeSingle();
       if (error) throw error;
       return data as any;
@@ -124,12 +127,16 @@ const AdminPixels = () => {
 
   const saveUtmifyMutation = useMutation({
     mutationFn: async () => {
+      const { data: { user }, error: userErr } = await supabase.auth.getUser();
+      if (userErr || !user) throw new Error("Você precisa estar logado");
+      if (!utmifyToken.trim()) throw new Error("Informe o token da API");
+
       if (utmifySettings?.id) {
         const { error } = await supabase
           .from("utmify_settings" as any)
           .update({
             api_token: utmifyToken.trim(),
-            platform_name: utmifyPlatformName.trim(),
+            platform_name: utmifyPlatformName.trim() || "VoidTok",
             active: utmifyActive,
           })
           .eq("id", utmifySettings.id);
@@ -138,8 +145,9 @@ const AdminPixels = () => {
         const { error } = await supabase
           .from("utmify_settings" as any)
           .insert({
+            user_id: user.id,
             api_token: utmifyToken.trim(),
-            platform_name: utmifyPlatformName.trim(),
+            platform_name: utmifyPlatformName.trim() || "VoidTok",
             active: utmifyActive,
           });
         if (error) throw error;
@@ -149,7 +157,7 @@ const AdminPixels = () => {
       queryClient.invalidateQueries({ queryKey: ["utmify-settings"] });
       toast({ title: "Utmify configurado com sucesso!" });
     },
-    onError: (err: Error) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
+    onError: (err: Error) => toast({ title: "Erro ao salvar Utmify", description: err.message, variant: "destructive" }),
   });
 
   const deleteUtmifyMutation = useMutation({
@@ -168,6 +176,41 @@ const AdminPixels = () => {
       setUtmifyActive(true);
       toast({ title: "Configuração da Utmify removida!" });
     },
+  });
+
+  const testUtmifyMutation = useMutation({
+    mutationFn: async () => {
+      const token = (utmifyToken || utmifySettings?.api_token || "").trim();
+      if (!token) throw new Error("Salve o token antes de testar");
+      const platform = (utmifyPlatformName || utmifySettings?.platform_name || "VoidTok").trim();
+
+      const now = new Date();
+      const createdAt = now.toISOString().replace("T", " ").substring(0, 19);
+      const testPayload = {
+        orderId: `test-${crypto.randomUUID()}`,
+        platform,
+        paymentMethod: "pix",
+        status: "paid",
+        createdAt,
+        approvedDate: createdAt,
+        refundedAt: null,
+        customer: { name: "Teste Lovable", email: "teste@lovable.app", phone: null, document: null, country: "BR" },
+        products: [{ id: "test-product", name: "Produto de Teste", planId: null, planName: null, quantity: 1, priceInCents: 1000 }],
+        trackingParameters: { src: null, sck: null, utm_source: "test", utm_campaign: null, utm_medium: null, utm_content: null, utm_term: null },
+        commission: { totalPriceInCents: 1000, gatewayFeeInCents: 25, userCommissionInCents: 975 },
+      };
+
+      const res = await fetch("https://api.utmify.com.br/api-credentials/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-token": token },
+        body: JSON.stringify(testPayload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(`Utmify retornou ${res.status}: ${JSON.stringify(data)}`);
+      return data;
+    },
+    onSuccess: () => toast({ title: "Conexão OK!", description: "Pedido de teste enviado. Verifique no painel da Utmify." }),
+    onError: (err: Error) => toast({ title: "Falha no teste", description: err.message, variant: "destructive" }),
   });
 
   // Pixel mutations
@@ -344,8 +387,15 @@ const AdminPixels = () => {
                   Remover
                 </Button>
               )}
-              <div className="flex gap-3 ml-auto">
+              <div className="flex gap-3 ml-auto flex-wrap">
                 <Button variant="outline" onClick={() => setView("grid")}>Cancelar</Button>
+                <Button
+                  variant="outline"
+                  onClick={() => testUtmifyMutation.mutate()}
+                  disabled={!(utmifyToken.trim() || utmifySettings?.api_token) || testUtmifyMutation.isPending}
+                >
+                  {testUtmifyMutation.isPending ? "Testando..." : "Testar conexão"}
+                </Button>
                 <Button
                   onClick={() => saveUtmifyMutation.mutate()}
                   disabled={!utmifyToken.trim() || saveUtmifyMutation.isPending}
