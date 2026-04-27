@@ -78,7 +78,7 @@ type UtmifyAccount = {
   name: string;
   api_token: string;
   platform_name: string;
-  tiktok_pixel_id: string;
+  tiktok_pixel_ids: string[];
   active: boolean;
 };
 
@@ -86,9 +86,20 @@ const emptyUtmifyAccount = (): UtmifyAccount => ({
   name: "",
   api_token: "",
   platform_name: "VoidTok",
-  tiktok_pixel_id: "",
+  tiktok_pixel_ids: [""],
   active: true,
 });
+
+const parsePixelIds = (raw: string | null | undefined): string[] => {
+  if (!raw) return [""];
+  const arr = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  return arr.length ? arr : [""];
+};
+
+const serializePixelIds = (ids: string[]): string | null => {
+  const cleaned = ids.map((s) => s.trim()).filter(Boolean);
+  return cleaned.length ? cleaned.join(",") : null;
+};
 
 const AdminPixels = () => {
   const [view, setView] = useState<View>("grid");
