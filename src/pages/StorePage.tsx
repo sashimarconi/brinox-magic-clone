@@ -19,6 +19,7 @@ const StorePage = () => {
 
   usePageTracking("page_view", store?.user_id, { surface: "store" });
   useVisitorHeartbeat(store?.user_id);
+  useUtmifyPixel(store?.user_id);
 
   const { data: products, isLoading: productsLoading } = useQuery({
     queryKey: ["store-products", store?.id],
