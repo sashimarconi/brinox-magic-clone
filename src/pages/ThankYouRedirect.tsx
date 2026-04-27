@@ -29,6 +29,8 @@ const ThankYouRedirect = () => {
     staleTime: 60_000,
   });
 
+  useUtmifyPixel(product?.user_id);
+
   useEffect(() => {
     if (!targetUrl) return;
 
