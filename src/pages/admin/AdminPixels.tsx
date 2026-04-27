@@ -387,8 +387,15 @@ const AdminPixels = () => {
                   Remover
                 </Button>
               )}
-              <div className="flex gap-3 ml-auto">
+              <div className="flex gap-3 ml-auto flex-wrap">
                 <Button variant="outline" onClick={() => setView("grid")}>Cancelar</Button>
+                <Button
+                  variant="outline"
+                  onClick={() => testUtmifyMutation.mutate()}
+                  disabled={!(utmifyToken.trim() || utmifySettings?.api_token) || testUtmifyMutation.isPending}
+                >
+                  {testUtmifyMutation.isPending ? "Testando..." : "Testar conexão"}
+                </Button>
                 <Button
                   onClick={() => saveUtmifyMutation.mutate()}
                   disabled={!utmifyToken.trim() || saveUtmifyMutation.isPending}
