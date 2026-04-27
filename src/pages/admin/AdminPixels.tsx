@@ -586,7 +586,7 @@ const AdminPixels = () => {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-semibold text-foreground">{p.name}</h3>
-                      {p.id === "utmify" && utmifySettings?.active && (
+                      {p.id === "utmify" && hasActiveUtmify && (
                         <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-marketplace-green/15 text-marketplace-green">Conectado</span>
                       )}
                     </div>
