@@ -369,6 +369,18 @@ const AdminPixels = () => {
               </p>
             </div>
 
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-primary">ID do Pixel TikTok (Utmify)</Label>
+              <Input
+                value={utmifyTiktokPixelId}
+                onChange={(e) => setUtmifyTiktokPixelId(e.target.value)}
+                placeholder="Ex: 69eedb95c404fbdd094caeda"
+              />
+              <p className="text-xs text-muted-foreground">
+                ID do pixel TikTok criado dentro da Utmify. Será carregado automaticamente em todas as páginas públicas (produto, checkout, obrigado e loja).
+              </p>
+            </div>
+
             <div className="flex items-center justify-between py-3">
               <div>
                 <p className="text-sm font-semibold text-foreground">Integração Ativa</p>
