@@ -71,7 +71,24 @@ const PLATFORMS = [
   },
 ];
 
-type View = "grid" | "list" | "create" | "edit" | "utmify";
+type View = "grid" | "list" | "create" | "edit" | "utmify" | "utmify-form";
+
+type UtmifyAccount = {
+  id?: string;
+  name: string;
+  api_token: string;
+  platform_name: string;
+  tiktok_pixel_id: string;
+  active: boolean;
+};
+
+const emptyUtmifyAccount = (): UtmifyAccount => ({
+  name: "",
+  api_token: "",
+  platform_name: "VoidTok",
+  tiktok_pixel_id: "",
+  active: true,
+});
 
 const AdminPixels = () => {
   const [view, setView] = useState<View>("grid");
@@ -82,6 +99,7 @@ const AdminPixels = () => {
   const [newPixelActive, setNewPixelActive] = useState(true);
   const [fireOnPaidOnly, setFireOnPaidOnly] = useState(false);
   const [editingPixel, setEditingPixel] = useState<any>(null);
+  const [utmifyForm, setUtmifyForm] = useState<UtmifyAccount>(emptyUtmifyAccount());
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
