@@ -323,6 +323,7 @@ const AdminPixels = () => {
       setUtmifyToken(utmifySettings.api_token);
       setUtmifyPlatformName(utmifySettings.platform_name || "VoidTok");
       setUtmifyActive(utmifySettings.active);
+      setUtmifyTiktokPixelId(utmifySettings.tiktok_pixel_id || "");
     }
 
     return (
