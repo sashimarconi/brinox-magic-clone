@@ -420,7 +420,7 @@ const AdminPixels = () => {
                           name: acc.name || "",
                           api_token: acc.api_token || "",
                           platform_name: acc.platform_name || "VoidTok",
-                          tiktok_pixel_id: acc.tiktok_pixel_id || "",
+                          tiktok_pixel_ids: parsePixelIds(acc.tiktok_pixel_id),
                           active: acc.active,
                         });
                         setView("utmify-form");
