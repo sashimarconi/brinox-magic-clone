@@ -71,7 +71,24 @@ const PLATFORMS = [
   },
 ];
 
-type View = "grid" | "list" | "create" | "edit" | "utmify";
+type View = "grid" | "list" | "create" | "edit" | "utmify" | "utmify-form";
+
+type UtmifyAccount = {
+  id?: string;
+  name: string;
+  api_token: string;
+  platform_name: string;
+  tiktok_pixel_id: string;
+  active: boolean;
+};
+
+const emptyUtmifyAccount = (): UtmifyAccount => ({
+  name: "",
+  api_token: "",
+  platform_name: "VoidTok",
+  tiktok_pixel_id: "",
+  active: true,
+});
 
 const AdminPixels = () => {
   const [view, setView] = useState<View>("grid");
@@ -82,6 +99,7 @@ const AdminPixels = () => {
   const [newPixelActive, setNewPixelActive] = useState(true);
   const [fireOnPaidOnly, setFireOnPaidOnly] = useState(false);
   const [editingPixel, setEditingPixel] = useState<any>(null);
+  const [utmifyForm, setUtmifyForm] = useState<UtmifyAccount>(emptyUtmifyAccount());
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -105,87 +123,91 @@ const AdminPixels = () => {
     },
   });
 
-  // Utmify queries
-  const { data: utmifySettings, isLoading: utmifyLoading } = useQuery({
-    queryKey: ["utmify-settings"],
+  // Utmify queries — múltiplas integrações por usuário
+  const { data: utmifyAccounts, isLoading: utmifyLoading } = useQuery({
+    queryKey: ["utmify-accounts"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      if (!user) return [] as any[];
       const { data, error } = await supabase
         .from("utmify_settings" as any)
         .select("*")
         .eq("user_id", user.id)
-        .maybeSingle();
+        .order("created_at", { ascending: true });
       if (error) throw error;
-      return data as any;
+      return (data || []) as any[];
     },
   });
 
-  const [utmifyToken, setUtmifyToken] = useState("");
-  const [utmifyPlatformName, setUtmifyPlatformName] = useState("VoidTok");
-  const [utmifyActive, setUtmifyActive] = useState(true);
-  const [utmifyTiktokPixelId, setUtmifyTiktokPixelId] = useState("");
+  const hasActiveUtmify = (utmifyAccounts || []).some((a: any) => a.active);
 
   const saveUtmifyMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (account: UtmifyAccount) => {
       const { data: { user }, error: userErr } = await supabase.auth.getUser();
       if (userErr || !user) throw new Error("Você precisa estar logado");
-      if (!utmifyToken.trim()) throw new Error("Informe o token da API");
+      if (!account.api_token.trim()) throw new Error("Informe o token da API");
 
-      if (utmifySettings?.id) {
+      const payload = {
+        name: account.name.trim() || "Conta principal",
+        api_token: account.api_token.trim(),
+        platform_name: account.platform_name.trim() || "VoidTok",
+        active: account.active,
+        tiktok_pixel_id: account.tiktok_pixel_id.trim() || null,
+      };
+
+      if (account.id) {
         const { error } = await supabase
           .from("utmify_settings" as any)
-          .update({
-            api_token: utmifyToken.trim(),
-            platform_name: utmifyPlatformName.trim() || "VoidTok",
-            active: utmifyActive,
-            tiktok_pixel_id: utmifyTiktokPixelId.trim() || null,
-          } as any)
-          .eq("id", utmifySettings.id);
+          .update(payload as any)
+          .eq("id", account.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("utmify_settings" as any)
-          .insert({
-            user_id: user.id,
-            api_token: utmifyToken.trim(),
-            platform_name: utmifyPlatformName.trim() || "VoidTok",
-            active: utmifyActive,
-            tiktok_pixel_id: utmifyTiktokPixelId.trim() || null,
-          } as any);
+          .insert({ user_id: user.id, ...payload } as any);
         if (error) throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["utmify-settings"] });
-      toast({ title: "Utmify configurado com sucesso!" });
+      queryClient.invalidateQueries({ queryKey: ["utmify-accounts"] });
+      setView("utmify");
+      setUtmifyForm(emptyUtmifyAccount());
+      toast({ title: "Integração Utmify salva!" });
     },
     onError: (err: Error) => toast({ title: "Erro ao salvar Utmify", description: err.message, variant: "destructive" }),
   });
 
   const deleteUtmifyMutation = useMutation({
-    mutationFn: async () => {
-      if (!utmifySettings?.id) return;
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from("utmify_settings" as any)
         .delete()
-        .eq("id", utmifySettings.id);
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["utmify-settings"] });
-      setUtmifyToken("");
-      setUtmifyPlatformName("VoidTok");
-      setUtmifyActive(true);
-      toast({ title: "Configuração da Utmify removida!" });
+      queryClient.invalidateQueries({ queryKey: ["utmify-accounts"] });
+      toast({ title: "Integração removida!" });
     },
+    onError: (err: Error) => toast({ title: "Erro ao remover", description: err.message, variant: "destructive" }),
+  });
+
+  const toggleUtmifyMutation = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase
+        .from("utmify_settings" as any)
+        .update({ active } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["utmify-accounts"] }),
   });
 
   const testUtmifyMutation = useMutation({
-    mutationFn: async () => {
-      const token = (utmifyToken || utmifySettings?.api_token || "").trim();
-      if (!token) throw new Error("Salve o token antes de testar");
-      const platform = (utmifyPlatformName || utmifySettings?.platform_name || "VoidTok").trim();
+    mutationFn: async (token: string) => {
+      const t = token.trim();
+      if (!t) throw new Error("Salve o token antes de testar");
+      const platform = (utmifyForm.platform_name || "VoidTok").trim();
 
       const now = new Date();
       const createdAt = now.toISOString().replace("T", " ").substring(0, 19);
@@ -205,7 +227,7 @@ const AdminPixels = () => {
 
       const res = await fetch("https://api.utmify.com.br/api-credentials/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-token": token },
+        headers: { "Content-Type": "application/json", "x-api-token": t },
         body: JSON.stringify(testPayload),
       });
       const data = await res.json().catch(() => ({}));
@@ -311,45 +333,159 @@ const AdminPixels = () => {
     );
   };
 
-  // ─── Utmify config view ───
+  // ─── Utmify list view (todas as integrações do usuário) ───
   if (view === "utmify") {
-    const hasExisting = !!utmifySettings;
-    const tokenValue = utmifyToken || utmifySettings?.api_token || "";
-    const platformNameValue = utmifyPlatformName || utmifySettings?.platform_name || "VoidTok";
-    const activeValue = utmifySettings ? (utmifyActive !== undefined ? utmifyActive : utmifySettings.active) : utmifyActive;
-
-    // Sync state on first render
-    if (utmifySettings && !utmifyToken && utmifySettings.api_token) {
-      setUtmifyToken(utmifySettings.api_token);
-      setUtmifyPlatformName(utmifySettings.platform_name || "VoidTok");
-      setUtmifyActive(utmifySettings.active);
-      setUtmifyTiktokPixelId(utmifySettings.tiktok_pixel_id || "");
-    }
+    const accounts = utmifyAccounts || [];
 
     return (
-      <div className="space-y-6 max-w-2xl">
+      <div className="space-y-6">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <button onClick={() => setView("grid")} className="hover:text-foreground transition-colors">Integrações</button>
           <span>/</span>
           <span className="text-foreground">Utmify</span>
         </div>
 
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <img src={utmifyLogo} alt="Utmify" className="w-10 h-10 rounded-xl" />
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Utmify</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Conecte vários negócios — cada integração envia para uma conta Utmify diferente
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={() => { setUtmifyForm(emptyUtmifyAccount()); setView("utmify-form"); }}
+            className="bg-primary hover:bg-primary/90 gap-1.5 shrink-0"
+          >
+            <Plus className="w-4 h-4" /> Nova integração
+          </Button>
+        </div>
+
+        {utmifyLoading ? (
+          <p className="text-muted-foreground text-sm">Carregando...</p>
+        ) : accounts.length === 0 ? (
+          <Card className="border-border">
+            <CardContent className="p-12 text-center">
+              <div className="w-12 h-12 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center mx-auto mb-3">
+                <Settings className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <p className="font-semibold text-foreground">Nenhuma integração Utmify</p>
+              <p className="text-sm text-muted-foreground mt-1">Adicione a primeira para começar a rastrear seus negócios</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {accounts.map((acc: any) => (
+              <Card key={acc.id} className="border-border">
+                <CardContent className="p-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <img src={utmifyLogo} alt="" className="w-9 h-9 rounded-xl shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{acc.name || "Conta principal"}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                        Plataforma: {acc.platform_name || "VoidTok"}
+                        {acc.tiktok_pixel_id ? ` • Pixel TikTok: ${acc.tiktok_pixel_id}` : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${acc.active ? "bg-marketplace-green/15 text-marketplace-green" : "bg-muted text-muted-foreground"}`}>
+                        {acc.active ? "Ativo" : "Inativo"}
+                      </span>
+                      <Switch
+                        checked={acc.active}
+                        onCheckedChange={(checked) => toggleUtmifyMutation.mutate({ id: acc.id, active: checked })}
+                      />
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setUtmifyForm({
+                          id: acc.id,
+                          name: acc.name || "",
+                          api_token: acc.api_token || "",
+                          platform_name: acc.platform_name || "VoidTok",
+                          tiktok_pixel_id: acc.tiktok_pixel_id || "",
+                          active: acc.active,
+                        });
+                        setView("utmify-form");
+                      }}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteUtmifyMutation.mutate(acc.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+          <p className="text-xs font-semibold text-foreground">Como funciona:</p>
+          <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
+            <li>Cada PIX <strong>gerado</strong> e <strong>pago</strong> é enviado para TODAS as integrações ativas</li>
+            <li>Cada integração pode ter seu próprio token, plataforma e pixel TikTok</li>
+            <li>Os dados de UTM são capturados automaticamente da URL do checkout</li>
+          </ul>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Utmify create/edit form ───
+  if (view === "utmify-form") {
+    const isEdit = !!utmifyForm.id;
+    return (
+      <div className="space-y-6 max-w-2xl">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <button onClick={() => setView("grid")} className="hover:text-foreground transition-colors">Integrações</button>
+          <span>/</span>
+          <button onClick={() => setView("utmify")} className="hover:text-foreground transition-colors">Utmify</button>
+          <span>/</span>
+          <span className="text-foreground">{isEdit ? "Editar" : "Nova"}</span>
+        </div>
+
         <div className="flex items-center gap-3">
           <img src={utmifyLogo} alt="Utmify" className="w-10 h-10 rounded-xl" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Utmify</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Rastreamento automático de vendas e UTMs</p>
+            <h1 className="text-2xl font-bold text-foreground">{isEdit ? "Editar integração" : "Nova integração Utmify"}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Configure uma conta da Utmify para um negócio específico</p>
           </div>
         </div>
 
         <Card className="border-border">
           <CardContent className="p-6 space-y-5">
             <div className="space-y-2">
+              <Label className="text-sm font-semibold text-primary">Nome da integração</Label>
+              <Input
+                value={utmifyForm.name}
+                onChange={(e) => setUtmifyForm({ ...utmifyForm, name: e.target.value })}
+                placeholder="Ex: Loja de cosméticos, Negócio XYZ..."
+              />
+              <p className="text-xs text-muted-foreground">
+                Use para identificar este negócio internamente. Não é enviado para a Utmify.
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label className="text-sm font-semibold text-primary">Credencial de API (x-api-token)</Label>
               <Input
                 type="password"
-                value={utmifyToken}
-                onChange={(e) => setUtmifyToken(e.target.value)}
+                value={utmifyForm.api_token}
+                onChange={(e) => setUtmifyForm({ ...utmifyForm, api_token: e.target.value })}
                 placeholder="Ex: KVRxalfMiBfm8Rm1nP5YxfwYzArNsA0VLeWC"
               />
               <p className="text-xs text-muted-foreground">
@@ -360,8 +496,8 @@ const AdminPixels = () => {
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-primary">Nome da Plataforma</Label>
               <Input
-                value={utmifyPlatformName}
-                onChange={(e) => setUtmifyPlatformName(e.target.value)}
+                value={utmifyForm.platform_name}
+                onChange={(e) => setUtmifyForm({ ...utmifyForm, platform_name: e.target.value })}
                 placeholder="Ex: VoidTok"
               />
               <p className="text-xs text-muted-foreground">
@@ -372,12 +508,12 @@ const AdminPixels = () => {
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-primary">ID do Pixel TikTok (Utmify)</Label>
               <Input
-                value={utmifyTiktokPixelId}
-                onChange={(e) => setUtmifyTiktokPixelId(e.target.value)}
+                value={utmifyForm.tiktok_pixel_id}
+                onChange={(e) => setUtmifyForm({ ...utmifyForm, tiktok_pixel_id: e.target.value })}
                 placeholder="Ex: 69eedb95c404fbdd094caeda"
               />
               <p className="text-xs text-muted-foreground">
-                ID do pixel TikTok criado dentro da Utmify. Será carregado automaticamente em todas as páginas públicas (produto, checkout, obrigado e loja).
+                ID do pixel TikTok criado dentro da Utmify. Será carregado em todas as páginas públicas.
               </p>
             </div>
 
@@ -385,54 +521,34 @@ const AdminPixels = () => {
               <div>
                 <p className="text-sm font-semibold text-foreground">Integração Ativa</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Quando ativa, os pedidos serão enviados automaticamente para a Utmify
+                  Quando ativa, os pedidos serão enviados automaticamente para esta conta da Utmify
                 </p>
               </div>
-              <Switch checked={utmifyActive} onCheckedChange={setUtmifyActive} />
+              <Switch
+                checked={utmifyForm.active}
+                onCheckedChange={(checked) => setUtmifyForm({ ...utmifyForm, active: checked })}
+              />
             </div>
 
-            <div className="flex justify-between pt-2">
-              {hasExisting && (
-                <Button
-                  variant="outline"
-                  className="text-destructive border-destructive/30 hover:bg-destructive/10"
-                  onClick={() => deleteUtmifyMutation.mutate()}
-                  disabled={deleteUtmifyMutation.isPending}
-                >
-                  <Trash2 className="w-4 h-4 mr-1.5" />
-                  Remover
-                </Button>
-              )}
-              <div className="flex gap-3 ml-auto flex-wrap">
-                <Button variant="outline" onClick={() => setView("grid")}>Cancelar</Button>
-                <Button
-                  variant="outline"
-                  onClick={() => testUtmifyMutation.mutate()}
-                  disabled={!(utmifyToken.trim() || utmifySettings?.api_token) || testUtmifyMutation.isPending}
-                >
-                  {testUtmifyMutation.isPending ? "Testando..." : "Testar conexão"}
-                </Button>
-                <Button
-                  onClick={() => saveUtmifyMutation.mutate()}
-                  disabled={!utmifyToken.trim() || saveUtmifyMutation.isPending}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  Salvar
-                </Button>
-              </div>
+            <div className="flex justify-end gap-3 pt-2 flex-wrap">
+              <Button variant="outline" onClick={() => setView("utmify")}>Cancelar</Button>
+              <Button
+                variant="outline"
+                onClick={() => testUtmifyMutation.mutate(utmifyForm.api_token)}
+                disabled={!utmifyForm.api_token.trim() || testUtmifyMutation.isPending}
+              >
+                {testUtmifyMutation.isPending ? "Testando..." : "Testar conexão"}
+              </Button>
+              <Button
+                onClick={() => saveUtmifyMutation.mutate(utmifyForm)}
+                disabled={!utmifyForm.api_token.trim() || saveUtmifyMutation.isPending}
+                className="bg-primary hover:bg-primary/90"
+              >
+                Salvar
+              </Button>
             </div>
           </CardContent>
         </Card>
-
-        <div className="bg-muted/30 rounded-lg p-3 space-y-2">
-          <p className="text-xs font-semibold text-foreground">Como funciona:</p>
-          <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
-            <li>Quando um pedido PIX é <strong>gerado</strong>, enviamos com status <code className="text-primary/80">waiting_payment</code></li>
-            <li>Quando o pagamento é <strong>confirmado</strong>, enviamos com status <code className="text-primary/80">paid</code></li>
-            <li>Os dados de UTM são capturados automaticamente da URL do checkout</li>
-            <li>Cada conta de usuário usa sua própria credencial — dados completamente isolados</li>
-          </ul>
-        </div>
       </div>
     );
   }
@@ -470,7 +586,7 @@ const AdminPixels = () => {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-semibold text-foreground">{p.name}</h3>
-                      {p.id === "utmify" && utmifySettings?.active && (
+                      {p.id === "utmify" && hasActiveUtmify && (
                         <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-marketplace-green/15 text-marketplace-green">Conectado</span>
                       )}
                     </div>

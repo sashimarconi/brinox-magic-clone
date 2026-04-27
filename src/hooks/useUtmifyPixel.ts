@@ -32,11 +32,12 @@ function injectUtmifyTikTokPixel(pixelId: string) {
 }
 
 /**
- * Carrega o pixel TikTok da Utmify (script client-side) configurado pelo dono da loja.
- * Multi-tenant safe: cada usuário injeta APENAS seu próprio pixel.
+ * Carrega TODOS os pixels TikTok da Utmify configurados pelo dono da loja.
+ * Multi-tenant safe: cada usuário injeta APENAS seus próprios pixels.
+ * Suporta múltiplas integrações Utmify (vários negócios) por usuário.
  */
 export function useUtmifyPixel(tenantUserId?: string | null) {
-  const { data: settings } = useQuery({
+  const { data: accounts } = useQuery({
     queryKey: ["utmify-pixel", tenantUserId],
     enabled: !!tenantUserId,
     queryFn: async () => {
@@ -44,16 +45,19 @@ export function useUtmifyPixel(tenantUserId?: string | null) {
         .from("utmify_settings" as any)
         .select("tiktok_pixel_id, active")
         .eq("user_id", tenantUserId!)
-        .maybeSingle();
+        .eq("active", true);
       if (error) throw error;
-      return data as any;
+      return (data || []) as any[];
     },
     staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {
-    if (settings?.active && settings?.tiktok_pixel_id) {
-      injectUtmifyTikTokPixel(settings.tiktok_pixel_id);
+    if (!accounts?.length) return;
+    for (const acc of accounts) {
+      if (acc?.tiktok_pixel_id) {
+        injectUtmifyTikTokPixel(acc.tiktok_pixel_id);
+      }
     }
-  }, [settings]);
+  }, [accounts]);
 }

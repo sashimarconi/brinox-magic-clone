@@ -49,14 +49,13 @@ serve(async (req) => {
       });
     }
 
-    const { data: utmifySettings, error: settingsError } = await supabase
+    const { data: utmifyAccounts, error: settingsError } = await supabase
       .from("utmify_settings")
       .select("*")
       .eq("user_id", order.user_id)
-      .eq("active", true)
-      .maybeSingle();
+      .eq("active", true);
 
-    if (settingsError || !utmifySettings) {
+    if (settingsError || !utmifyAccounts || utmifyAccounts.length === 0) {
       console.log("No active Utmify settings for user:", order.user_id);
       return new Response(JSON.stringify({ skipped: true, reason: "No active Utmify config" }), {
         status: 200,
@@ -96,71 +95,76 @@ serve(async (req) => {
     const gatewayFeeInCents = Math.round(totalInCents * (feePercent / 100));
     const userCommissionInCents = totalInCents - gatewayFeeInCents;
 
-    const payload = {
-      orderId: order.id,
-      platform: utmifySettings.platform_name || "VoidTok",
-      paymentMethod: order.payment_method === "pix" ? "pix" : "credit_card",
-      status: utmifyStatus,
-      createdAt: createdAtUTC,
-      approvedDate,
-      refundedAt,
-      customer: {
-        name: order.customer_name,
-        email: order.customer_email,
-        phone: order.customer_phone || null,
-        document: order.customer_document || null,
-        country: "BR",
-      },
-      products: [
-        {
-          id: product?.id || order.product_id || order.id,
-          name: product?.title || "Produto",
-          planId: null,
-          planName: null,
-          quantity: order.quantity || 1,
-          priceInCents: product ? Math.round(Number(product.sale_price) * 100) : totalInCents,
+    const results: any[] = [];
+    for (const utmifySettings of utmifyAccounts) {
+      const payload = {
+        orderId: order.id,
+        platform: utmifySettings.platform_name || "VoidTok",
+        paymentMethod: order.payment_method === "pix" ? "pix" : "credit_card",
+        status: utmifyStatus,
+        createdAt: createdAtUTC,
+        approvedDate,
+        refundedAt,
+        customer: {
+          name: order.customer_name,
+          email: order.customer_email,
+          phone: order.customer_phone || null,
+          document: order.customer_document || null,
+          country: "BR",
         },
-      ],
-      trackingParameters: {
-        src: order.utm_params?.src || null,
-        sck: order.utm_params?.sck || null,
-        utm_source: order.utm_params?.utm_source || null,
-        utm_campaign: order.utm_params?.utm_campaign || null,
-        utm_medium: order.utm_params?.utm_medium || null,
-        utm_content: order.utm_params?.utm_content || null,
-        utm_term: order.utm_params?.utm_term || null,
-      },
-      commission: {
-        totalPriceInCents: totalInCents,
-        gatewayFeeInCents,
-        userCommissionInCents,
-      },
-    };
+        products: [
+          {
+            id: product?.id || order.product_id || order.id,
+            name: product?.title || "Produto",
+            planId: null,
+            planName: null,
+            quantity: order.quantity || 1,
+            priceInCents: product ? Math.round(Number(product.sale_price) * 100) : totalInCents,
+          },
+        ],
+        trackingParameters: {
+          src: order.utm_params?.src || null,
+          sck: order.utm_params?.sck || null,
+          utm_source: order.utm_params?.utm_source || null,
+          utm_campaign: order.utm_params?.utm_campaign || null,
+          utm_medium: order.utm_params?.utm_medium || null,
+          utm_content: order.utm_params?.utm_content || null,
+          utm_term: order.utm_params?.utm_term || null,
+        },
+        commission: {
+          totalPriceInCents: totalInCents,
+          gatewayFeeInCents,
+          userCommissionInCents,
+        },
+      };
 
-    console.log("Sending to Utmify:", JSON.stringify(payload));
+      console.log(`Sending to Utmify (${utmifySettings.name || "conta"}):`, JSON.stringify(payload));
 
-    const utmifyResponse = await fetch(UTMIFY_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-token": utmifySettings.api_token,
-      },
-      body: JSON.stringify(payload),
-    });
+      try {
+        const utmifyResponse = await fetch(UTMIFY_API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-token": utmifySettings.api_token,
+          },
+          body: JSON.stringify(payload),
+        });
 
-    const utmifyData = await utmifyResponse.json();
-
-    if (!utmifyResponse.ok) {
-      console.error("Utmify API error:", utmifyResponse.status, utmifyData);
-      return new Response(JSON.stringify({ error: "Utmify API error", details: utmifyData }), {
-        status: utmifyResponse.status,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+        const utmifyData = await utmifyResponse.json().catch(() => ({}));
+        if (!utmifyResponse.ok) {
+          console.error(`Utmify API error [${utmifySettings.name}]:`, utmifyResponse.status, utmifyData);
+          results.push({ account: utmifySettings.name, ok: false, status: utmifyResponse.status, data: utmifyData });
+        } else {
+          console.log(`Utmify response [${utmifySettings.name}]:`, utmifyData);
+          results.push({ account: utmifySettings.name, ok: true, data: utmifyData });
+        }
+      } catch (err) {
+        console.error(`Utmify request failed [${utmifySettings.name}]:`, err);
+        results.push({ account: utmifySettings.name, ok: false, error: (err as Error).message });
+      }
     }
 
-    console.log("Utmify response:", utmifyData);
-
-    return new Response(JSON.stringify({ success: true, data: utmifyData }), {
+    return new Response(JSON.stringify({ success: true, results }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
