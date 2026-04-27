@@ -14,6 +14,7 @@ const DomainStorefront = () => {
 
   usePageTracking("page_view", ownerId, { surface: "domain_storefront" });
   useVisitorHeartbeat(ownerId);
+  useUtmifyPixel(ownerId);
 
   // Fetch owner's stores
   const { data: stores } = useQuery({
