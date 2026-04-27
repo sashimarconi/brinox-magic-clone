@@ -1259,6 +1259,7 @@ export type Database = {
           api_token: string
           created_at: string
           id: string
+          name: string
           platform_name: string
           tiktok_pixel_id: string | null
           updated_at: string
@@ -1269,6 +1270,7 @@ export type Database = {
           api_token: string
           created_at?: string
           id?: string
+          name?: string
           platform_name?: string
           tiktok_pixel_id?: string | null
           updated_at?: string
@@ -1279,6 +1281,7 @@ export type Database = {
           api_token?: string
           created_at?: string
           id?: string
+          name?: string
           platform_name?: string
           tiktok_pixel_id?: string | null
           updated_at?: string
