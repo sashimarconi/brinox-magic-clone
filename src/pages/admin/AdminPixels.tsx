@@ -523,14 +523,58 @@ const AdminPixels = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-semibold text-primary">ID do Pixel TikTok (Utmify)</Label>
-              <Input
-                value={utmifyForm.tiktok_pixel_id}
-                onChange={(e) => setUtmifyForm({ ...utmifyForm, tiktok_pixel_id: e.target.value })}
-                placeholder="Ex: 69eedb95c404fbdd094caeda"
-              />
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold text-primary">IDs de Pixel TikTok (Utmify)</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setUtmifyForm({
+                      ...utmifyForm,
+                      tiktok_pixel_ids: [...utmifyForm.tiktok_pixel_ids, ""],
+                    })
+                  }
+                  className="h-7 gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Adicionar pixel
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {utmifyForm.tiktok_pixel_ids.map((pid, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <Input
+                      value={pid}
+                      onChange={(e) => {
+                        const next = [...utmifyForm.tiktok_pixel_ids];
+                        next[idx] = e.target.value;
+                        setUtmifyForm({ ...utmifyForm, tiktok_pixel_ids: next });
+                      }}
+                      placeholder={`Pixel ${idx + 1} • Ex: 69eedb95c404fbdd094caeda`}
+                    />
+                    {utmifyForm.tiktok_pixel_ids.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const next = utmifyForm.tiktok_pixel_ids.filter((_, i) => i !== idx);
+                          setUtmifyForm({
+                            ...utmifyForm,
+                            tiktok_pixel_ids: next.length ? next : [""],
+                          });
+                        }}
+                        className="text-muted-foreground hover:text-destructive shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
               <p className="text-xs text-muted-foreground">
-                ID do pixel TikTok criado dentro da Utmify. Será carregado em todas as páginas públicas.
+                Adicione quantos pixels TikTok quiser para esta integração. Todos serão carregados nas páginas públicas.
               </p>
             </div>
 
