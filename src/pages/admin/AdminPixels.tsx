@@ -109,9 +109,12 @@ const AdminPixels = () => {
   const { data: utmifySettings, isLoading: utmifyLoading } = useQuery({
     queryKey: ["utmify-settings"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
       const { data, error } = await supabase
         .from("utmify_settings" as any)
         .select("*")
+        .eq("user_id", user.id)
         .maybeSingle();
       if (error) throw error;
       return data as any;
@@ -124,12 +127,16 @@ const AdminPixels = () => {
 
   const saveUtmifyMutation = useMutation({
     mutationFn: async () => {
+      const { data: { user }, error: userErr } = await supabase.auth.getUser();
+      if (userErr || !user) throw new Error("Você precisa estar logado");
+      if (!utmifyToken.trim()) throw new Error("Informe o token da API");
+
       if (utmifySettings?.id) {
         const { error } = await supabase
           .from("utmify_settings" as any)
           .update({
             api_token: utmifyToken.trim(),
-            platform_name: utmifyPlatformName.trim(),
+            platform_name: utmifyPlatformName.trim() || "VoidTok",
             active: utmifyActive,
           })
           .eq("id", utmifySettings.id);
@@ -138,8 +145,9 @@ const AdminPixels = () => {
         const { error } = await supabase
           .from("utmify_settings" as any)
           .insert({
+            user_id: user.id,
             api_token: utmifyToken.trim(),
-            platform_name: utmifyPlatformName.trim(),
+            platform_name: utmifyPlatformName.trim() || "VoidTok",
             active: utmifyActive,
           });
         if (error) throw error;
@@ -149,7 +157,7 @@ const AdminPixels = () => {
       queryClient.invalidateQueries({ queryKey: ["utmify-settings"] });
       toast({ title: "Utmify configurado com sucesso!" });
     },
-    onError: (err: Error) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
+    onError: (err: Error) => toast({ title: "Erro ao salvar Utmify", description: err.message, variant: "destructive" }),
   });
 
   const deleteUtmifyMutation = useMutation({
