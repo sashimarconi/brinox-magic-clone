@@ -178,6 +178,41 @@ const AdminPixels = () => {
     },
   });
 
+  const testUtmifyMutation = useMutation({
+    mutationFn: async () => {
+      const token = (utmifyToken || utmifySettings?.api_token || "").trim();
+      if (!token) throw new Error("Salve o token antes de testar");
+      const platform = (utmifyPlatformName || utmifySettings?.platform_name || "VoidTok").trim();
+
+      const now = new Date();
+      const createdAt = now.toISOString().replace("T", " ").substring(0, 19);
+      const testPayload = {
+        orderId: `test-${crypto.randomUUID()}`,
+        platform,
+        paymentMethod: "pix",
+        status: "paid",
+        createdAt,
+        approvedDate: createdAt,
+        refundedAt: null,
+        customer: { name: "Teste Lovable", email: "teste@lovable.app", phone: null, document: null, country: "BR" },
+        products: [{ id: "test-product", name: "Produto de Teste", planId: null, planName: null, quantity: 1, priceInCents: 1000 }],
+        trackingParameters: { src: null, sck: null, utm_source: "test", utm_campaign: null, utm_medium: null, utm_content: null, utm_term: null },
+        commission: { totalPriceInCents: 1000, gatewayFeeInCents: 25, userCommissionInCents: 975 },
+      };
+
+      const res = await fetch("https://api.utmify.com.br/api-credentials/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-token": token },
+        body: JSON.stringify(testPayload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(`Utmify retornou ${res.status}: ${JSON.stringify(data)}`);
+      return data;
+    },
+    onSuccess: () => toast({ title: "Conexão OK!", description: "Pedido de teste enviado. Verifique no painel da Utmify." }),
+    onError: (err: Error) => toast({ title: "Falha no teste", description: err.message, variant: "destructive" }),
+  });
+
   // Pixel mutations
   const [accessToken, setAccessToken] = useState("");
 
