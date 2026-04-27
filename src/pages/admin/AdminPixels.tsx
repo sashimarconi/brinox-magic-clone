@@ -124,6 +124,7 @@ const AdminPixels = () => {
   const [utmifyToken, setUtmifyToken] = useState("");
   const [utmifyPlatformName, setUtmifyPlatformName] = useState("VoidTok");
   const [utmifyActive, setUtmifyActive] = useState(true);
+  const [utmifyTiktokPixelId, setUtmifyTiktokPixelId] = useState("");
 
   const saveUtmifyMutation = useMutation({
     mutationFn: async () => {
