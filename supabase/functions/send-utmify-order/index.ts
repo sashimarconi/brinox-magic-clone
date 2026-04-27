@@ -49,14 +49,13 @@ serve(async (req) => {
       });
     }
 
-    const { data: utmifySettings, error: settingsError } = await supabase
+    const { data: utmifyAccounts, error: settingsError } = await supabase
       .from("utmify_settings")
       .select("*")
       .eq("user_id", order.user_id)
-      .eq("active", true)
-      .maybeSingle();
+      .eq("active", true);
 
-    if (settingsError || !utmifySettings) {
+    if (settingsError || !utmifyAccounts || utmifyAccounts.length === 0) {
       console.log("No active Utmify settings for user:", order.user_id);
       return new Response(JSON.stringify({ skipped: true, reason: "No active Utmify config" }), {
         status: 200,
