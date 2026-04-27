@@ -55,9 +55,13 @@ export function useUtmifyPixel(tenantUserId?: string | null) {
   useEffect(() => {
     if (!accounts?.length) return;
     for (const acc of accounts) {
-      if (acc?.tiktok_pixel_id) {
-        injectUtmifyTikTokPixel(acc.tiktok_pixel_id);
-      }
+      if (!acc?.tiktok_pixel_id) continue;
+      // Suporta múltiplos IDs separados por vírgula no mesmo registro
+      const ids = String(acc.tiktok_pixel_id)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      for (const pid of ids) injectUtmifyTikTokPixel(pid);
     }
   }, [accounts]);
 }
