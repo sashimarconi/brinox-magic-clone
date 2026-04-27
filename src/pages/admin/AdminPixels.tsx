@@ -397,7 +397,13 @@ const AdminPixels = () => {
                       <p className="text-sm font-medium text-foreground truncate">{acc.name || "Conta principal"}</p>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">
                         Plataforma: {acc.platform_name || "VoidTok"}
-                        {acc.tiktok_pixel_id ? ` • Pixel TikTok: ${acc.tiktok_pixel_id}` : ""}
+                        {(() => {
+                          const ids = parsePixelIds(acc.tiktok_pixel_id).filter(Boolean);
+                          if (!ids.length) return "";
+                          return ids.length === 1
+                            ? ` • Pixel TikTok: ${ids[0]}`
+                            : ` • ${ids.length} pixels TikTok`;
+                        })()}
                       </p>
                     </div>
                   </div>
