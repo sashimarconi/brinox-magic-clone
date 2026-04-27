@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProductBySlug } from "@/lib/supabase-queries";
 import { trackEvent } from "@/hooks/usePageTracking";
+import { useUtmifyPixel } from "@/hooks/useUtmifyPixel";
 
 const ThankYouRedirect = () => {
   const { slug } = useParams<{ slug: string }>();
