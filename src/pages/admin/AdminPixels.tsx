@@ -139,7 +139,8 @@ const AdminPixels = () => {
             api_token: utmifyToken.trim(),
             platform_name: utmifyPlatformName.trim() || "VoidTok",
             active: utmifyActive,
-          })
+            tiktok_pixel_id: utmifyTiktokPixelId.trim() || null,
+          } as any)
           .eq("id", utmifySettings.id);
         if (error) throw error;
       } else {
@@ -150,7 +151,8 @@ const AdminPixels = () => {
             api_token: utmifyToken.trim(),
             platform_name: utmifyPlatformName.trim() || "VoidTok",
             active: utmifyActive,
-          });
+            tiktok_pixel_id: utmifyTiktokPixelId.trim() || null,
+          } as any);
         if (error) throw error;
       }
     },
