@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking, useVisitorHeartbeat } from "@/hooks/usePageTracking";
+import { useUtmifyPixel } from "@/hooks/useUtmifyPixel";
 import { useDomain } from "@/contexts/DomainContext";
 import { Star } from "lucide-react";
 import { formatCurrency } from "@/data/mockData";
