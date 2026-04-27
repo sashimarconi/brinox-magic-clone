@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePageTracking, useVisitorHeartbeat } from "@/hooks/usePageTracking";
 import { useTikTokPixel, trackTikTokViewContent } from "@/hooks/useTikTokPixel";
+import { useUtmifyPixel } from "@/hooks/useUtmifyPixel";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
