@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import QRCode from "qrcode";
 import { useTikTokPixel, trackTikTokPurchase, trackTikTokInitiateCheckout } from "@/hooks/useTikTokPixel";
+import { useUtmifyPixel } from "@/hooks/useUtmifyPixel";
 import { usePageTracking, useVisitorHeartbeat, trackEvent } from "@/hooks/usePageTracking";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -273,6 +274,7 @@ const CheckoutPage = () => {
 
   // Carrega APENAS os pixels do dono da loja (multi-tenant safe)
   useTikTokPixel(product?.user_id);
+  useUtmifyPixel(product?.user_id);
   usePageTracking("checkout_view", product?.user_id);
   useVisitorHeartbeat(product?.user_id);
 

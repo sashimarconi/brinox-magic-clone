@@ -124,6 +124,7 @@ const AdminPixels = () => {
   const [utmifyToken, setUtmifyToken] = useState("");
   const [utmifyPlatformName, setUtmifyPlatformName] = useState("VoidTok");
   const [utmifyActive, setUtmifyActive] = useState(true);
+  const [utmifyTiktokPixelId, setUtmifyTiktokPixelId] = useState("");
 
   const saveUtmifyMutation = useMutation({
     mutationFn: async () => {
@@ -138,7 +139,8 @@ const AdminPixels = () => {
             api_token: utmifyToken.trim(),
             platform_name: utmifyPlatformName.trim() || "VoidTok",
             active: utmifyActive,
-          })
+            tiktok_pixel_id: utmifyTiktokPixelId.trim() || null,
+          } as any)
           .eq("id", utmifySettings.id);
         if (error) throw error;
       } else {
@@ -149,7 +151,8 @@ const AdminPixels = () => {
             api_token: utmifyToken.trim(),
             platform_name: utmifyPlatformName.trim() || "VoidTok",
             active: utmifyActive,
-          });
+            tiktok_pixel_id: utmifyTiktokPixelId.trim() || null,
+          } as any);
         if (error) throw error;
       }
     },
@@ -320,6 +323,7 @@ const AdminPixels = () => {
       setUtmifyToken(utmifySettings.api_token);
       setUtmifyPlatformName(utmifySettings.platform_name || "VoidTok");
       setUtmifyActive(utmifySettings.active);
+      setUtmifyTiktokPixelId(utmifySettings.tiktok_pixel_id || "");
     }
 
     return (
@@ -362,6 +366,18 @@ const AdminPixels = () => {
               />
               <p className="text-xs text-muted-foreground">
                 Esse nome aparecerá nos pedidos dentro da Utmify (campo "platform")
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-primary">ID do Pixel TikTok (Utmify)</Label>
+              <Input
+                value={utmifyTiktokPixelId}
+                onChange={(e) => setUtmifyTiktokPixelId(e.target.value)}
+                placeholder="Ex: 69eedb95c404fbdd094caeda"
+              />
+              <p className="text-xs text-muted-foreground">
+                ID do pixel TikTok criado dentro da Utmify. Será carregado automaticamente em todas as páginas públicas (produto, checkout, obrigado e loja).
               </p>
             </div>
 

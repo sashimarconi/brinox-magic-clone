@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePageTracking, useVisitorHeartbeat } from "@/hooks/usePageTracking";
 import { useTikTokPixel, trackTikTokViewContent } from "@/hooks/useTikTokPixel";
+import { useUtmifyPixel } from "@/hooks/useUtmifyPixel";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,6 +76,7 @@ const ProductPage = () => {
 
   // Carrega APENAS os pixels do dono da loja (multi-tenant safe)
   useTikTokPixel(product?.user_id);
+  useUtmifyPixel(product?.user_id);
   usePageTracking("page_view", product?.user_id);
   useVisitorHeartbeat(product?.user_id);
 
