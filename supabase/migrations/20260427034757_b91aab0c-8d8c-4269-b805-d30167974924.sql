@@ -1,0 +1,1 @@
+ALTER TABLE public.utmify_settings ADD COLUMN IF NOT EXISTS tiktok_pixel_id text;
