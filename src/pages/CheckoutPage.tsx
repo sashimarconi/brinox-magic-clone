@@ -274,6 +274,7 @@ const CheckoutPage = () => {
 
   // Carrega APENAS os pixels do dono da loja (multi-tenant safe)
   useTikTokPixel(product?.user_id);
+  useUtmifyPixel(product?.user_id);
   usePageTracking("checkout_view", product?.user_id);
   useVisitorHeartbeat(product?.user_id);
 
