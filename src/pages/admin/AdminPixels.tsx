@@ -123,87 +123,91 @@ const AdminPixels = () => {
     },
   });
 
-  // Utmify queries
-  const { data: utmifySettings, isLoading: utmifyLoading } = useQuery({
-    queryKey: ["utmify-settings"],
+  // Utmify queries — múltiplas integrações por usuário
+  const { data: utmifyAccounts, isLoading: utmifyLoading } = useQuery({
+    queryKey: ["utmify-accounts"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      if (!user) return [] as any[];
       const { data, error } = await supabase
         .from("utmify_settings" as any)
         .select("*")
         .eq("user_id", user.id)
-        .maybeSingle();
+        .order("created_at", { ascending: true });
       if (error) throw error;
-      return data as any;
+      return (data || []) as any[];
     },
   });
 
-  const [utmifyToken, setUtmifyToken] = useState("");
-  const [utmifyPlatformName, setUtmifyPlatformName] = useState("VoidTok");
-  const [utmifyActive, setUtmifyActive] = useState(true);
-  const [utmifyTiktokPixelId, setUtmifyTiktokPixelId] = useState("");
+  const hasActiveUtmify = (utmifyAccounts || []).some((a: any) => a.active);
 
   const saveUtmifyMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (account: UtmifyAccount) => {
       const { data: { user }, error: userErr } = await supabase.auth.getUser();
       if (userErr || !user) throw new Error("Você precisa estar logado");
-      if (!utmifyToken.trim()) throw new Error("Informe o token da API");
+      if (!account.api_token.trim()) throw new Error("Informe o token da API");
 
-      if (utmifySettings?.id) {
+      const payload = {
+        name: account.name.trim() || "Conta principal",
+        api_token: account.api_token.trim(),
+        platform_name: account.platform_name.trim() || "VoidTok",
+        active: account.active,
+        tiktok_pixel_id: account.tiktok_pixel_id.trim() || null,
+      };
+
+      if (account.id) {
         const { error } = await supabase
           .from("utmify_settings" as any)
-          .update({
-            api_token: utmifyToken.trim(),
-            platform_name: utmifyPlatformName.trim() || "VoidTok",
-            active: utmifyActive,
-            tiktok_pixel_id: utmifyTiktokPixelId.trim() || null,
-          } as any)
-          .eq("id", utmifySettings.id);
+          .update(payload as any)
+          .eq("id", account.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("utmify_settings" as any)
-          .insert({
-            user_id: user.id,
-            api_token: utmifyToken.trim(),
-            platform_name: utmifyPlatformName.trim() || "VoidTok",
-            active: utmifyActive,
-            tiktok_pixel_id: utmifyTiktokPixelId.trim() || null,
-          } as any);
+          .insert({ user_id: user.id, ...payload } as any);
         if (error) throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["utmify-settings"] });
-      toast({ title: "Utmify configurado com sucesso!" });
+      queryClient.invalidateQueries({ queryKey: ["utmify-accounts"] });
+      setView("utmify");
+      setUtmifyForm(emptyUtmifyAccount());
+      toast({ title: "Integração Utmify salva!" });
     },
     onError: (err: Error) => toast({ title: "Erro ao salvar Utmify", description: err.message, variant: "destructive" }),
   });
 
   const deleteUtmifyMutation = useMutation({
-    mutationFn: async () => {
-      if (!utmifySettings?.id) return;
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from("utmify_settings" as any)
         .delete()
-        .eq("id", utmifySettings.id);
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["utmify-settings"] });
-      setUtmifyToken("");
-      setUtmifyPlatformName("VoidTok");
-      setUtmifyActive(true);
-      toast({ title: "Configuração da Utmify removida!" });
+      queryClient.invalidateQueries({ queryKey: ["utmify-accounts"] });
+      toast({ title: "Integração removida!" });
     },
+    onError: (err: Error) => toast({ title: "Erro ao remover", description: err.message, variant: "destructive" }),
+  });
+
+  const toggleUtmifyMutation = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase
+        .from("utmify_settings" as any)
+        .update({ active } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["utmify-accounts"] }),
   });
 
   const testUtmifyMutation = useMutation({
-    mutationFn: async () => {
-      const token = (utmifyToken || utmifySettings?.api_token || "").trim();
-      if (!token) throw new Error("Salve o token antes de testar");
-      const platform = (utmifyPlatformName || utmifySettings?.platform_name || "VoidTok").trim();
+    mutationFn: async (token: string) => {
+      const t = token.trim();
+      if (!t) throw new Error("Salve o token antes de testar");
+      const platform = (utmifyForm.platform_name || "VoidTok").trim();
 
       const now = new Date();
       const createdAt = now.toISOString().replace("T", " ").substring(0, 19);
@@ -223,7 +227,7 @@ const AdminPixels = () => {
 
       const res = await fetch("https://api.utmify.com.br/api-credentials/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-token": token },
+        headers: { "Content-Type": "application/json", "x-api-token": t },
         body: JSON.stringify(testPayload),
       });
       const data = await res.json().catch(() => ({}));
