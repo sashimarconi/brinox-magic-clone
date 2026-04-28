@@ -682,6 +682,7 @@ Deno.serve(async (req) => {
               product_variant: body.productVariant || null,
               payment_method: "pix",
               selected_bumps: body.selectedBumps,
+              utm_params: body.utmParams || {},
             },
           }),
         });

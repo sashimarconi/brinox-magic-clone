@@ -47,6 +47,49 @@ Deno.serve(async (req) => {
 
     console.log(`Found ${matching.length} webhooks for event ${event}`);
 
+    // Helper: build xTracky-compatible payload (Paradise/PaymentBR-like format)
+    const buildXtrackyPayload = (evt: string, p: any) => {
+      const status = evt === "order_paid" ? "paid" : "waiting_payment";
+      const amountInCents = Math.round(Number(p.total || 0) * 100);
+      // xTracky expects tracking params at the top level (utm_source, utm_campaign, etc.)
+      const utm = p.utm_params || {};
+      return {
+        id: p.transaction_id || p.order_id,
+        order_id: p.order_id,
+        transaction_id: p.transaction_id,
+        status,
+        payment_method: p.payment_method || "pix",
+        amount: amountInCents,
+        total: amountInCents,
+        paid_amount: status === "paid" ? amountInCents : 0,
+        currency: "BRL",
+        customer: {
+          name: p.customer_name,
+          email: p.customer_email,
+          phone: p.customer_phone,
+          document: p.customer_document,
+        },
+        // Top-level UTMs (xTracky reads these)
+        utm_source: utm.utm_source ?? null,
+        utm_medium: utm.utm_medium ?? null,
+        utm_campaign: utm.utm_campaign ?? null,
+        utm_content: utm.utm_content ?? null,
+        utm_term: utm.utm_term ?? null,
+        src: utm.src ?? null,
+        sck: utm.sck ?? null,
+        trackingParameters: {
+          utm_source: utm.utm_source ?? null,
+          utm_medium: utm.utm_medium ?? null,
+          utm_campaign: utm.utm_campaign ?? null,
+          utm_content: utm.utm_content ?? null,
+          utm_term: utm.utm_term ?? null,
+          src: utm.src ?? null,
+          sck: utm.sck ?? null,
+        },
+        created_at: new Date().toISOString(),
+      };
+    };
+
     // Fire all webhooks in parallel (fire-and-forget style, but we await)
     const results = await Promise.allSettled(
       matching.map(async (wh: any) => {
@@ -57,11 +100,15 @@ Deno.serve(async (req) => {
           headers["X-Webhook-Secret"] = wh.secret_key;
         }
 
-        const body = JSON.stringify({
-          event,
-          timestamp: new Date().toISOString(),
-          data: payload,
-        });
+        const isXtracky = typeof wh.url === "string" && wh.url.includes("xtracky.com");
+
+        const body = isXtracky
+          ? JSON.stringify(buildXtrackyPayload(event, payload))
+          : JSON.stringify({
+              event,
+              timestamp: new Date().toISOString(),
+              data: payload,
+            });
 
         const response = await fetch(wh.url, {
           method: "POST",
@@ -69,7 +116,7 @@ Deno.serve(async (req) => {
           body,
         });
 
-        console.log(`Webhook ${wh.name} (${wh.url}): ${response.status}`);
+        console.log(`Webhook ${wh.name} (${wh.url}): ${response.status}${isXtracky ? " [xtracky-format]" : ""}`);
         return { id: wh.id, name: wh.name, status: response.status };
       })
     );
