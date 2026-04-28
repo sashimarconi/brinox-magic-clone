@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProducts } from "@/lib/supabase-queries";
 import { formatCurrency } from "@/data/mockData";
+import { getUrlWithUtm } from "@/utils/utm";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ const Index = () => {
         {products?.map((product) => (
           <button
             key={product.id}
-            onClick={() => navigate(`/product/${product.slug}`)}
+            onClick={() => navigate(getUrlWithUtm(`/product/${product.slug}`))}
             className="text-left rounded-lg border border-border overflow-hidden bg-card shadow-sm"
           >
             <div className="aspect-square overflow-hidden">
