@@ -1,5 +1,6 @@
 import { formatCurrency, type Product } from "@/data/mockData";
 import { useNavigate } from "react-router-dom";
+import { getUrlWithUtm } from "@/utils/utm";
 
 interface RelatedProductsProps {
   title: string;
@@ -18,7 +19,7 @@ const RelatedProducts = ({ title, products }: RelatedProductsProps) => {
         {products.map((product) => (
           <button
             key={product.id}
-            onClick={() => navigate(`/product/${product.id}`)}
+            onClick={() => navigate(getUrlWithUtm(`/product/${product.id}`))}
             className="text-left rounded-lg border border-border overflow-hidden bg-card"
           >
             <div className="aspect-square overflow-hidden">

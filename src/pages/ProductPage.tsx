@@ -5,6 +5,7 @@ import { useUtmifyPixel } from "@/hooks/useUtmifyPixel";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getUrlWithUtm } from "@/utils/utm";
 import { fetchProductBySlug, fetchStoreForProduct, fetchStoreProducts, fetchStoreSettings } from "@/lib/supabase-queries";
 import ProductHeader from "@/components/product/ProductHeader";
 import ProductGallery from "@/components/product/ProductGallery";
@@ -156,7 +157,7 @@ const ProductPage = () => {
         if (variantValues) params.set("variant", variantValues);
       }
       if (quantity > 1) params.set("qty", String(quantity));
-      navigate(`/checkout/${slug}?${params.toString()}`);
+      navigate(getUrlWithUtm(`/checkout/${slug}?${params.toString()}`));
     }
   };
 

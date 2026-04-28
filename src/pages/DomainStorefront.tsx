@@ -6,6 +6,7 @@ import { useUtmifyPixel } from "@/hooks/useUtmifyPixel";
 import { useDomain } from "@/contexts/DomainContext";
 import { Star } from "lucide-react";
 import { formatCurrency } from "@/data/mockData";
+import { getUrlWithUtm } from "@/utils/utm";
 
 const DomainStorefront = () => {
   const navigate = useNavigate();
@@ -104,7 +105,7 @@ const DomainStorefront = () => {
             {stores.map((store) => (
               <button
                 key={store.id}
-                onClick={() => navigate(`/loja/${store.slug}`)}
+                onClick={() => navigate(getUrlWithUtm(`/loja/${store.slug}`))}
                 className="shrink-0 rounded-lg border border-border bg-card p-3 text-center min-w-[120px] hover:border-primary/50 transition-colors"
               >
                 {store.logo_url && (
@@ -122,7 +123,7 @@ const DomainStorefront = () => {
         {products?.map((product) => (
           <button
             key={product.id}
-            onClick={() => navigate(`/product/${product.slug}`)}
+            onClick={() => navigate(getUrlWithUtm(`/product/${product.slug}`))}
             className="text-left rounded-lg border border-border overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
           >
             <div className="aspect-square overflow-hidden">
