@@ -243,6 +243,7 @@ Deno.serve(async (req) => {
                 total: order.total, product_id: order.product_id,
                 product_variant: order.product_variant, payment_method: order.payment_method,
                 selected_bumps: order.selected_bumps,
+                utm_params: order.utm_params || {},
               },
             }),
           }).then(() => {}).catch((e) => console.error("Webhook dispatch error:", e))
