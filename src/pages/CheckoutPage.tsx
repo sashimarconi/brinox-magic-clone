@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchProductBySlug } from "@/lib/supabase-queries";
 import { clearPendingPixOrder, readPendingPixOrder, readStoredThankYouUrl, savePendingPixOrder, saveStoredThankYouUrl } from "@/lib/pending-order";
 import { formatCurrency } from "@/data/mockData";
+import { readTrackingParam } from "@/utils/utm";
 import { ArrowLeft, Minus, Plus, Check, ShieldCheck, Clock, X } from "lucide-react";
 import { toast } from "sonner";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -605,13 +606,13 @@ const CheckoutPage = () => {
               .map((b) => ({ id: b.id, title: b.title, price: Math.round(Number(b.price) * 100) })),
             productVariant: selectedVariant || undefined,
             utmParams: {
-              src: searchParams.get("src") || null,
-              sck: searchParams.get("sck") || null,
-              utm_source: searchParams.get("utm_source") || null,
-              utm_campaign: searchParams.get("utm_campaign") || null,
-              utm_medium: searchParams.get("utm_medium") || null,
-              utm_content: searchParams.get("utm_content") || null,
-              utm_term: searchParams.get("utm_term") || null,
+              src: readTrackingParam("src"),
+              sck: readTrackingParam("sck"),
+              utm_source: readTrackingParam("utm_source"),
+              utm_campaign: readTrackingParam("utm_campaign"),
+              utm_medium: readTrackingParam("utm_medium"),
+              utm_content: readTrackingParam("utm_content"),
+              utm_term: readTrackingParam("utm_term"),
             },
           }),
         }
