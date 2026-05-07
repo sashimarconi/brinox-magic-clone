@@ -10,7 +10,7 @@ import { Navigate } from "react-router-dom";
 import ProductPage from "./pages/ProductPage";
 import StorePage from "./pages/StorePage";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
+// Register removed
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminProductForm from "./pages/admin/AdminProductForm";
