@@ -1,4 +1,4 @@
-import type { AdminOrderRecord, DateFilter, OrderStatus } from "./types";
+import type { AdminOrderRecord, DateFilter, DateRange, OrderStatus } from "./types";
 
 export const orderStatusOptions: Array<{ value: "all" | OrderStatus; label: string }> = [
   { value: "all", label: "Todos" },
@@ -40,7 +40,7 @@ export const getEffectiveStatus = (order: AdminOrderRecord): OrderStatus => {
   return "pending";
 };
 
-export const matchesDateFilter = (order: AdminOrderRecord, filter: DateFilter) => {
+export const matchesDateFilter = (order: AdminOrderRecord, filter: DateFilter, range?: DateRange) => {
   if (filter === "all") return true;
 
   const createdAt = new Date(order.created_at);
@@ -57,6 +57,14 @@ export const matchesDateFilter = (order: AdminOrderRecord, filter: DateFilter) =
 
   if (filter === "month") {
     return createdAt.getMonth() === now.getMonth() && createdAt.getFullYear() === now.getFullYear();
+  }
+
+  if (filter === "custom") {
+    if (!range?.from && !range?.to) return true;
+    const fromOk = !range.from || createdAt >= new Date(range.from.getFullYear(), range.from.getMonth(), range.from.getDate(), 0, 0, 0);
+    const toEnd = range.to ? new Date(range.to.getFullYear(), range.to.getMonth(), range.to.getDate(), 23, 59, 59, 999) : null;
+    const toOk = !toEnd || createdAt <= toEnd;
+    return fromOk && toOk;
   }
 
   return true;

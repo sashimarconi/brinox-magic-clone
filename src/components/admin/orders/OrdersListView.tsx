@@ -4,11 +4,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, Clock3, CopyCheck, Eye, Filter, Package2, RefreshCw, Search, Wallet, X } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { CalendarIcon, CheckCircle2, Clock3, CopyCheck, Download, Eye, Filter, Package2, RefreshCw, Search, Wallet, X } from "lucide-react";
 import { OrderStatusBadge } from "./OrderStatusBadge";
-import { formatCurrency, formatDateTime, getDisplayVariantLabel, getShortOrderId, orderDateOptions, orderStatusOptions } from "./order-utils";
-import type { AdminOrderRecord, DateFilter, OrderStats, StatusFilter } from "./types";
+import { formatCurrency, formatDateTime, getDisplayVariantLabel, getEffectiveStatus, getShortOrderId, orderDateOptions, orderStatusOptions } from "./order-utils";
+import type { AdminOrderRecord, DateFilter, DateRange, OrderStats, StatusFilter } from "./types";
 
 interface OrdersListViewProps {
   orders: AdminOrderRecord[];
@@ -17,13 +20,64 @@ interface OrdersListViewProps {
   search: string;
   statusFilter: StatusFilter;
   dateFilter: DateFilter;
+  dateRange: DateRange;
   stats: OrderStats;
   onSearchChange: (value: string) => void;
   onStatusFilterChange: (value: StatusFilter) => void;
   onDateFilterChange: (value: DateFilter) => void;
+  onDateRangeChange: (value: DateRange) => void;
   onRefresh: () => void;
   onSelectOrder: (id: string) => void;
 }
+
+type ExportStatus = "all" | "paid" | "pending";
+
+const csvEscape = (value: any) => {
+  if (value === null || value === undefined) return "";
+  const str = String(value).replace(/"/g, '""');
+  return `"${str}"`;
+};
+
+const downloadCsv = (filename: string, rows: AdminOrderRecord[]) => {
+  const headers = [
+    "ID", "Data", "Status", "Nome", "Email", "Telefone", "Documento",
+    "CEP", "Endereço", "Número", "Complemento", "Bairro", "Cidade", "UF",
+    "Produto", "Variante", "Quantidade", "Total", "Método", "Transação", "PIX copiado",
+  ];
+  const lines = [headers.join(",")];
+  for (const o of rows) {
+    lines.push([
+      o.id,
+      o.created_at,
+      getEffectiveStatus(o),
+      o.customer_name,
+      o.customer_email,
+      o.customer_phone,
+      o.customer_document,
+      o.customer_cep,
+      o.customer_address,
+      o.customer_number,
+      o.customer_complement,
+      o.customer_neighborhood,
+      o.customer_city,
+      o.customer_state,
+      o.product?.title,
+      o.variant_name || o.product_variant,
+      o.quantity,
+      o.total,
+      o.payment_method,
+      o.transaction_id,
+      o.pix_copied ? "sim" : "não",
+    ].map(csvEscape).join(","));
+  }
+  const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
 
 export const OrdersListView = ({
   orders,
@@ -32,14 +86,19 @@ export const OrdersListView = ({
   search,
   statusFilter,
   dateFilter,
+  dateRange,
   stats,
   onSearchChange,
   onStatusFilterChange,
   onDateFilterChange,
+  onDateRangeChange,
   onRefresh,
   onSelectOrder,
 }: OrdersListViewProps) => {
   const [filterOpen, setFilterOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportStatus, setExportStatus] = useState<ExportStatus>("all");
+  const [exportRange, setExportRange] = useState<DateRange>({});
 
   const statCards = [
     { label: "Pedidos totais", value: stats.total, icon: Package2, tone: "text-muted-foreground" },
@@ -49,6 +108,39 @@ export const OrdersListView = ({
   ];
 
   const activeFilterCount = (statusFilter !== "all" ? 1 : 0) + (dateFilter !== "all" ? 1 : 0);
+
+  const dateButtonLabel = () => {
+    if (dateFilter === "custom" && (dateRange.from || dateRange.to)) {
+      const f = dateRange.from ? format(dateRange.from, "dd/MM/yy") : "...";
+      const t = dateRange.to ? format(dateRange.to, "dd/MM/yy") : "...";
+      return `${f} → ${t}`;
+    }
+    return null;
+  };
+
+  const handleExport = () => {
+    const rows = orders.filter((o) => {
+      const st = getEffectiveStatus(o);
+      if (exportStatus === "paid" && st !== "paid") return false;
+      if (exportStatus === "pending" && st !== "pending") return false;
+      const created = new Date(o.created_at);
+      if (exportRange.from) {
+        const f = new Date(exportRange.from.getFullYear(), exportRange.from.getMonth(), exportRange.from.getDate(), 0, 0, 0);
+        if (created < f) return false;
+      }
+      if (exportRange.to) {
+        const t = new Date(exportRange.to.getFullYear(), exportRange.to.getMonth(), exportRange.to.getDate(), 23, 59, 59, 999);
+        if (created > t) return false;
+      }
+      return true;
+    });
+    if (rows.length === 0) {
+      return;
+    }
+    const today = format(new Date(), "yyyy-MM-dd");
+    downloadCsv(`leads_${exportStatus}_${today}.csv`, rows);
+    setExportOpen(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -62,10 +154,65 @@ export const OrdersListView = ({
                 <p className="text-sm text-muted-foreground">Gerencie pedidos pagos, pendentes e os cliques no botão de copiar PIX.</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={onRefresh} className="gap-2 self-start sm:self-auto">
-              <RefreshCw className="h-4 w-4" />
-              Atualizar
-            </Button>
+            <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+              <Popover open={exportOpen} onOpenChange={setExportOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Download className="h-4 w-4" />
+                    Exportar leads
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-4 space-y-4" align="end">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Status</p>
+                    <div className="flex flex-wrap gap-2">
+                      {([
+                        { v: "all", l: "Ambos" },
+                        { v: "paid", l: "Pagos" },
+                        { v: "pending", l: "Pendentes" },
+                      ] as Array<{ v: ExportStatus; l: string }>).map((opt) => (
+                        <button
+                          key={opt.v}
+                          type="button"
+                          onClick={() => setExportStatus(opt.v)}
+                          className={cn(
+                            "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                            exportStatus === opt.v
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-muted text-muted-foreground hover:text-foreground",
+                          )}
+                        >
+                          {opt.l}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Período (opcional)</p>
+                    <Calendar
+                      mode="range"
+                      selected={exportRange as any}
+                      onSelect={(r: any) => setExportRange(r || {})}
+                      locale={ptBR}
+                      className={cn("p-0 pointer-events-auto")}
+                    />
+                    {(exportRange.from || exportRange.to) && (
+                      <Button variant="ghost" size="sm" className="mt-2 w-full text-muted-foreground" onClick={() => setExportRange({})}>
+                        Limpar período
+                      </Button>
+                    )}
+                  </div>
+                  <Button onClick={handleExport} className="w-full gap-2">
+                    <Download className="h-4 w-4" />
+                    Baixar CSV
+                  </Button>
+                </PopoverContent>
+              </Popover>
+              <Button variant="outline" size="sm" onClick={onRefresh} className="gap-2">
+                <RefreshCw className="h-4 w-4" />
+                Atualizar
+              </Button>
+            </div>
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-5">
@@ -112,7 +259,7 @@ export const OrdersListView = ({
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-72 p-0" align="start">
+                <PopoverContent className="w-80 p-0" align="start">
                   <div className="p-4 space-y-4">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Status</p>
@@ -141,7 +288,10 @@ export const OrdersListView = ({
                           <button
                             key={option.value}
                             type="button"
-                            onClick={() => onDateFilterChange(option.value)}
+                            onClick={() => {
+                              onDateFilterChange(option.value);
+                              if (option.value !== "custom") onDateRangeChange({});
+                            }}
                             className={cn(
                               "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                               dateFilter === option.value
@@ -155,6 +305,23 @@ export const OrdersListView = ({
                       </div>
                     </div>
 
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                        Período personalizado
+                        {dateButtonLabel() && <span className="ml-2 normal-case tracking-normal text-foreground">{dateButtonLabel()}</span>}
+                      </p>
+                      <Calendar
+                        mode="range"
+                        selected={dateRange as any}
+                        onSelect={(r: any) => {
+                          onDateRangeChange(r || {});
+                          onDateFilterChange("custom");
+                        }}
+                        locale={ptBR}
+                        className={cn("p-0 pointer-events-auto")}
+                      />
+                    </div>
+
                     {activeFilterCount > 0 && (
                       <Button
                         variant="ghost"
@@ -163,6 +330,7 @@ export const OrdersListView = ({
                         onClick={() => {
                           onStatusFilterChange("all");
                           onDateFilterChange("all");
+                          onDateRangeChange({});
                         }}
                       >
                         Limpar filtros

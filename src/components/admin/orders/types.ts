@@ -2,7 +2,12 @@ export type OrderStatus = "pending" | "paid" | "expired";
 
 export type StatusFilter = "all" | OrderStatus;
 
-export type DateFilter = "all" | "today" | "week" | "month";
+export type DateFilter = "all" | "today" | "week" | "month" | "custom";
+
+export interface DateRange {
+  from?: Date;
+  to?: Date;
+}
 
 export interface AdminOrderRecord {
   id: string;
