@@ -5,7 +5,7 @@ import { OrderDetailsView } from "@/components/admin/orders/OrderDetailsView";
 import { OrdersListView } from "@/components/admin/orders/OrdersListView";
 import { getEffectiveStatus, isUuid, matchesDateFilter } from "@/components/admin/orders/order-utils";
 
-import type { AdminOrderRecord, DateFilter, OrderStats, StatusFilter } from "@/components/admin/orders/types";
+import type { AdminOrderRecord, DateFilter, DateRange, OrderStats, StatusFilter } from "@/components/admin/orders/types";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ProductSummary {
@@ -23,25 +23,40 @@ interface VariantSummary {
   name: string;
 }
 
+const PAGE_SIZE = 1000;
+
 const AdminOrders = () => {
   const [orders, setOrders] = useState<AdminOrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+  const [dateRange, setDateRange] = useState<DateRange>({});
   const [searchParams, setSearchParams] = useSearchParams();
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+      // Paginate through all orders to bypass the 1000-row default limit
+      const allRows: AdminOrderRecord[] = [];
+      let from = 0;
+      // Cap at 50k to prevent runaway queries
+      while (from < 50000) {
+        const { data, error } = await supabase
+          .from("orders")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
 
-      if (error) {
-        throw error;
+        if (error) throw error;
+        const batch = (data || []) as AdminOrderRecord[];
+        allRows.push(...batch);
+        if (batch.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
       }
 
-      const rows = (data || []) as AdminOrderRecord[];
+      const rows = allRows;
       const productIds = Array.from(new Set(rows.map((order) => order.product_id).filter((value): value is string => Boolean(value))));
       const shippingIds = Array.from(new Set(rows.map((order) => order.shipping_option_id).filter((value): value is string => Boolean(value))));
       const variantIds = Array.from(
@@ -117,7 +132,7 @@ const AdminOrders = () => {
           return false;
         }
 
-        if (!matchesDateFilter(order, dateFilter)) {
+        if (!matchesDateFilter(order, dateFilter, dateRange)) {
           return false;
         }
 
@@ -141,7 +156,7 @@ const AdminOrders = () => {
 
         return searchableValues.some((value) => String(value || "").toLowerCase().includes(normalizedSearch));
       }),
-    [dateFilter, orders, search, statusFilter],
+    [dateFilter, dateRange, orders, search, statusFilter],
   );
 
   const stats = useMemo<OrderStats>(
@@ -181,10 +196,12 @@ const AdminOrders = () => {
       search={search}
       statusFilter={statusFilter}
       dateFilter={dateFilter}
+      dateRange={dateRange}
       stats={stats}
       onSearchChange={setSearch}
       onStatusFilterChange={setStatusFilter}
       onDateFilterChange={setDateFilter}
+      onDateRangeChange={setDateRange}
       onRefresh={fetchOrders}
       onSelectOrder={openOrderDetails}
     />
