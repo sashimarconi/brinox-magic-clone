@@ -66,7 +66,7 @@ const AppRoutes = () => {
   // Platform domain: full app
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/marketplace" element={<Index />} />
       <Route path="/product/:slug" element={<ProductPage />} />
       <Route path="/products/:slug" element={<ProductPage />} />
