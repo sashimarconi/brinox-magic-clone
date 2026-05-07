@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DomainProvider, useDomain } from "@/contexts/DomainContext";
 import CustomDomainRoutes from "@/components/CustomDomainRoutes";
 import Index from "./pages/Index";
-import LandingPage from "./pages/LandingPage";
+import { Navigate } from "react-router-dom";
 import ProductPage from "./pages/ProductPage";
 import StorePage from "./pages/StorePage";
 import Login from "./pages/Login";
