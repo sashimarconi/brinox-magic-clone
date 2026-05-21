@@ -372,7 +372,7 @@ export const OrdersListView = ({
             <>
               {/* Mobile card layout */}
               <div className="space-y-3 md:hidden">
-                {filteredOrders.map((order) => {
+                {paginatedOrders.map((order) => {
                   const variantLabel = getDisplayVariantLabel(order);
                   return (
                     <div
@@ -430,7 +430,7 @@ export const OrdersListView = ({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredOrders.map((order) => {
+                    {paginatedOrders.map((order) => {
                       const variantLabel = getDisplayVariantLabel(order);
                       return (
                         <TableRow key={order.id}>
@@ -467,6 +467,38 @@ export const OrdersListView = ({
                     })}
                   </TableBody>
                 </Table>
+              </div>
+
+              {/* Pagination */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
+                <p className="text-xs text-muted-foreground">
+                  Mostrando {paginatedOrders.length === 0 ? 0 : page * ROWS_PER_PAGE + 1}
+                  {"–"}
+                  {page * ROWS_PER_PAGE + paginatedOrders.length} de {filteredOrders.length}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page === 0}
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    className="gap-1"
+                  >
+                    <ChevronLeft className="h-4 w-4" /> Anterior
+                  </Button>
+                  <span className="text-xs text-muted-foreground px-2">
+                    Página {page + 1} de {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages - 1}
+                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                    className="gap-1"
+                  >
+                    Próxima <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </>
           )}
