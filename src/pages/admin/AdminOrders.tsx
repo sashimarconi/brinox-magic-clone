@@ -25,6 +25,41 @@ interface VariantSummary {
 
 const PAGE_SIZE = 1000;
 
+// Colunas leves para a listagem — campos pesados (pix_qr_code, pix_qr_code_base64,
+// pix_copy_paste, customer_user_agent) só são buscados ao abrir o detalhe.
+const LIST_COLUMNS = [
+  "id",
+  "customer_name",
+  "customer_email",
+  "customer_phone",
+  "customer_document",
+  "customer_cep",
+  "customer_address",
+  "customer_number",
+  "customer_complement",
+  "customer_neighborhood",
+  "customer_city",
+  "customer_state",
+  "payment_status",
+  "payment_method",
+  "total",
+  "subtotal",
+  "shipping_cost",
+  "shipping_option_id",
+  "bumps_total",
+  "product_variant",
+  "quantity",
+  "transaction_id",
+  "pix_expires_at",
+  "paid_at",
+  "created_at",
+  "updated_at",
+  "pix_copied",
+  "product_id",
+  "selected_bumps",
+  "utm_params",
+].join(", ");
+
 const AdminOrders = () => {
   const [orders, setOrders] = useState<AdminOrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +67,7 @@ const AdminOrders = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [dateRange, setDateRange] = useState<DateRange>({});
+  const [selectedOrder, setSelectedOrder] = useState<AdminOrderRecord | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const fetchOrders = useCallback(async () => {
@@ -41,16 +77,15 @@ const AdminOrders = () => {
       // Paginate through all orders to bypass the 1000-row default limit
       const allRows: AdminOrderRecord[] = [];
       let from = 0;
-      // Cap at 50k to prevent runaway queries
-      while (from < 50000) {
+      while (from < 100000) {
         const { data, error } = await supabase
           .from("orders")
-          .select("*")
+          .select(LIST_COLUMNS)
           .order("created_at", { ascending: false })
           .range(from, from + PAGE_SIZE - 1);
 
         if (error) throw error;
-        const batch = (data || []) as AdminOrderRecord[];
+        const batch = (data || []) as unknown as AdminOrderRecord[];
         allRows.push(...batch);
         if (batch.length < PAGE_SIZE) break;
         from += PAGE_SIZE;
@@ -170,7 +205,50 @@ const AdminOrders = () => {
   );
 
   const selectedOrderId = searchParams.get("order");
-  const selectedOrder = orders.find((order) => order.id === selectedOrderId) ?? null;
+
+  // Quando um pedido é selecionado via URL, busca os dados completos (incl. pix_qr_code etc.)
+  useEffect(() => {
+    if (!selectedOrderId) {
+      setSelectedOrder(null);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      const lightRow = orders.find((o) => o.id === selectedOrderId) ?? null;
+      if (lightRow) setSelectedOrder(lightRow);
+
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("id", selectedOrderId)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (error || !data) {
+        if (!lightRow) {
+          toast.error("Pedido não encontrado");
+          const next = new URLSearchParams(searchParams);
+          next.delete("order");
+          setSearchParams(next);
+        }
+        return;
+      }
+
+      const enriched = data as unknown as AdminOrderRecord;
+      setSelectedOrder({
+        ...enriched,
+        product: lightRow?.product ?? null,
+        shipping_option: lightRow?.shipping_option ?? null,
+        variant_name: lightRow?.variant_name ?? null,
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedOrderId, orders, searchParams, setSearchParams]);
 
   const openOrderDetails = (orderId: string) => {
     const nextParams = new URLSearchParams(searchParams);
