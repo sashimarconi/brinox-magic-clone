@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,10 +8,12 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, CheckCircle2, Clock3, CopyCheck, Download, Eye, Filter, Package2, RefreshCw, Search, Wallet, X } from "lucide-react";
+import { CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Clock3, CopyCheck, Download, Eye, Filter, Package2, RefreshCw, Search, Wallet, X } from "lucide-react";
 import { OrderStatusBadge } from "./OrderStatusBadge";
 import { formatCurrency, formatDateTime, getDisplayVariantLabel, getEffectiveStatus, getShortOrderId, orderDateOptions, orderStatusOptions } from "./order-utils";
 import type { AdminOrderRecord, DateFilter, DateRange, OrderStats, StatusFilter } from "./types";
+
+const ROWS_PER_PAGE = 50;
 
 interface OrdersListViewProps {
   orders: AdminOrderRecord[];
@@ -99,6 +101,18 @@ export const OrdersListView = ({
   const [exportOpen, setExportOpen] = useState(false);
   const [exportStatus, setExportStatus] = useState<ExportStatus>("all");
   const [exportRange, setExportRange] = useState<DateRange>({});
+  const [page, setPage] = useState(0);
+
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / ROWS_PER_PAGE));
+
+  useEffect(() => {
+    setPage(0);
+  }, [search, statusFilter, dateFilter, dateRange.from, dateRange.to, filteredOrders.length]);
+
+  const paginatedOrders = useMemo(
+    () => filteredOrders.slice(page * ROWS_PER_PAGE, page * ROWS_PER_PAGE + ROWS_PER_PAGE),
+    [filteredOrders, page],
+  );
 
   const statCards = [
     { label: "Pedidos totais", value: stats.total, icon: Package2, tone: "text-muted-foreground" },
