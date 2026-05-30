@@ -42,7 +42,9 @@ const AdminLiveView = () => {
 
   const fetchData = useCallback(async () => {
     const now = new Date();
-    const liveCutoff = new Date(now.getTime() - 20 * 1000).toISOString();
+    // "Ativo" = visto nos últimos 2 minutos (alinhado com padrão de "online users").
+    // Antes era 20s, o que perdia quase todos os visitantes de funis rápidos (TikTok → PIX → fecha aba).
+    const liveCutoff = new Date(now.getTime() - 120 * 1000).toISOString();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
 
     const [sessionsRes, ordersRes, eventsRes, todaySessionsRes] = await Promise.all([
