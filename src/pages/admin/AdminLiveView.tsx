@@ -116,7 +116,7 @@ const AdminLiveView = () => {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    const interval = setInterval(fetchData, 20000); // 20s — antes 5s sobrecarregava o banco
     return () => clearInterval(interval);
   }, [fetchData]);
 

@@ -153,7 +153,7 @@ export function useVisitorHeartbeat(userId?: string | null) {
         { session_id: sessionId, last_seen_at: new Date().toISOString(), page_url: window.location.pathname, user_id: userId },
         { onConflict: "session_id" }
       ).then();
-    }, 5000);
+    }, 30000); // 30s — reduz drasticamente IO no banco mantendo sessão "ativa"
 
     return () => clearInterval(interval);
   }, [userId]);

@@ -511,8 +511,10 @@ const CheckoutPage = () => {
     // Immediate check
     checkPaymentStatus();
 
-    // Fast polling for near-immediate redirect when webhook marks the order as paid
-    const interval = window.setInterval(checkPaymentStatus, 1500);
+    // Polling para redirecionar quando webhook marca como pago.
+    // Era 1.5s — consumia muito IO do banco. 5s é suficiente porque o webhook
+    // também dispara redirect via Realtime/foco da aba.
+    const interval = window.setInterval(checkPaymentStatus, 5000);
 
     // Re-check whenever the tab becomes visible again
     const onVisibility = () => {
