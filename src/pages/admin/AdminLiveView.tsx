@@ -68,7 +68,7 @@ const AdminLiveView = () => {
 
     if (summaryRes.error) throw summaryRes.error;
 
-    const summary = (summaryRes.data || {}) as LiveSummary;
+    const summary = (summaryRes.data || {}) as unknown as LiveSummary;
     const events = eventsRes.data || [];
 
     const activeSessions = sessionsRes.data || [];
