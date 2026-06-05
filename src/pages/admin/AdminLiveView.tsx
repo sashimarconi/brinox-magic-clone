@@ -87,10 +87,8 @@ const AdminLiveView = () => {
     todayAll.forEach(s => { if (!uniqueToday.has(s.session_id)) uniqueToday.set(s.session_id, s); });
     setTodaySessions(Array.from(uniqueToday.values()));
 
-    const events = (eventsRes.data || []) as { event_type: string; page_url: string | null; created_at: string }[];
     setTodayEvents(events);
 
-    const orders = ordersRes.data || [];
     const paidOrders = orders.filter(o => o.payment_status === "paid" || o.payment_status === "approved");
     const revenue = paidOrders.reduce((sum, o) => sum + Number(o.total), 0);
 
