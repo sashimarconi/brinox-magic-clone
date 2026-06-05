@@ -1608,6 +1608,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      live_view_summary: {
+        Args: { _live_cutoff: string; _today_start: string }
+        Returns: Json
+      }
       mark_pix_copied: { Args: { _order_id: string }; Returns: undefined }
       remove_my_mfa_factor: { Args: { _factor_id: string }; Returns: undefined }
       remove_my_mfa_factors: { Args: never; Returns: undefined }
