@@ -29,6 +29,18 @@ interface LiveStats {
   avgTicket: number;
 }
 
+interface LiveSummary {
+  visitors?: number;
+  revenue?: number;
+  orders?: number;
+  paidOrders?: number;
+  conversionRate?: number;
+  avgTicket?: number;
+  checkoutViews?: number;
+  pageViews?: number;
+  hourlyData?: { hour: string; value: number }[];
+}
+
 const AdminLiveView = () => {
   const [stats, setStats] = useState<LiveStats>({
     visitors: 0, revenue: 0, orders: 0, paidOrders: 0, conversionRate: 0, avgTicket: 0,
@@ -47,32 +59,17 @@ const AdminLiveView = () => {
     const liveCutoff = new Date(now.getTime() - 120 * 1000).toISOString();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
 
-    // Paginação para escapar do limite default de 1000 linhas do PostgREST.
-    const PAGE = 1000;
-    const fetchAll = async <T,>(build: (from: number, to: number) => any): Promise<T[]> => {
-      const all: T[] = [];
-      let from = 0;
-      while (from < 200000) {
-        const { data, error } = await build(from, from + PAGE - 1);
-        if (error) throw error;
-        const batch = (data || []) as T[];
-        all.push(...batch);
-        if (batch.length < PAGE) break;
-        from += PAGE;
-      }
-      return all;
-    };
-
-    const [sessionsRes, orders, events, todaySessionsRes] = await Promise.all([
+    const [summaryRes, sessionsRes, eventsRes, todaySessionsRes] = await Promise.all([
+      supabase.rpc("live_view_summary", { _today_start: todayStart, _live_cutoff: liveCutoff }),
       supabase.from("visitor_sessions").select("session_id, page_url, last_seen_at, city, region, country, latitude, longitude").gte("last_seen_at", liveCutoff),
-      fetchAll<{ id: string; total: number; payment_status: string; created_at: string }>((f, t) =>
-        supabase.from("orders").select("id, total, payment_status, created_at").gte("created_at", todayStart).order("created_at", { ascending: false }).range(f, t)
-      ),
-      fetchAll<{ event_type: string; page_url: string | null; created_at: string }>((f, t) =>
-        supabase.from("page_events").select("event_type, page_url, created_at").gte("created_at", todayStart).order("created_at", { ascending: false }).range(f, t)
-      ),
-      supabase.from("visitor_sessions").select("session_id, city, region, country").gte("last_seen_at", todayStart),
+      supabase.from("page_events").select("event_type, page_url, created_at").gte("created_at", todayStart).order("created_at", { ascending: false }).limit(1000),
+      supabase.from("visitor_sessions").select("session_id, city, region, country").gte("last_seen_at", todayStart).order("last_seen_at", { ascending: false }).limit(1000),
     ]);
+
+    if (summaryRes.error) throw summaryRes.error;
+
+    const summary = (summaryRes.data || {}) as LiveSummary;
+    const events = eventsRes.data || [];
 
     const activeSessions = sessionsRes.data || [];
     const uniqueSessions = new Map<string, SessionData>();
@@ -89,46 +86,39 @@ const AdminLiveView = () => {
 
     setTodayEvents(events);
 
-    const paidOrders = orders.filter(o => o.payment_status === "paid" || o.payment_status === "approved");
-    const revenue = paidOrders.reduce((sum, o) => sum + Number(o.total), 0);
-
-    const checkoutViews = events.filter(e => e.event_type === "checkout_view").length;
-    // Conversão = % de PIX pagos em relação ao total de PIX gerados
-    const conversionRate = orders.length > 0 ? (paidOrders.length / orders.length) * 100 : 0;
+    const orders = Number(summary.orders || 0);
+    const paidOrders = Number(summary.paidOrders || 0);
+    const revenue = Number(summary.revenue || 0);
+    const pageViews = Number(summary.pageViews || 0);
+    const checkoutViews = Number(summary.checkoutViews || 0);
     const checkoutActive = sessionsArr.filter(s => s.page_url?.includes("/checkout")).length;
     setBehavior({
       activeCarts: sessionsArr.length,
       inCheckout: checkoutActive,
-      purchased: paidOrders.length,
+      purchased: paidOrders,
     });
 
     setStats({
-      visitors: uniqueSessions.size,
+      visitors: Number(summary.visitors || uniqueSessions.size),
       revenue,
-      orders: orders.length,
-      paidOrders: paidOrders.length,
-      conversionRate,
-      avgTicket: paidOrders.length > 0 ? revenue / paidOrders.length : 0,
+      orders,
+      paidOrders,
+      conversionRate: Number(summary.conversionRate || 0),
+      avgTicket: Number(summary.avgTicket || 0),
     });
 
-    const hours = Array.from({ length: 24 }, (_, i) => ({
+    setHourlyData(summary.hourlyData?.length ? summary.hourlyData : Array.from({ length: 24 }, (_, i) => ({
       hour: `${String(i).padStart(2, "0")}h`,
       value: 0,
-    }));
-    paidOrders.forEach(o => {
-      const h = new Date(o.created_at).getHours();
-      hours[h].value += Number(o.total);
-    });
-    setHourlyData(hours);
+    })));
 
-    const pageViews = events.filter(e => e.event_type === "page_view").length;
-    const pixGenerated = orders.length;
+    const pixGenerated = orders;
     const total = pageViews || 1;
     setFunnelData([
       { label: "Acessos", value: pageViews, pct: 100 },
       { label: "Checkout", value: checkoutViews, pct: Math.round((checkoutViews / total) * 100) },
       { label: "PIX Gerado", value: pixGenerated, pct: Math.round((pixGenerated / total) * 100) },
-      { label: "Pagos", value: paidOrders.length, pct: Math.round((paidOrders.length / total) * 100) },
+      { label: "Pagos", value: paidOrders, pct: Math.round((paidOrders / total) * 100) },
     ]);
   }, []);
 
