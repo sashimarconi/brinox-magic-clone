@@ -47,10 +47,30 @@ const AdminLiveView = () => {
     const liveCutoff = new Date(now.getTime() - 120 * 1000).toISOString();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
 
-    const [sessionsRes, ordersRes, eventsRes, todaySessionsRes] = await Promise.all([
+    // Paginação para escapar do limite default de 1000 linhas do PostgREST.
+    const PAGE = 1000;
+    const fetchAll = async <T,>(build: (from: number, to: number) => any): Promise<T[]> => {
+      const all: T[] = [];
+      let from = 0;
+      while (from < 200000) {
+        const { data, error } = await build(from, from + PAGE - 1);
+        if (error) throw error;
+        const batch = (data || []) as T[];
+        all.push(...batch);
+        if (batch.length < PAGE) break;
+        from += PAGE;
+      }
+      return all;
+    };
+
+    const [sessionsRes, orders, events, todaySessionsRes] = await Promise.all([
       supabase.from("visitor_sessions").select("session_id, page_url, last_seen_at, city, region, country, latitude, longitude").gte("last_seen_at", liveCutoff),
-      supabase.from("orders").select("id, total, payment_status, created_at").gte("created_at", todayStart),
-      supabase.from("page_events").select("event_type, page_url, created_at").gte("created_at", todayStart),
+      fetchAll<{ id: string; total: number; payment_status: string; created_at: string }>((f, t) =>
+        supabase.from("orders").select("id, total, payment_status, created_at").gte("created_at", todayStart).order("created_at", { ascending: false }).range(f, t)
+      ),
+      fetchAll<{ event_type: string; page_url: string | null; created_at: string }>((f, t) =>
+        supabase.from("page_events").select("event_type, page_url, created_at").gte("created_at", todayStart).order("created_at", { ascending: false }).range(f, t)
+      ),
       supabase.from("visitor_sessions").select("session_id, city, region, country").gte("last_seen_at", todayStart),
     ]);
 
@@ -67,10 +87,8 @@ const AdminLiveView = () => {
     todayAll.forEach(s => { if (!uniqueToday.has(s.session_id)) uniqueToday.set(s.session_id, s); });
     setTodaySessions(Array.from(uniqueToday.values()));
 
-    const events = (eventsRes.data || []) as { event_type: string; page_url: string | null; created_at: string }[];
     setTodayEvents(events);
 
-    const orders = ordersRes.data || [];
     const paidOrders = orders.filter(o => o.payment_status === "paid" || o.payment_status === "approved");
     const revenue = paidOrders.reduce((sum, o) => sum + Number(o.total), 0);
 
