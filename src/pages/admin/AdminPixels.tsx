@@ -32,10 +32,10 @@ const PLATFORMS = [
   {
     id: "meta",
     name: "Meta Pixel",
-    description: "Rastreie conversões e otimize campanhas no Meta Ads",
+    description: "Rastreie conversões e otimize campanhas no Meta Ads (Facebook + Instagram)",
     icon: "📘",
     color: "bg-blue-600 text-white",
-    enabled: false,
+    enabled: true,
   },
   {
     id: "google_ads",
