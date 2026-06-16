@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import QRCode from "qrcode";
 import { useTikTokPixel, trackTikTokPurchase, trackTikTokInitiateCheckout } from "@/hooks/useTikTokPixel";
+import { useMetaPixel, trackMetaPurchase, trackMetaInitiateCheckout } from "@/hooks/useMetaPixel";
 import { useUtmifyPixel } from "@/hooks/useUtmifyPixel";
 import { usePageTracking, useVisitorHeartbeat, trackEvent } from "@/hooks/usePageTracking";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
@@ -275,6 +276,7 @@ const CheckoutPage = () => {
 
   // Carrega APENAS os pixels do dono da loja (multi-tenant safe)
   useTikTokPixel(product?.user_id);
+  useMetaPixel(product?.user_id);
   useUtmifyPixel(product?.user_id);
   usePageTracking("checkout_view", product?.user_id);
   useVisitorHeartbeat(product?.user_id);
@@ -285,6 +287,11 @@ const CheckoutPage = () => {
     if (product?.id && !initiateCheckoutFiredRef.current) {
       initiateCheckoutFiredRef.current = true;
       trackTikTokInitiateCheckout({
+        contentId: product.id,
+        contentName: selectedVariant ? `${product.title} - ${selectedVariant}` : product.title,
+        value: Number(product.sale_price || 0),
+      });
+      trackMetaInitiateCheckout({
         contentId: product.id,
         contentName: selectedVariant ? `${product.title} - ${selectedVariant}` : product.title,
         value: Number(product.sale_price || 0),
@@ -657,6 +664,14 @@ const CheckoutPage = () => {
         quantity,
         email: customerEmail,
         phone: customerPhone,
+        filterPaidOnly: false,
+      });
+      // Fire Meta Purchase only for pixels WITHOUT fire_on_paid_only (pix-generated)
+      trackMetaPurchase(total, "BRL", {
+        orderId: result.orderId,
+        contentId: product.id,
+        contentName: selectedVariant ? `${product.title} - ${selectedVariant}` : product.title,
+        quantity,
         filterPaidOnly: false,
       });
     } catch (err: any) {
