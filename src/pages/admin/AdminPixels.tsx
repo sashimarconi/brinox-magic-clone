@@ -32,10 +32,10 @@ const PLATFORMS = [
   {
     id: "meta",
     name: "Meta Pixel",
-    description: "Rastreie conversões e otimize campanhas no Meta Ads",
+    description: "Rastreie conversões e otimize campanhas no Meta Ads (Facebook + Instagram)",
     icon: "📘",
     color: "bg-blue-600 text-white",
-    enabled: false,
+    enabled: true,
   },
   {
     id: "google_ads",
@@ -709,7 +709,7 @@ const AdminPixels = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-semibold text-primary">
-                  Access Token (Events API) <span className="text-destructive">*</span>
+                  {activePlatform === "meta" ? "Access Token (Conversions API)" : "Access Token (Events API)"} <span className="text-destructive">*</span>
                 </Label>
                 <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded bg-destructive/10 text-destructive">
                   Obrigatório
@@ -718,7 +718,7 @@ const AdminPixels = () => {
               <Input
                 value={accessToken}
                 onChange={(e) => setAccessToken(e.target.value)}
-                placeholder="Cole aqui o Access Token da Events API do TikTok"
+                placeholder={activePlatform === "meta" ? "Cole aqui o Access Token da Conversions API do Meta" : "Cole aqui o Access Token da Events API do TikTok"}
                 type="password"
                 className={!accessToken.trim() ? "border-destructive/50 focus-visible:ring-destructive/30" : ""}
               />
@@ -727,12 +727,15 @@ const AdminPixels = () => {
                   <AlertTriangle className="w-3.5 h-3.5" /> Sem o Access Token o pixel NÃO vai marcar conversões
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  O TikTok Ads exige o Access Token da <strong>Events API</strong> para receber conversões pelo servidor (S2S).
-                  Sem ele, o pixel só funciona via navegador — e a maioria dos visitantes tem ad-blocker, navegação fechada antes do tempo, iOS com proteção de rastreamento, etc.
-                  Resultado: <strong>quase nenhuma venda aparece no TikTok</strong>.
+                  {activePlatform === "meta"
+                    ? "O Meta Ads usa a Conversions API (CAPI) para receber conversões pelo servidor. Sem o token, o pixel depende só do navegador e perde muitas vendas para ad-blockers, iOS ATT e abas fechadas cedo."
+                    : "O TikTok Ads exige o Access Token da Events API para receber conversões pelo servidor (S2S). Sem ele, o pixel só funciona via navegador — e a maioria dos visitantes tem ad-blocker, iOS, etc. Resultado: quase nenhuma venda aparece no TikTok."}
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  <strong>Onde achar:</strong> TikTok Ads → Ferramentas → Events Manager → seu Pixel → aba "Configurar" → "Configurar Events API" → "Gerar Access Token".
+                  <strong>Onde achar:</strong>{" "}
+                  {activePlatform === "meta"
+                    ? "Meta Events Manager → seu Pixel → Configurações → API de Conversões → Gerar Token de Acesso."
+                    : "TikTok Ads → Ferramentas → Events Manager → seu Pixel → aba \"Configurar\" → \"Configurar Events API\" → \"Gerar Access Token\"."}
                 </p>
               </div>
             </div>
@@ -812,7 +815,7 @@ const AdminPixels = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-semibold text-primary">
-                  Access Token (Events API) <span className="text-destructive">*</span>
+                  {editingPixel.platform === "meta" ? "Access Token (Conversions API)" : "Access Token (Events API)"} <span className="text-destructive">*</span>
                 </Label>
                 <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded bg-destructive/10 text-destructive">
                   Obrigatório
@@ -821,16 +824,18 @@ const AdminPixels = () => {
               <Input
                 value={editingPixel.access_token ?? ""}
                 onChange={(e) => setEditingPixel({ ...editingPixel, access_token: e.target.value })}
-                placeholder="Cole aqui o Access Token da Events API do TikTok"
+                placeholder={editingPixel.platform === "meta" ? "Cole aqui o Access Token da Conversions API do Meta" : "Cole aqui o Access Token da Events API do TikTok"}
                 type="password"
                 className={!editingPixel.access_token?.trim() ? "border-destructive/50 focus-visible:ring-destructive/30" : ""}
               />
               <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 space-y-1.5">
                 <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                  <AlertTriangle className="w-3.5 h-3.5" /> Sem o Access Token o pixel NÃO marca conversões no TikTok
+                  <AlertTriangle className="w-3.5 h-3.5" /> Sem o Access Token o pixel NÃO marca conversões
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Gere em: TikTok Ads → Ferramentas → Events Manager → seu Pixel → aba "Configurar" → "Configurar Events API" → "Gerar Access Token".
+                  {editingPixel.platform === "meta"
+                    ? "Gere em: Meta Events Manager → seu Pixel → Configurações → API de Conversões → Gerar Token."
+                    : "Gere em: TikTok Ads → Ferramentas → Events Manager → seu Pixel → aba \"Configurar\" → \"Configurar Events API\" → \"Gerar Access Token\"."}
                 </p>
               </div>
             </div>
@@ -916,7 +921,7 @@ const AdminPixels = () => {
         </div>
       </div>
 
-      {!isLoading && filteredPixels.some((p: any) => !p.access_token) && activePlatform === "tiktok" && (
+      {!isLoading && filteredPixels.some((p: any) => !p.access_token) && (activePlatform === "tiktok" || activePlatform === "meta") && (
         <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 flex gap-3">
           <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
           <div className="space-y-1">
@@ -953,7 +958,7 @@ const AdminPixels = () => {
                     <p className="text-sm font-medium text-foreground">{pixel.pixel_id}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <p className="text-xs text-muted-foreground capitalize">{pixel.platform}</p>
-                      {activePlatform === "tiktok" && !pixel.access_token && (
+                      {(activePlatform === "tiktok" || activePlatform === "meta") && !pixel.access_token && (
                         <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-destructive/15 text-destructive flex items-center gap-1">
                           <AlertTriangle className="w-2.5 h-2.5" /> Sem token — não marca conversão
                         </span>

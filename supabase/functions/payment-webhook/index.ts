@@ -152,6 +152,73 @@ async function dispatchTikTokS2S(supabase: any, order: any) {
   }
 }
 
+async function dispatchMetaCAPI(supabase: any, order: any) {
+  try {
+    const userId = order.user_id;
+    if (!userId) return;
+
+    const { data: pixels } = await supabase
+      .from("tracking_pixels")
+      .select("pixel_id, access_token, fire_on_paid_only")
+      .eq("user_id", userId)
+      .eq("platform", "meta")
+      .eq("active", true);
+
+    if (!pixels || pixels.length === 0) {
+      console.log("[Meta CAPI] Nenhum pixel Meta ativo para user", userId);
+      return;
+    }
+
+    for (const pixel of pixels) {
+      if (!pixel.access_token) {
+        console.warn(`[Meta CAPI] Pixel ${pixel.pixel_id} sem access_token, pulando.`);
+        continue;
+      }
+
+      const userData: Record<string, any> = {};
+      if (order.customer_email) userData.em = [await sha256Hex(order.customer_email)];
+      if (order.customer_phone) {
+        const digits = String(order.customer_phone).replace(/\D/g, "");
+        if (digits) userData.ph = [await sha256Hex(digits)];
+      }
+      if (order.customer_ip) userData.client_ip_address = order.customer_ip;
+      if (order.customer_user_agent) userData.client_user_agent = order.customer_user_agent;
+
+      const body = {
+        data: [{
+          event_name: "Purchase",
+          event_time: Math.floor(Date.now() / 1000),
+          event_id: order.id, // dedup com client-side (eventID = order.id)
+          action_source: "website",
+          ...(order.page_url ? { event_source_url: order.page_url } : {}),
+          user_data: userData,
+          custom_data: {
+            currency: "BRL",
+            value: Number(order.total) || 0,
+            order_id: order.id,
+            ...(order.product_id ? { content_ids: [order.product_id], content_type: "product" } : {}),
+          },
+        }],
+      };
+
+      const url = `https://graph.facebook.com/v19.0/${encodeURIComponent(pixel.pixel_id)}/events?access_token=${encodeURIComponent(pixel.access_token)}`;
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const result = await resp.json().catch(() => ({}));
+      if (resp.ok && (result?.events_received ?? 0) > 0) {
+        console.log(`[Meta CAPI] ✅ Pixel ${pixel.pixel_id} → Purchase enviado (event_id: ${order.id})`);
+      } else {
+        console.error(`[Meta CAPI] ❌ Pixel ${pixel.pixel_id} → erro`, JSON.stringify(result));
+      }
+    }
+  } catch (err) {
+    console.error("[Meta CAPI] Error:", err);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -278,8 +345,9 @@ Deno.serve(async (req) => {
           }).then(() => {}).catch((e) => console.error("Utmify dispatch error:", e))
         );
 
-        // TikTok S2S
+        // TikTok S2S + Meta CAPI
         tasks.push(dispatchTikTokS2S(supabase, order));
+        tasks.push(dispatchMetaCAPI(supabase, order));
 
         await Promise.allSettled(tasks);
       } else {

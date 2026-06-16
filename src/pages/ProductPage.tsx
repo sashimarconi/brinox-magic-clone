@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePageTracking, useVisitorHeartbeat } from "@/hooks/usePageTracking";
 import { useTikTokPixel, trackTikTokViewContent } from "@/hooks/useTikTokPixel";
+import { useMetaPixel, trackMetaViewContent } from "@/hooks/useMetaPixel";
 import { useUtmifyPixel } from "@/hooks/useUtmifyPixel";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -77,6 +78,7 @@ const ProductPage = () => {
 
   // Carrega APENAS os pixels do dono da loja (multi-tenant safe)
   useTikTokPixel(product?.user_id);
+  useMetaPixel(product?.user_id);
   useUtmifyPixel(product?.user_id);
   usePageTracking("page_view", product?.user_id);
   useVisitorHeartbeat(product?.user_id);
@@ -85,6 +87,11 @@ const ProductPage = () => {
   useEffect(() => {
     if (product?.id) {
       trackTikTokViewContent({
+        contentId: product.id,
+        contentName: product.title,
+        value: Number(product.sale_price || 0),
+      });
+      trackMetaViewContent({
         contentId: product.id,
         contentName: product.title,
         value: Number(product.sale_price || 0),
