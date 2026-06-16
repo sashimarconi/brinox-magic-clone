@@ -815,7 +815,7 @@ const AdminPixels = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-semibold text-primary">
-                  Access Token (Events API) <span className="text-destructive">*</span>
+                  {editingPixel.platform === "meta" ? "Access Token (Conversions API)" : "Access Token (Events API)"} <span className="text-destructive">*</span>
                 </Label>
                 <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded bg-destructive/10 text-destructive">
                   Obrigatório
@@ -824,16 +824,18 @@ const AdminPixels = () => {
               <Input
                 value={editingPixel.access_token ?? ""}
                 onChange={(e) => setEditingPixel({ ...editingPixel, access_token: e.target.value })}
-                placeholder="Cole aqui o Access Token da Events API do TikTok"
+                placeholder={editingPixel.platform === "meta" ? "Cole aqui o Access Token da Conversions API do Meta" : "Cole aqui o Access Token da Events API do TikTok"}
                 type="password"
                 className={!editingPixel.access_token?.trim() ? "border-destructive/50 focus-visible:ring-destructive/30" : ""}
               />
               <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 space-y-1.5">
                 <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                  <AlertTriangle className="w-3.5 h-3.5" /> Sem o Access Token o pixel NÃO marca conversões no TikTok
+                  <AlertTriangle className="w-3.5 h-3.5" /> Sem o Access Token o pixel NÃO marca conversões
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Gere em: TikTok Ads → Ferramentas → Events Manager → seu Pixel → aba "Configurar" → "Configurar Events API" → "Gerar Access Token".
+                  {editingPixel.platform === "meta"
+                    ? "Gere em: Meta Events Manager → seu Pixel → Configurações → API de Conversões → Gerar Token."
+                    : "Gere em: TikTok Ads → Ferramentas → Events Manager → seu Pixel → aba \"Configurar\" → \"Configurar Events API\" → \"Gerar Access Token\"."}
                 </p>
               </div>
             </div>
