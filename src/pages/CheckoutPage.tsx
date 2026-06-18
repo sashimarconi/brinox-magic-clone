@@ -1150,39 +1150,55 @@ const CheckoutPage = () => {
           <div className="bg-card px-4 py-2.5 border-b border-border">
             <p className="text-sm font-semibold text-foreground">Método de entrega</p>
           </div>
-          {shippingOptions.map((option) => (
-            <button
-              key={option.id}
-              onClick={() => setSelectedShipping(option.id)}
-              className={`w-full bg-card px-4 py-3 border-b border-border flex items-center gap-3 transition-colors ${
-                selectedShipping === option.id ? "ring-1 ring-marketplace-red" : ""
-              }`}
-            >
-              <div
-                className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                  selectedShipping === option.id
-                    ? "border-marketplace-red"
-                    : "border-muted-foreground/30"
+          {isCepFilled ? (
+            shippingOptions.map((option) => (
+              <button
+                key={option.id}
+                onClick={() => setSelectedShipping(option.id)}
+                className={`w-full bg-card px-4 py-3 border-b border-border flex items-center gap-3 transition-colors ${
+                  selectedShipping === option.id ? "ring-1 ring-marketplace-red" : ""
                 }`}
               >
-                {selectedShipping === option.id && (
-                  <div className="w-2 h-2 rounded-full bg-marketplace-red" />
+                <div
+                  className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                    selectedShipping === option.id
+                      ? "border-marketplace-red"
+                      : "border-muted-foreground/30"
+                  }`}
+                >
+                  {selectedShipping === option.id && (
+                    <div className="w-2 h-2 rounded-full bg-marketplace-red" />
+                  )}
+                </div>
+                {option.logo_url && (
+                  <img src={option.logo_url} alt={option.name} className="w-8 h-8 rounded object-contain" />
                 )}
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-medium text-foreground">{option.name}</p>
+                  {option.estimated_days && (
+                    <p className="text-[11px] text-muted-foreground">Chega em {option.estimated_days}</p>
+                  )}
+                </div>
+                <span className={`text-sm font-semibold ${option.free ? "text-marketplace-green" : "text-foreground"}`}>
+                  {option.free ? "GRÁTIS" : formatCurrency(Number(option.price))}
+                </span>
+              </button>
+            ))
+          ) : (
+            <button
+              onClick={() => setShowForm(true)}
+              className="w-full bg-card px-4 py-3 border-b border-border flex items-center gap-3 text-left"
+            >
+              <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center">
+                <span className="text-[10px] text-muted-foreground">📍</span>
               </div>
-              {option.logo_url && (
-                <img src={option.logo_url} alt={option.name} className="w-8 h-8 rounded object-contain" />
-              )}
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-foreground">{option.name}</p>
-                {option.estimated_days && (
-                  <p className="text-[11px] text-muted-foreground">Chega em {option.estimated_days}</p>
-                )}
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">Calcular frete</p>
+                <p className="text-[11px] text-muted-foreground">Informe seu CEP para ver as opções de entrega</p>
               </div>
-              <span className={`text-sm font-semibold ${option.free ? "text-marketplace-green" : "text-foreground"}`}>
-                {option.free ? "GRÁTIS" : formatCurrency(Number(option.price))}
-              </span>
+              <span className="text-muted-foreground text-lg">›</span>
             </button>
-          ))}
+          )}
         </div>
       )}
 
