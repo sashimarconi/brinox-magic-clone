@@ -419,11 +419,20 @@ const CheckoutPage = () => {
   const checkoutLogoUrl = builderAppearance.logo_url || "";
   const checkoutLogoHeight = builderAppearance.logo_height || 28;
 
+  const cepDigits = customerCep.replace(/\D/g, "");
+  const isCepFilled = cepDigits.length === 8;
+
   useEffect(() => {
-    if (shippingOptions?.length && !selectedShipping) {
+    if (isCepFilled && shippingOptions?.length && !selectedShipping) {
       setSelectedShipping(shippingOptions[0].id);
     }
-  }, [shippingOptions, selectedShipping]);
+  }, [shippingOptions, selectedShipping, isCepFilled]);
+
+  useEffect(() => {
+    if (!isCepFilled) {
+      setSelectedShipping(null);
+    }
+  }, [isCepFilled]);
 
   const selectedShippingOption = shippingOptions?.find((s) => s.id === selectedShipping);
   const shippingCost = selectedShippingOption?.free ? 0 : Number(selectedShippingOption?.price || 0);
