@@ -173,12 +173,93 @@ export type Database = {
         }
         Relationships: []
       }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          date: string
+          description: string | null
+          id: string
+          is_recurring: boolean
+          recurring_day: number | null
+          recurring_parent_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          category: string
+          created_at?: string
+          date?: string
+          description?: string | null
+          id?: string
+          is_recurring?: boolean
+          recurring_day?: number | null
+          recurring_parent_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          date?: string
+          description?: string | null
+          id?: string
+          is_recurring?: boolean
+          recurring_day?: number | null
+          recurring_parent_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_recurring_parent_id_fkey"
+            columns: ["recurring_parent_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_goals: {
+        Row: {
+          created_at: string
+          id: string
+          month: string
+          profit_goal: number
+          revenue_goal: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month: string
+          profit_goal?: number
+          revenue_goal?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month?: string
+          profit_goal?: number
+          revenue_goal?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       gateway_settings: {
         Row: {
           active: boolean | null
           created_at: string
           description: string | null
           display_name: string | null
+          fee_percent: number
           gateway_name: string
           id: string
           logo_url: string | null
@@ -192,6 +273,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           display_name?: string | null
+          fee_percent?: number
           gateway_name?: string
           id?: string
           logo_url?: string | null
@@ -205,6 +287,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           display_name?: string | null
+          fee_percent?: number
           gateway_name?: string
           id?: string
           logo_url?: string | null
@@ -616,6 +699,33 @@ export type Database = {
           key?: string
           updated_at?: string
           value?: string | null
+        }
+        Relationships: []
+      }
+      product_costs: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          unit_cost: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          unit_cost?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          unit_cost?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1613,8 +1723,39 @@ export type Database = {
         Returns: Json
       }
       mark_pix_copied: { Args: { _order_id: string }; Returns: undefined }
+      materialize_recurring_expenses: {
+        Args: { _end: string; _start: string; _user_id: string }
+        Returns: undefined
+      }
       remove_my_mfa_factor: { Args: { _factor_id: string }; Returns: undefined }
       remove_my_mfa_factors: { Args: never; Returns: undefined }
+      user_financial_daily: {
+        Args: { _end: string; _start: string }
+        Returns: {
+          costs_and_fees: number
+          day: string
+          expenses: number
+          net_profit: number
+          revenue: number
+        }[]
+      }
+      user_financial_summary: {
+        Args: { _end: string; _start: string }
+        Returns: Json
+      }
+      user_product_profit_ranking: {
+        Args: { _end: string; _start: string }
+        Returns: {
+          gateway_fees: number
+          margin_pct: number
+          product_cost: number
+          product_id: string
+          profit: number
+          revenue: number
+          title: string
+          units_sold: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
