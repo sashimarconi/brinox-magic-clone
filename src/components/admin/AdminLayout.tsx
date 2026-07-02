@@ -5,7 +5,7 @@ import {
   Package, Star, ShieldCheck, LogOut, Menu, CreditCard, Truck, Tag,
   BarChart3, LayoutDashboard, ClipboardList, Store, PenTool, Radio,
   ChevronLeft, ExternalLink, ShoppingCart, Webhook, Bell, Zap, Crown,
-  ChevronDown, Sun, Moon, Globe, User
+  ChevronDown, Sun, Moon, Globe, User, Wallet
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SaleNotification from "@/components/admin/SaleNotification";
@@ -28,6 +28,7 @@ const navSections = [
     items: [
       { label: "Pedidos", path: "/dashboard/orders", icon: ClipboardList },
       { label: "Carrinhos Abandonados", path: "/dashboard/abandoned-carts", icon: ShoppingCart },
+      { label: "Painel Financeiro", path: "/dashboard/financial", icon: Wallet },
     ],
   },
   {

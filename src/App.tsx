@@ -44,6 +44,7 @@ import AdminProfile from "./pages/admin/AdminProfile";
 import ResetPassword from "./pages/ResetPassword";
 import ThankYouRedirect from "./pages/ThankYouRedirect";
 import NotFound from "./pages/NotFound";
+import AdminFinancial from "./pages/admin/AdminFinancial";
 
 const queryClient = new QueryClient();
 
@@ -90,6 +91,7 @@ const AppRoutes = () => {
         <Route path="analytics" element={<AdminAnalytics />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="abandoned-carts" element={<AdminAbandonedCarts />} />
+        <Route path="financial" element={<AdminFinancial />} />
         <Route path="products" element={<AdminProducts />} />
         <Route path="products/new" element={<AdminProductForm />} />
         <Route path="products/:id/edit" element={<AdminProductForm />} />
