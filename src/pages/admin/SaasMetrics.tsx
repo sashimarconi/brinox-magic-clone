@@ -52,6 +52,8 @@ const planColors: Record<string, string> = {
 };
 
 const rankColors = ["text-yellow-400", "text-slate-300", "text-amber-600"];
+const PLAN_COLORS = ["hsl(220, 10%, 50%)", "hsl(199, 89%, 48%)", "hsl(263, 70%, 58%)"];
+
 
 
 const SaasMetrics = () => {
