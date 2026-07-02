@@ -47,7 +47,13 @@ interface SaasUser {
   monthly_price: number;
   created_at: string;
   blocked: boolean;
+  total_products: number;
+  total_paid_orders: number;
+  total_revenue: number;
 }
+
+const brl = (n: number) =>
+  Number(n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const planColors: Record<string, string> = {
   free: "bg-muted text-muted-foreground border-border",
@@ -273,6 +279,20 @@ const SaasUsers = () => {
                     <ActionsMenu user={user} />
                   </div>
                 </div>
+                <div className="grid grid-cols-3 gap-2 text-center rounded-lg border border-border/50 bg-muted/20 p-2">
+                  <div>
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Vendas</p>
+                    <p className="text-[11px] font-semibold text-emerald-400">{brl(user.total_revenue)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Pedidos pagos</p>
+                    <p className="text-[11px] font-semibold">{user.total_paid_orders}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Produtos</p>
+                    <p className="text-[11px] font-semibold">{user.total_products}</p>
+                  </div>
+                </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <div className="flex items-center gap-1.5">
                     <span>Taxa:</span>
@@ -327,6 +347,9 @@ const SaasUsers = () => {
                   <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Usuário</TableHead>
                   <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Email</TableHead>
                   <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Status</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium text-right">Vendas</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium text-right">Pagos</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium text-right">Produtos</TableHead>
                   <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Plano</TableHead>
                   <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Taxa</TableHead>
                   <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Cadastro</TableHead>
@@ -356,6 +379,15 @@ const SaasUsers = () => {
                           Ativo
                         </Badge>
                       )}
+                    </TableCell>
+                    <TableCell className="text-right text-sm font-semibold text-emerald-400 tabular-nums">
+                      {brl(user.total_revenue)}
+                    </TableCell>
+                    <TableCell className="text-right text-sm font-medium tabular-nums">
+                      {user.total_paid_orders}
+                    </TableCell>
+                    <TableCell className="text-right text-sm font-medium tabular-nums">
+                      {user.total_products}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={`text-[10px] font-medium ${planColors[user.plan] || ""}`}>
@@ -412,7 +444,7 @@ const SaasUsers = () => {
                 ))}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-12 text-sm">
+                    <TableCell colSpan={11} className="text-center text-muted-foreground py-12 text-sm">
                       Nenhum usuário encontrado.
                     </TableCell>
                   </TableRow>

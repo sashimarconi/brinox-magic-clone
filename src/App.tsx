@@ -34,6 +34,7 @@ import AdminPlans from "./pages/admin/AdminPlans";
 import SaasAdminLayout from "./components/admin/SaasAdminLayout";
 import SaasMetrics from "./pages/admin/SaasMetrics";
 import SaasUsers from "./pages/admin/SaasUsers";
+import SaasProducts from "./pages/admin/SaasProducts";
 import SaasUserDetails from "./pages/admin/SaasUserDetails";
 import SaasAnalytics from "./pages/admin/SaasAnalytics";
 import SaasOrders from "./pages/admin/SaasOrders";
@@ -82,6 +83,7 @@ const AppRoutes = () => {
         <Route path="analytics" element={<SaasAnalytics />} />
         <Route path="orders" element={<SaasOrders />} />
         <Route path="users" element={<SaasUsers />} />
+        <Route path="products" element={<SaasProducts />} />
         <Route path="users/:userId" element={<SaasUserDetails />} />
         <Route path="platform" element={<AdminPlatformSettings />} />
       </Route>

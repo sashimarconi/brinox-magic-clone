@@ -1607,6 +1607,25 @@ export type Database = {
         Args: { _target_user_id: string }
         Returns: undefined
       }
+      admin_list_all_products: {
+        Args: { _limit?: number; _offset?: number; _search?: string }
+        Returns: {
+          active: boolean
+          created_at: string
+          original_price: number
+          owner_email: string
+          owner_full_name: string
+          owner_user_id: string
+          product_id: string
+          sale_price: number
+          slug: string
+          thumbnail_url: string
+          title: string
+          total_orders: number
+          total_paid_orders: number
+          total_revenue: number
+        }[]
+      }
       admin_list_orders: {
         Args: { _limit?: number; _offset?: number; _status?: string }
         Returns: {
@@ -1635,6 +1654,9 @@ export type Database = {
           full_name: string
           monthly_price: number
           plan: Database["public"]["Enums"]["plan_type"]
+          total_paid_orders: number
+          total_products: number
+          total_revenue: number
           transaction_fee_percent: number
           user_id: string
         }[]
@@ -1655,6 +1677,18 @@ export type Database = {
       admin_toggle_user_block: {
         Args: { _blocked: boolean; _target_user_id: string }
         Returns: undefined
+      }
+      admin_top_sellers: {
+        Args: { _limit?: number }
+        Returns: {
+          email: string
+          full_name: string
+          plan: Database["public"]["Enums"]["plan_type"]
+          total_paid_orders: number
+          total_products: number
+          total_revenue: number
+          user_id: string
+        }[]
       }
       admin_update_user_fee: {
         Args: { _new_fee: number; _target_user_id: string }
