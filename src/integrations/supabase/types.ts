@@ -1727,6 +1727,20 @@ export type Database = {
         Args: { _end: string; _start: string; _user_id: string }
         Returns: undefined
       }
+      public_upsert_visitor_session: {
+        Args: {
+          _city?: string
+          _country?: string
+          _latitude?: number
+          _longitude?: number
+          _page_url?: string
+          _referrer?: string
+          _region?: string
+          _session_id: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
       remove_my_mfa_factor: { Args: { _factor_id: string }; Returns: undefined }
       remove_my_mfa_factors: { Args: never; Returns: undefined }
       user_financial_daily: {
