@@ -65,10 +65,11 @@ const SaasMetrics = () => {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [metricsRes, ordersRes, signupsRes] = await Promise.all([
+      const [metricsRes, ordersRes, signupsRes, sellersRes] = await Promise.all([
         supabase.rpc("admin_saas_metrics"),
         supabase.rpc("admin_daily_orders", { days: 30 }),
         supabase.rpc("admin_daily_signups", { days: 30 }),
+        (supabase as any).rpc("admin_top_sellers", { _limit: 10 }),
       ]);
 
       if (!metricsRes.error && metricsRes.data?.length > 0) {
@@ -79,6 +80,9 @@ const SaasMetrics = () => {
       }
       if (!signupsRes.error && signupsRes.data) {
         setDailySignups(signupsRes.data as unknown as DailySignup[]);
+      }
+      if (!sellersRes.error && sellersRes.data) {
+        setTopSellers(sellersRes.data as unknown as TopSeller[]);
       }
       setLoading(false);
     };
