@@ -111,22 +111,18 @@ export function usePageTracking(eventType: string = "page_view", userId?: string
     });
 
     fetchGeoOnce().then(geo => {
-      const sessionData: any = {
-        session_id: sessionId,
-        last_seen_at: new Date().toISOString(),
-        page_url: pageUrl,
-        user_id: userId,
-      };
-      if (geo) {
-        sessionData.city = geo.city;
-        sessionData.region = geo.region;
-        sessionData.country = geo.country;
-        sessionData.latitude = geo.latitude;
-        sessionData.longitude = geo.longitude;
-      }
-      supabase.from("visitor_sessions").upsert(sessionData, { onConflict: "session_id" }).then(({ error }) => {
-        if (error) console.error("[Tracking] visitor_sessions upsert error:", error.message);
-        else console.log("[Tracking] visitor_sessions upserted OK");
+      (supabase as any).rpc("public_upsert_visitor_session", {
+        _session_id: sessionId,
+        _user_id: userId,
+        _page_url: pageUrl,
+        _referrer: document.referrer || null,
+        _country: geo?.country ?? null,
+        _region: geo?.region ?? null,
+        _city: geo?.city ?? null,
+        _latitude: geo?.latitude ?? null,
+        _longitude: geo?.longitude ?? null,
+      }).then(({ error }: any) => {
+        if (error) console.error("[Tracking] visitor_sessions rpc error:", error.message);
       });
     });
   }, [eventType, userId, metadata]);
@@ -149,10 +145,11 @@ export function useVisitorHeartbeat(userId?: string | null) {
     if (!userId) return;
     const sessionId = getSessionId();
     const interval = setInterval(() => {
-      supabase.from("visitor_sessions").upsert(
-        { session_id: sessionId, last_seen_at: new Date().toISOString(), page_url: window.location.pathname, user_id: userId },
-        { onConflict: "session_id" }
-      ).then();
+      (supabase as any).rpc("public_upsert_visitor_session", {
+        _session_id: sessionId,
+        _user_id: userId,
+        _page_url: window.location.pathname,
+      }).then();
     }, 30000); // 30s — reduz drasticamente IO no banco mantendo sessão "ativa"
 
     return () => clearInterval(interval);
