@@ -60,6 +60,7 @@ const SaasMetrics = () => {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [dailyOrders, setDailyOrders] = useState<DailyOrder[]>([]);
   const [dailySignups, setDailySignups] = useState<DailySignup[]>([]);
+  const [topSellers, setTopSellers] = useState<TopSeller[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
