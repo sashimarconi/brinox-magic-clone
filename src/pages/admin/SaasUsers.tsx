@@ -279,6 +279,20 @@ const SaasUsers = () => {
                     <ActionsMenu user={user} />
                   </div>
                 </div>
+                <div className="grid grid-cols-3 gap-2 text-center rounded-lg border border-border/50 bg-muted/20 p-2">
+                  <div>
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Vendas</p>
+                    <p className="text-[11px] font-semibold text-emerald-400">{brl(user.total_revenue)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Pedidos pagos</p>
+                    <p className="text-[11px] font-semibold">{user.total_paid_orders}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Produtos</p>
+                    <p className="text-[11px] font-semibold">{user.total_products}</p>
+                  </div>
+                </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <div className="flex items-center gap-1.5">
                     <span>Taxa:</span>
