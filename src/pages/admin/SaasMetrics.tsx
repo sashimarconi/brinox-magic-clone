@@ -32,7 +32,27 @@ interface DailySignup {
   signup_count: number;
 }
 
-const PLAN_COLORS = ["hsl(220, 10%, 50%)", "hsl(199, 89%, 48%)", "hsl(263, 70%, 58%)"];
+interface TopSeller {
+  user_id: string;
+  email: string;
+  full_name: string | null;
+  plan: string;
+  total_paid_orders: number;
+  total_revenue: number;
+  total_products: number;
+}
+
+const brl = (n: number) =>
+  Number(n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const planColors: Record<string, string> = {
+  free: "bg-muted text-muted-foreground border-border",
+  pro: "bg-accent/10 text-accent border-accent/20",
+  enterprise: "bg-primary/10 text-primary border-primary/20",
+};
+
+const rankColors = ["text-yellow-400", "text-slate-300", "text-amber-600"];
+
 
 const SaasMetrics = () => {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
