@@ -347,6 +347,9 @@ const SaasUsers = () => {
                   <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Usuário</TableHead>
                   <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Email</TableHead>
                   <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Status</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium text-right">Vendas</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium text-right">Pagos</TableHead>
+                  <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium text-right">Produtos</TableHead>
                   <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Plano</TableHead>
                   <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Taxa</TableHead>
                   <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Cadastro</TableHead>
