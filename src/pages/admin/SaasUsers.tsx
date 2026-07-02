@@ -380,6 +380,15 @@ const SaasUsers = () => {
                         </Badge>
                       )}
                     </TableCell>
+                    <TableCell className="text-right text-sm font-semibold text-emerald-400 tabular-nums">
+                      {brl(user.total_revenue)}
+                    </TableCell>
+                    <TableCell className="text-right text-sm font-medium tabular-nums">
+                      {user.total_paid_orders}
+                    </TableCell>
+                    <TableCell className="text-right text-sm font-medium tabular-nums">
+                      {user.total_products}
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={`text-[10px] font-medium ${planColors[user.plan] || ""}`}>
                         {user.plan.toUpperCase()}
