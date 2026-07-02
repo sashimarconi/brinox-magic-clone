@@ -47,7 +47,13 @@ interface SaasUser {
   monthly_price: number;
   created_at: string;
   blocked: boolean;
+  total_products: number;
+  total_paid_orders: number;
+  total_revenue: number;
 }
+
+const brl = (n: number) =>
+  Number(n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const planColors: Record<string, string> = {
   free: "bg-muted text-muted-foreground border-border",
