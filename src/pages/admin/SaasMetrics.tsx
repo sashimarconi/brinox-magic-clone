@@ -278,6 +278,68 @@ const SaasMetrics = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Top Sellers Ranking */}
+      <Card className="border-border/60 bg-card">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-yellow-400" />
+            Ranking dos Melhores Vendedores
+          </CardTitle>
+          <Link to="/admin/users" className="text-[11px] text-accent hover:underline">Ver todos</Link>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent border-border/60">
+                <TableHead className="w-12 text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">#</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Vendedor</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium">Plano</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium text-right">Vendas</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium text-right">Pedidos pagos</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-medium text-right">Produtos</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {topSellers.map((s, i) => (
+                <TableRow key={s.user_id} className="border-border/40 hover:bg-muted/30 transition-colors">
+                  <TableCell className={`font-bold text-sm ${rankColors[i] || "text-muted-foreground"}`}>
+                    {i < 3 ? <Trophy className={`w-4 h-4 ${rankColors[i]}`} /> : `#${i + 1}`}
+                  </TableCell>
+                  <TableCell>
+                    <Link to={`/admin/users/${s.user_id}`} className="flex items-center gap-2.5 group">
+                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+                        {(s.full_name || s.email || "?").charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate group-hover:text-accent transition-colors">{s.full_name || "—"}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{s.email}</p>
+                      </div>
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={`text-[10px] font-medium ${planColors[s.plan] || ""}`}>
+                      {(s.plan || "free").toUpperCase()}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right text-sm font-semibold text-emerald-400 tabular-nums">
+                    {brl(s.total_revenue)}
+                  </TableCell>
+                  <TableCell className="text-right text-sm tabular-nums">{s.total_paid_orders}</TableCell>
+                  <TableCell className="text-right text-sm tabular-nums">{s.total_products}</TableCell>
+                </TableRow>
+              ))}
+              {topSellers.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-10 text-sm">
+                    Nenhum vendedor com vendas ainda.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };
