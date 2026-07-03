@@ -74,20 +74,21 @@ export async function fetchProductBySlug(slug: string) {
     `)
     .eq("slug", slug)
     .eq("active", true)
-    .maybeSingle();
+    .limit(1);
 
   if (error) throw error;
-  if (!data) return null;
+  const product = data?.[0];
+  if (!product) return null;
 
   // Also fetch reviews linked via review_products join table
   const { data: linkedReviewProducts } = await supabase
     .from("review_products")
     .select("review_id")
-    .eq("product_id", data.id);
+    .eq("product_id", product.id);
 
   if (linkedReviewProducts && linkedReviewProducts.length > 0) {
     const linkedReviewIds = linkedReviewProducts.map((rp: any) => rp.review_id);
-    const existingIds = new Set((data.reviews || []).map((r: any) => r.id));
+    const existingIds = new Set((product.reviews || []).map((r: any) => r.id));
     const missingIds = linkedReviewIds.filter((id: string) => !existingIds.has(id));
 
     if (missingIds.length > 0) {
@@ -97,12 +98,12 @@ export async function fetchProductBySlug(slug: string) {
         .in("id", missingIds);
 
       if (extraReviews) {
-        data.reviews = [...(data.reviews || []), ...extraReviews];
+        product.reviews = [...(product.reviews || []), ...extraReviews];
       }
     }
   }
 
-  return normalizeProductRelations(data) as ProductWithRelations;
+  return normalizeProductRelations(product) as ProductWithRelations;
 }
 
 export async function fetchStoreSettings(userId?: string | null) {
@@ -115,10 +116,10 @@ export async function fetchStoreSettings(userId?: string | null) {
     query = query.eq("user_id", userId);
   }
 
-  const { data, error } = await query.maybeSingle();
+  const { data, error } = await query;
 
   if (error) throw error;
-  return data || null;
+  return data?.[0] || null;
 }
 
 export async function fetchStoreBySlug(slug: string) {
