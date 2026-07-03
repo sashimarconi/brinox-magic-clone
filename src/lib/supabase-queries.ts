@@ -73,9 +73,11 @@ export async function fetchProductBySlug(slug: string) {
       reviews(id, user_name, user_avatar_url, city, rating, comment, photos, review_date)
     `)
     .eq("slug", slug)
-    .single();
+    .eq("active", true)
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) return null;
 
   // Also fetch reviews linked via review_products join table
   const { data: linkedReviewProducts } = await supabase
@@ -103,15 +105,20 @@ export async function fetchProductBySlug(slug: string) {
   return normalizeProductRelations(data) as ProductWithRelations;
 }
 
-export async function fetchStoreSettings() {
-  const { data, error } = await supabase
+export async function fetchStoreSettings(userId?: string | null) {
+  let query = supabase
     .from("store_settings")
     .select("*")
-    .limit(1)
-    .single();
+    .limit(1);
+
+  if (userId) {
+    query = query.eq("user_id", userId);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) throw error;
-  return data;
+  return data || null;
 }
 
 export async function fetchStoreBySlug(slug: string) {
