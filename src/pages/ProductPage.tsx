@@ -129,9 +129,9 @@ const ProductPage = () => {
         query = query.eq("user_id", product.user_id);
       }
 
-      const { data, error } = await query.maybeSingle();
+      const { data, error } = await query;
       if (error) return null;
-      return data as any;
+      return (data?.[0] || null) as any;
     },
     enabled: !!product?.user_id,
   });
