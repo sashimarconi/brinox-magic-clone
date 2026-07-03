@@ -726,10 +726,21 @@ const CheckoutPage = () => {
     }
   };
 
-  if (isLoading || !product) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-6 text-center">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Produto não encontrado</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Este checkout não está disponível no momento.</p>
+        </div>
       </div>
     );
   }

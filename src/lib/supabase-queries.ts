@@ -73,19 +73,22 @@ export async function fetchProductBySlug(slug: string) {
       reviews(id, user_name, user_avatar_url, city, rating, comment, photos, review_date)
     `)
     .eq("slug", slug)
-    .single();
+    .eq("active", true)
+    .limit(1);
 
   if (error) throw error;
+  const product = data?.[0];
+  if (!product) return null;
 
   // Also fetch reviews linked via review_products join table
   const { data: linkedReviewProducts } = await supabase
     .from("review_products")
     .select("review_id")
-    .eq("product_id", data.id);
+    .eq("product_id", product.id);
 
   if (linkedReviewProducts && linkedReviewProducts.length > 0) {
     const linkedReviewIds = linkedReviewProducts.map((rp: any) => rp.review_id);
-    const existingIds = new Set((data.reviews || []).map((r: any) => r.id));
+    const existingIds = new Set((product.reviews || []).map((r: any) => r.id));
     const missingIds = linkedReviewIds.filter((id: string) => !existingIds.has(id));
 
     if (missingIds.length > 0) {
@@ -95,23 +98,28 @@ export async function fetchProductBySlug(slug: string) {
         .in("id", missingIds);
 
       if (extraReviews) {
-        data.reviews = [...(data.reviews || []), ...extraReviews];
+        product.reviews = [...(product.reviews || []), ...extraReviews];
       }
     }
   }
 
-  return normalizeProductRelations(data) as ProductWithRelations;
+  return normalizeProductRelations(product) as ProductWithRelations;
 }
 
-export async function fetchStoreSettings() {
-  const { data, error } = await supabase
+export async function fetchStoreSettings(userId?: string | null) {
+  let query = supabase
     .from("store_settings")
     .select("*")
-    .limit(1)
-    .single();
+    .limit(1);
+
+  if (userId) {
+    query = query.eq("user_id", userId);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
-  return data;
+  return data?.[0] || null;
 }
 
 export async function fetchStoreBySlug(slug: string) {

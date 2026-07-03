@@ -112,21 +112,28 @@ const ProductPage = () => {
   });
 
   const { data: storeSettings } = useQuery({
-    queryKey: ["store-settings"],
-    queryFn: () => fetchStoreSettings(),
+    queryKey: ["store-settings", product?.user_id],
+    queryFn: () => fetchStoreSettings(product?.user_id),
+    enabled: !!product?.user_id,
   });
 
   const { data: builderRaw } = useQuery({
-    queryKey: ["product-page-builder-config"],
+    queryKey: ["product-page-builder-config", product?.user_id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("product_page_builder_config" as any)
         .select("*")
-        .limit(1)
-        .single();
+        .limit(1);
+
+      if (product?.user_id) {
+        query = query.eq("user_id", product.user_id);
+      }
+
+      const { data, error } = await query;
       if (error) return null;
-      return data as any;
+      return (data?.[0] || null) as any;
     },
+    enabled: !!product?.user_id,
   });
 
   const builder: ProductPageBuilderConfig = (() => {
@@ -168,10 +175,21 @@ const ProductPage = () => {
     }
   };
 
-  if (isLoading || !product) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-6 text-center">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Produto não encontrado</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Este produto não está disponível no momento.</p>
+        </div>
       </div>
     );
   }
