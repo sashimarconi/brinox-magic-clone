@@ -18,7 +18,10 @@ const StoreCarousel = ({ title, products }: StoreCarouselProps) => {
         <p className="text-sm font-semibold text-foreground">{title}</p>
         <span className="text-[11px] text-muted-foreground">{products.length} produtos</span>
       </div>
-      <div className="flex gap-2.5 overflow-x-auto scrollbar-hide -mx-4 px-4 snap-x snap-mandatory">
+      <div
+        className="flex gap-2.5 overflow-x-auto -mx-4 px-4 snap-x snap-mandatory"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
         {products.map((product) => (
           <button
             key={product.id}
