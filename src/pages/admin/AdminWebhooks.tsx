@@ -110,30 +110,68 @@ const AdminWebhooks = () => {
     setTestingId(wh.id);
     const events = Array.isArray(wh.events) ? wh.events : [];
     const eventName = events[0] || "webhook_test";
-    const testPayload = {
-      event: eventName,
-      timestamp: new Date().toISOString(),
-      test: true,
-      data: {
-        message: "Este é um disparo de teste do webhook",
-        webhook_id: wh.id,
-        webhook_name: wh.name,
-        sample_order: {
-          id: "test-order-id",
-          customer_name: "Cliente Teste",
-          customer_email: "teste@exemplo.com",
-          total: 99.9,
-          payment_status: eventName === "order_paid" ? "paid" : "pending",
+    const isDialog = /\/webhook-checkout\/universal\/|\/webhook-recovery\/universal\//i.test(wh.url || "");
+    const isXtracky = (wh.url || "").includes("xtracky.com");
+
+    let body: string;
+    if (isDialog) {
+      body = JSON.stringify({
+        order_id: "test-order-id",
+        status: eventName === "order_paid" ? "paid" : "pending",
+        tracking_code: null,
+        customer: {
+          name: "Cliente Teste",
+          email: "teste@exemplo.com",
+          phone: "11999999999",
+          cpf: "00000000000",
         },
-      },
-    };
+        address: {
+          street: "Rua Teste, 123",
+          neighborhood: "Centro",
+          city: "São Paulo",
+          state: "SP",
+          zip: "01000000",
+        },
+        products: [{ name: "Produto Teste", quantity: 1, price: 99.9 }],
+        amount: 99.9,
+        store_name: "Loja Teste",
+        store_cnpj: "",
+        payment_method: "pix",
+      });
+    } else if (isXtracky) {
+      body = JSON.stringify({
+        orderId: "test-order-id",
+        amount: 9990,
+        status: eventName === "order_paid" ? "paid" : "waiting_payment",
+        utm_source: null,
+      });
+    } else {
+      body = JSON.stringify({
+        event: eventName,
+        timestamp: new Date().toISOString(),
+        test: true,
+        data: {
+          message: "Este é um disparo de teste do webhook",
+          webhook_id: wh.id,
+          webhook_name: wh.name,
+          sample_order: {
+            id: "test-order-id",
+            customer_name: "Cliente Teste",
+            customer_email: "teste@exemplo.com",
+            total: 99.9,
+            payment_status: eventName === "order_paid" ? "paid" : "pending",
+          },
+        },
+      });
+    }
+
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (wh.secret_key) headers["X-Webhook-Secret"] = wh.secret_key;
       const res = await fetch(wh.url, {
         method: "POST",
         headers,
-        body: JSON.stringify(testPayload),
+        body,
         mode: "cors",
       });
       if (res.ok || res.type === "opaque") {
@@ -142,7 +180,6 @@ const AdminWebhooks = () => {
         toast.error(`Webhook respondeu com erro ${res.status}`);
       }
     } catch (err: any) {
-      // CORS pode bloquear leitura da resposta, mas o disparo costuma ocorrer
       toast.message("Disparo enviado", {
         description: "Não foi possível ler a resposta (CORS). Verifique o destino para confirmar o recebimento.",
       });
