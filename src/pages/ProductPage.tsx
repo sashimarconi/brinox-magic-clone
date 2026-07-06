@@ -17,6 +17,7 @@ import TrustBadges from "@/components/product/TrustBadges";
 import ReviewsSection from "@/components/product/ReviewsSection";
 import StoreCard from "@/components/product/StoreCard";
 import RelatedProducts from "@/components/product/RelatedProducts";
+import StoreCarousel from "@/components/product/StoreCarousel";
 import FixedFooter from "@/components/product/FixedFooter";
 import BuySheet from "@/components/product/BuySheet";
 
