@@ -261,10 +261,13 @@ const ProductPage = () => {
     ),
     trust_badges: isSectionEnabled("trust_badges") && <TrustBadges />,
     store_card: isSectionEnabled("store_card") && productStore && (
-      <StoreCard
-        store={{ name: productStore.name, avatar: productStore.logo_url || "", totalSales: productStore.total_sales || "0", rating: Number(productStore.rating) || 5.0 }}
-        storeSlug={productStore.slug}
-      />
+      <>
+        <StoreCard
+          store={{ name: productStore.name, avatar: productStore.logo_url || "", totalSales: productStore.total_sales || "0", rating: Number(productStore.rating) || 5.0 }}
+          storeSlug={productStore.slug}
+        />
+        <StoreCarousel title={builder.texts.related_title} products={relatedFormatted} />
+      </>
     ),
     reviews: isSectionEnabled("reviews") && (
       <div ref={reviewsRef}>
