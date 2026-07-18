@@ -185,7 +185,7 @@ const AdminOrders = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dateBounds.from, dateBounds.to]);
 
   useEffect(() => {
     fetchOrders();
