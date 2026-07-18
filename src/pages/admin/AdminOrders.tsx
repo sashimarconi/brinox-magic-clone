@@ -65,25 +65,57 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("month");
   const [dateRange, setDateRange] = useState<DateRange>({});
   const [selectedOrder, setSelectedOrder] = useState<AdminOrderRecord | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Compute server-side date cutoff from active date filter to avoid loading
+  // tens of thousands of orders on every page open.
+  const dateBounds = useMemo(() => {
+    const now = new Date();
+    if (dateFilter === "today") {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      return { from: start.toISOString(), to: null as string | null };
+    }
+    if (dateFilter === "week") {
+      return { from: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(), to: null };
+    }
+    if (dateFilter === "month") {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+      return { from: start.toISOString(), to: null };
+    }
+    if (dateFilter === "custom") {
+      const from = dateRange.from
+        ? new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate(), 0, 0, 0).toISOString()
+        : null;
+      const to = dateRange.to
+        ? new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate(), 23, 59, 59, 999).toISOString()
+        : null;
+      return { from, to };
+    }
+    return { from: null, to: null };
+  }, [dateFilter, dateRange.from, dateRange.to]);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
 
     try {
-      // Paginate through all orders to bypass the 1000-row default limit
+      // Paginate through orders in the selected window (server-side filtered)
       const allRows: AdminOrderRecord[] = [];
       let from = 0;
-      while (from < 100000) {
-        const { data, error } = await supabase
+      const MAX_ROWS = 20000;
+      while (from < MAX_ROWS) {
+        let q = supabase
           .from("orders")
           .select(LIST_COLUMNS)
           .order("created_at", { ascending: false })
           .range(from, from + PAGE_SIZE - 1);
 
+        if (dateBounds.from) q = q.gte("created_at", dateBounds.from);
+        if (dateBounds.to) q = q.lte("created_at", dateBounds.to);
+
+        const { data, error } = await q;
         if (error) throw error;
         const batch = (data || []) as unknown as AdminOrderRecord[];
         allRows.push(...batch);
@@ -92,6 +124,7 @@ const AdminOrders = () => {
       }
 
       const rows = allRows;
+
       const productIds = Array.from(new Set(rows.map((order) => order.product_id).filter((value): value is string => Boolean(value))));
       const shippingIds = Array.from(new Set(rows.map((order) => order.shipping_option_id).filter((value): value is string => Boolean(value))));
       const variantIds = Array.from(
