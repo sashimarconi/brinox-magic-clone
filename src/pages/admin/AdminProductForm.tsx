@@ -835,6 +835,26 @@ const AdminProductForm = () => {
               <video src={form.video_url} className="w-full h-40 rounded-lg object-cover bg-black" muted controls />
             )}
           </Section>
+
+          <Section
+            icon={Code2}
+            title="HTML no <head>"
+            description="Cole scripts/tags que serão injetados no head da página deste produto"
+          >
+            <Textarea
+              value={form.head_html}
+              onChange={(e) => updateField("head_html", e.target.value)}
+              rows={10}
+              spellCheck={false}
+              placeholder={'<script>\n  // seu script aqui\n</script>'}
+              className="font-mono text-xs"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Aceita &lt;script&gt;, &lt;meta&gt;, &lt;link&gt; e &lt;style&gt;. O código é injetado no
+              &lt;head&gt; ao abrir /product/{form.slug || "seu-produto"}. Use apenas código de fontes
+              confiáveis.
+            </p>
+          </Section>
         </div>
 
         {/* Sidebar */}
