@@ -27,6 +27,7 @@ import {
   ExternalLink,
   Video,
   Layers,
+  Code2,
 } from "lucide-react";
 import ProductVariantsManager from "@/components/admin/ProductVariantsManager";
 import {
@@ -99,6 +100,7 @@ const emptyForm: ProductForm = {
   sold_count: 0,
   active: true,
   video_url: "",
+  head_html: "",
 };
 
 const formatCentsInput = (raw: string): string => {
@@ -289,6 +291,7 @@ const AdminProductForm = () => {
         sold_count: existing.sold_count || 0,
         active: existing.active ?? true,
         video_url: existing.video_url || "",
+        head_html: (existing as any).head_html || "",
       });
       const sortedImgs = [...(existing.product_images || [])].sort(
         (a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
