@@ -862,6 +862,7 @@ export type Database = {
           flash_sale: boolean | null
           flash_sale_ends_in: string | null
           free_shipping: boolean | null
+          head_html: string | null
           id: string
           original_price: number
           promo_tag: string | null
@@ -889,6 +890,7 @@ export type Database = {
           flash_sale?: boolean | null
           flash_sale_ends_in?: string | null
           free_shipping?: boolean | null
+          head_html?: string | null
           id?: string
           original_price: number
           promo_tag?: string | null
@@ -916,6 +918,7 @@ export type Database = {
           flash_sale?: boolean | null
           flash_sale_ends_in?: string | null
           free_shipping?: boolean | null
+          head_html?: string | null
           id?: string
           original_price?: number
           promo_tag?: string | null
