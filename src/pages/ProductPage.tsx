@@ -3,6 +3,7 @@ import { usePageTracking, useVisitorHeartbeat } from "@/hooks/usePageTracking";
 import { useTikTokPixel, trackTikTokViewContent } from "@/hooks/useTikTokPixel";
 import { useMetaPixel, trackMetaViewContent } from "@/hooks/useMetaPixel";
 import { useUtmifyPixel } from "@/hooks/useUtmifyPixel";
+import { useCustomHeadHtml } from "@/hooks/useCustomHeadHtml";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,6 +84,9 @@ const ProductPage = () => {
   useUtmifyPixel(product?.user_id);
   usePageTracking("page_view", product?.user_id);
   useVisitorHeartbeat(product?.user_id);
+
+  // HTML personalizado no <head> definido no editor do produto
+  useCustomHeadHtml((product as any)?.head_html);
 
   // Dispara ViewContent quando o produto é carregado
   useEffect(() => {
