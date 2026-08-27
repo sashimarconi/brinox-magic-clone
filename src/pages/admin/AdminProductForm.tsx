@@ -68,6 +68,7 @@ interface ProductForm {
   sold_count: number;
   active: boolean;
   video_url: string;
+  head_html: string;
 }
 
 interface ImageItem {
