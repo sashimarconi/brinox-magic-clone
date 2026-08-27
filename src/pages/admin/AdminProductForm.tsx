@@ -27,6 +27,7 @@ import {
   ExternalLink,
   Video,
   Layers,
+  Code2,
 } from "lucide-react";
 import ProductVariantsManager from "@/components/admin/ProductVariantsManager";
 import {
@@ -68,6 +69,7 @@ interface ProductForm {
   sold_count: number;
   active: boolean;
   video_url: string;
+  head_html: string;
 }
 
 interface ImageItem {
@@ -98,6 +100,7 @@ const emptyForm: ProductForm = {
   sold_count: 0,
   active: true,
   video_url: "",
+  head_html: "",
 };
 
 const formatCentsInput = (raw: string): string => {
@@ -288,6 +291,7 @@ const AdminProductForm = () => {
         sold_count: existing.sold_count || 0,
         active: existing.active ?? true,
         video_url: existing.video_url || "",
+        head_html: (existing as any).head_html || "",
       });
       const sortedImgs = [...(existing.product_images || [])].sort(
         (a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
@@ -830,6 +834,26 @@ const AdminProductForm = () => {
             {form.video_url && (
               <video src={form.video_url} className="w-full h-40 rounded-lg object-cover bg-black" muted controls />
             )}
+          </Section>
+
+          <Section
+            icon={Code2}
+            title="HTML no <head>"
+            description="Cole scripts/tags que serão injetados no head da página deste produto"
+          >
+            <Textarea
+              value={form.head_html}
+              onChange={(e) => updateField("head_html", e.target.value)}
+              rows={10}
+              spellCheck={false}
+              placeholder={'<script>\n  // seu script aqui\n</script>'}
+              className="font-mono text-xs"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Aceita &lt;script&gt;, &lt;meta&gt;, &lt;link&gt; e &lt;style&gt;. O código é injetado no
+              &lt;head&gt; ao abrir /product/{form.slug || "seu-produto"}. Use apenas código de fontes
+              confiáveis.
+            </p>
           </Section>
         </div>
 
